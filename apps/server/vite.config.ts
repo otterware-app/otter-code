@@ -79,6 +79,11 @@ export default mergeConfig(
             },
           }
         : {}),
+      // Its UMD entry hides relative require calls inside a factory. Bundle the ESM entry.
+      alias: {
+        "vscode-json-languageservice": "vscode-json-languageservice/lib/esm/jsonLanguageService.js",
+        "jsonc-parser": "jsonc-parser/lib/esm/main.js",
+      },
       deps: {
         // `neverBundle` forces the native packages out: returning false from
         // `alwaysBundle` only means "no opinion", so a transitive dependency

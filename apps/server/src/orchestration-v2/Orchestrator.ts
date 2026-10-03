@@ -14,6 +14,7 @@ import {
 import {
   ORCHESTRATION_V2_WORKSPACE_PREPARATION_FAILURE_CODE,
   type ChatAttachment,
+  normalizeLinearIssueIdentifier,
   CommandId,
   isProviderNativeSubagentThread,
   MessageId,
@@ -391,6 +392,9 @@ function commandThreadId(command: OrchestrationV2ServerCommand): ThreadId {
     case "thread.pull-request.watch":
     case "thread.pull-request-watch.sync":
     case "thread.pull-request.sync":
+    case "thread.linear-issue.link":
+    case "thread.linear-issue.unlink":
+    case "thread.linear-issue-link.sync":
     case "thread.title.regeneration.complete":
     case "thread.runtime-mode.set":
     case "thread.interaction-mode.set":
@@ -2327,6 +2331,9 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
           | "thread.pull-request.watch"
           | "thread.pull-request-watch.sync"
           | "thread.pull-request.sync"
+          | "thread.linear-issue.link"
+          | "thread.linear-issue.unlink"
+          | "thread.linear-issue-link.sync"
           | "thread.title.regeneration.complete"
           | "thread.runtime-mode.set"
           | "thread.interaction-mode.set"
@@ -3041,6 +3048,56 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
                 }),
             updatedAt: thread.updatedAt,
           };
+        case "thread.linear-issue.link":
+        case "thread.linear-issue.unlink":
+        case "thread.linear-issue-link.sync": {
+          const links = thread.linearIssues ?? [];
+          const identifier = normalizeLinearIssueIdentifier(command.identifier);
+          if (identifier === null) return thread;
+          const existing = links.find(
+            (link) =>
+              link.identifier === identifier ||
+              (command.type === "thread.linear-issue-link.sync" &&
+                link.issueId === command.issueId),
+          );
+          let linearIssues = links;
+          if (command.type === "thread.linear-issue.link") {
+            if (existing) return thread;
+            linearIssues = [
+              ...links,
+              {
+                identifier,
+                issueId: null,
+                url: command.url,
+                source: command.source,
+                linkedAt: DateTime.formatIso(now),
+                snapshot: null,
+              },
+            ];
+          } else if (command.type === "thread.linear-issue.unlink") {
+            if (!existing) return thread;
+            linearIssues = links.filter((link) => link !== existing);
+          } else {
+            if (!existing) return thread;
+            // A moved issue gets a new identifier; the stable issueId keeps the link.
+            linearIssues = links.map((link) =>
+              link === existing
+                ? {
+                    ...link,
+                    identifier: command.snapshot.identifier,
+                    issueId: command.issueId,
+                    url: command.url,
+                    snapshot: command.snapshot,
+                  }
+                : link,
+            );
+          }
+          return {
+            ...thread,
+            linearIssues,
+            updatedAt: command.type === "thread.linear-issue-link.sync" ? thread.updatedAt : now,
+          };
+        }
         case "thread.title.regeneration.complete":
           return thread.titleRegeneration?.requestId === command.requestId
             ? {
@@ -3099,6 +3156,11 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
         case "thread.pull-request.watch":
         case "thread.pull-request-watch.sync":
         case "thread.pull-request.sync":
+        // Linear links ride the existing whole-thread event so older clients,
+        // which decode event types strictly, still apply them.
+        case "thread.linear-issue.link":
+        case "thread.linear-issue.unlink":
+        case "thread.linear-issue-link.sync":
           return "thread.pull-request-synced" as const;
         case "thread.runtime-mode.set":
           return "thread.runtime-mode-updated" as const;
@@ -9509,6 +9571,9 @@ const makeOrchestrator = Effect.fn("orchestrationV2.Orchestrator.layer")(functio
       case "thread.pull-request-link.sync":
       case "thread.pull-request.watch":
       case "thread.pull-request.sync":
+      case "thread.linear-issue.link":
+      case "thread.linear-issue.unlink":
+      case "thread.linear-issue-link.sync":
       case "thread.title.regeneration.complete":
       case "thread.runtime-mode.set":
       case "thread.interaction-mode.set":

@@ -1,0 +1,1 @@
+-- Merge the Linear and upstream delivery-attempts retention snapshot heads without changing the schema.

@@ -4,6 +4,7 @@ import type {
   EnvironmentId,
   ReviewDiffPreviewInput,
   ReviewDiffPreviewSource,
+  ReviewDiffPreviewSourceRequest,
 } from "@t3tools/contracts";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
@@ -22,6 +23,7 @@ export function useReviewFilePatches({
   environmentId,
   cwd,
   source,
+  sourceRequest,
   baseRef,
   ignoreWhitespace,
   theme,
@@ -31,6 +33,8 @@ export function useReviewFilePatches({
   environmentId: EnvironmentId | undefined;
   cwd: string | undefined;
   source: ReviewDiffPreviewSource | null;
+  /** The preview's `source` request, repeated so each file is read from the same diff. */
+  sourceRequest: ReviewDiffPreviewSourceRequest | undefined;
   baseRef: string | null;
   ignoreWhitespace: boolean;
   theme: "light" | "dark";
@@ -52,6 +56,7 @@ export function useReviewFilePatches({
     environmentId,
     cwd,
     source,
+    sourceRequest,
     baseRef,
     ignoreWhitespace,
     previewInput,
@@ -161,6 +166,7 @@ function reviewFileQueries({
   environmentId,
   cwd,
   source,
+  sourceRequest,
   baseRef,
   ignoreWhitespace,
   previewInput,
@@ -170,6 +176,7 @@ function reviewFileQueries({
   environmentId: EnvironmentId | undefined;
   cwd: string | undefined;
   source: ReviewDiffPreviewSource | null;
+  sourceRequest: ReviewDiffPreviewSourceRequest | undefined;
   baseRef: string | null;
   ignoreWhitespace: boolean;
   previewInput: ReviewDiffPreviewInput | undefined;
@@ -194,6 +201,7 @@ function reviewFileQueries({
                   cwd,
                   ...(baseRef ? { baseRef } : {}),
                   ...(source.kind === "commit" ? { commitSha: source.id } : {}),
+                  ...(sourceRequest ? { source: sourceRequest } : {}),
                   ignoreWhitespace,
                   file: {
                     path: file.path,

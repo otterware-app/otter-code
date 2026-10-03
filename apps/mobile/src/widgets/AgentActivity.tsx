@@ -152,7 +152,7 @@ function AgentActivity(
   const deepLinkRow = attentionRow ?? row0;
   const deepLink =
     deepLinkRow && deepLinkRow.deepLink.startsWith("/") && !deepLinkRow.deepLink.startsWith("//")
-      ? `t3code://${deepLinkRow.deepLink.slice(1)}`
+      ? `ottercode://${deepLinkRow.deepLink.slice(1)}`
       : null;
   const linkModifiers = deepLink ? [widgetURL(deepLink)] : [];
 
@@ -246,10 +246,6 @@ function AgentActivity(
         ]}
       >
         <ZStack>
-          <HStack spacing={0} alignment="center">
-            {renderLogo(13, primaryForeground)}
-            <Spacer minLength={0} />
-          </HStack>
           <HStack spacing={6} alignment="center">
             <Spacer minLength={0} />
             <Text
@@ -288,7 +284,6 @@ function AgentActivity(
     bannerSmall: (
       <VStack alignment="leading" spacing={5} modifiers={[padding({ all: 10 })]}>
         <HStack spacing={7} alignment="center">
-          {renderLogo(14, primaryForeground)}
           <Text
             modifiers={[
               font({ weight: "bold", size: 13 }),
@@ -358,7 +353,6 @@ function AgentActivity(
       : renderLogo(11, tint, linkModifiers),
     expandedLeading: (
       <HStack spacing={5} alignment="center" modifiers={[padding({ leading: 4, vertical: 4 })]}>
-        {renderLogo(15, tint)}
         <Text modifiers={[font({ weight: "bold", size: 13 }), foregroundStyle(tint)]}>
           {allDone ? doneLabel : `${props.activeCount}`}
         </Text>

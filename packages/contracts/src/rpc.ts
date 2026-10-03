@@ -5,6 +5,12 @@ import {
   OrchestrationV2SearchThreadsInput,
   OrchestrationV2SearchThreadsResult,
 } from "./orchestrationV2.ts";
+import {
+  LanguageRequest,
+  LanguageResult,
+  LanguageServerStatusResult,
+  LanguageServiceError,
+} from "./language.ts";
 import { OrchestrationDispatchCommandError } from "./orchestrationDispatch.ts";
 import {
   McpAppCallToolInput,
@@ -413,6 +419,8 @@ import { Project, ProjectMutation, ProjectMutationError } from "./project.ts";
 export const WS_METHODS = {
   projectsListEntries: "projects.listEntries",
   projectsListIgnoredFiles: "projects.listIgnoredFiles",
+  projectsLanguage: "projects.language",
+  projectsLanguageServers: "projects.languageServers",
   projectsReadFile: "projects.readFile",
   projectsSearchContents: "projects.searchContents",
   projectsSearchEntries: "projects.searchEntries",
@@ -1332,6 +1340,18 @@ const WsProjectsListIgnoredFilesRpc = Rpc.make(WS_METHODS.projectsListIgnoredFil
   error: Schema.Union([ProjectListEntriesError, EnvironmentAuthorizationError]),
 });
 
+const WsProjectsLanguageRpc = Rpc.make(WS_METHODS.projectsLanguage, {
+  payload: LanguageRequest,
+  success: LanguageResult,
+  error: Schema.Union([LanguageServiceError, EnvironmentAuthorizationError]),
+});
+
+const WsProjectsLanguageServersRpc = Rpc.make(WS_METHODS.projectsLanguageServers, {
+  payload: Schema.Struct({}),
+  success: LanguageServerStatusResult,
+  error: EnvironmentAuthorizationError,
+});
+
 const WsProjectsReadFileRpc = Rpc.make(WS_METHODS.projectsReadFile, {
   payload: ProjectReadFileInput,
   success: ProjectReadFileResult,
@@ -2109,6 +2129,8 @@ export const WsRpcGroup = RpcGroup.make(
   WsSubscribeProjectClonesRpc,
   WsProjectsListEntriesRpc,
   WsProjectsListIgnoredFilesRpc,
+  WsProjectsLanguageRpc,
+  WsProjectsLanguageServersRpc,
   WsProjectsReadFileRpc,
   WsProjectsSearchContentsRpc,
   WsProjectsSearchEntriesRpc,

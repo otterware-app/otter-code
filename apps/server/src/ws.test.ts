@@ -31,6 +31,8 @@ import { RpcGroup, RpcMessage, RpcServer } from "effect/rpc";
 import * as SqlClient from "effect/sql/SqlClient";
 
 import * as PreviewAutomationBroker from "./mcp/PreviewAutomationBroker.ts";
+import * as LinearIssueSyncReactor from "./linear/LinearIssueSyncReactor.ts";
+import { WorkspaceLanguageService } from "./workspace/WorkspaceLanguageService.ts";
 import * as ServerBrowser from "./preview/ServerBrowser.ts";
 import * as AcpRegistryRuntimeCoordinator from "@t3tools/provider-acp-registry/server/AcpRegistryRuntimeCoordinator";
 import * as AcpRegistrySupport from "@t3tools/provider-acp-registry/server/AcpRegistrySupport";
@@ -664,6 +666,7 @@ it.effect(
             {},
             yield* ServerBrowser.ServerBrowser,
             () => Effect.void,
+            new WorkspaceLanguageService(),
           ).pipe(Layer.provide(configRpcServices)),
         ),
       );
@@ -726,6 +729,7 @@ it.effect(
           Layer.fresh(layerConfigSources),
           Layer.mock(PreviewAutomationBroker.PreviewAutomationBroker)({}),
           Layer.mock(ServerBrowser.ServerBrowser)({}),
+          Layer.mock(LinearIssueSyncReactor.LinearIssueSyncReactor)({}),
         ),
       ),
       Effect.scoped,
@@ -832,6 +836,7 @@ it.effect("on-demand clients get provider config without workspace snapshots", (
           {},
           yield* ServerBrowser.ServerBrowser,
           () => Effect.void,
+          new WorkspaceLanguageService(),
         ).pipe(Layer.provide(configRpcServices)),
       ),
     );

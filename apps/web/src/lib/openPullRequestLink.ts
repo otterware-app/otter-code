@@ -49,7 +49,7 @@ export function findProjectOnChangeRequestHost(
   });
 }
 
-function shouldOpenPullRequestExternally(
+export function shouldOpenPullRequestExternally(
   event: Pick<MouseEvent<HTMLElement>, "metaKey" | "ctrlKey"> &
     Partial<Pick<MouseEvent<HTMLElement>, "button">>,
 ): boolean {

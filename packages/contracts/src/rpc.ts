@@ -210,6 +210,12 @@ import {
   PullRequestUpdateInput,
 } from "./pullRequest.ts";
 import {
+  LinearIssueChange,
+  LinearIssueDetail,
+  LinearIssueDetailError,
+  LinearIssueDetailInput,
+} from "./linear.ts";
+import {
   RelayClientInstallFailedError,
   RelayClientInstallProgressEventSchema,
   RelayClientStatusSchema,
@@ -562,6 +568,8 @@ export const WS_METHODS = {
   pullRequestsInvalidate: "pullRequests.invalidate",
   pullRequestsReportState: "pullRequests.reportState",
   pullRequestsSubscribeRefreshes: "pullRequests.subscribeRefreshes",
+  linearIssueDetail: "linear.issueDetail",
+  linearSubscribeIssueChanges: "linear.subscribeIssueChanges",
   pullRequestsReviewerCandidates: "pullRequests.reviewerCandidates",
   pullRequestsRequestReviewers: "pullRequests.requestReviewers",
   pullRequestsLabelCandidates: "pullRequests.labelCandidates",
@@ -1001,6 +1009,19 @@ const WsPullRequestsLinkedThreadsRpc = Rpc.make(WS_METHODS.pullRequestsLinkedThr
   payload: PullRequestRef,
   success: PullRequestLinkedThreadsResult,
   error: PullRequestRpcError,
+});
+
+const WsLinearIssueDetailRpc = Rpc.make(WS_METHODS.linearIssueDetail, {
+  payload: LinearIssueDetailInput,
+  success: LinearIssueDetail,
+  error: Schema.Union([LinearIssueDetailError, EnvironmentAuthorizationError]),
+});
+
+const WsLinearSubscribeIssueChangesRpc = Rpc.make(WS_METHODS.linearSubscribeIssueChanges, {
+  payload: Schema.Struct({}),
+  success: LinearIssueChange,
+  error: EnvironmentAuthorizationError,
+  stream: true,
 });
 
 const WsPullRequestsDetailRpc = Rpc.make(WS_METHODS.pullRequestsDetail, {
@@ -1972,6 +1993,8 @@ export const WsRpcGroup = RpcGroup.make(
   WsPullRequestsStackRpc,
   WsPullRequestsLinkedThreadsRpc,
   WsPullRequestsDetailRpc,
+  WsLinearIssueDetailRpc,
+  WsLinearSubscribeIssueChangesRpc,
   WsPullRequestsPreviewRpc,
   WsPullRequestsChecksRpc,
   WsPullRequestsActivityRpc,

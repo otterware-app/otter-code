@@ -20,6 +20,22 @@ export const DIFF_VIEW_UNSAFE_CSS = `${DIFF_SURFACE_THEME_UNSAFE_CSS}
   --diffs-code-grid: var(--diffs-grid-number-column-width) minmax(0, 1fr);
 }
 
+/* Code intelligence paints through the CSS Custom Highlight API; see DiffCodeIntelligence. */
+::highlight(diff-code-problem-error) {
+  text-decoration: underline wavy var(--error, #ef4444);
+  text-decoration-skip-ink: none;
+}
+
+::highlight(diff-code-problem-warning) {
+  text-decoration: underline wavy var(--warning, #f59e0b);
+  text-decoration-skip-ink: none;
+}
+
+::highlight(diff-code-definition-link) {
+  text-decoration: underline;
+  color: var(--primary);
+}
+
 :is(
   [data-line],
   [data-line-annotation],

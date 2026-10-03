@@ -32,6 +32,7 @@ export type SettingsPath =
   | "/settings/devices"
   | "/settings/scheduled-tasks"
   | "/settings/source-control"
+  | "/settings/code-intelligence"
   | "/settings/worktrees"
   | "/settings/connections"
   | "/settings/access"
@@ -107,6 +108,7 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   "/settings/devices": msg("Devices"),
   "/settings/scheduled-tasks": msg("Scheduled tasks"),
   "/settings/source-control": msg("Source control"),
+  "/settings/code-intelligence": msg("Code intelligence"),
   "/settings/worktrees": msg("Worktrees"),
   "/settings/connections": msg("Environments"),
   "/settings/access": msg("Sharing & access"),
@@ -1137,6 +1139,15 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["pull request merge squash rebase last selected"],
   },
   {
+    id: "code-intelligence",
+    title: "Code intelligence",
+    to: "/settings/code-intelligence",
+    scope: "environment-defaults",
+    searchTerms: [
+      "intellisense language server lsp completion hover definition references diagnostics typescript javascript json python pyright rust rust-analyzer protobuf buf path",
+    ],
+  },
+  {
     id: "source-control",
     title: "Source control",
     to: "/settings/source-control",
@@ -1411,6 +1422,7 @@ const SETTINGS_CATEGORY_SCOPES: Readonly<Record<SettingsPath, SettingsSearchScop
   "/settings/browser": null,
   "/settings/devices": null,
   "/settings/source-control": "environment-defaults",
+  "/settings/code-intelligence": "environment-defaults",
   "/settings/worktrees": "project-defaults",
   "/settings/connections": "connections",
   "/settings/access": "connections",

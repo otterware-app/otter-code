@@ -1,0 +1,1 @@
+-- Merge the Linear and upstream API pause snapshot heads without changing the schema.

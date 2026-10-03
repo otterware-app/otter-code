@@ -58,6 +58,7 @@ import {
   resolveThreadPrBadgeAction,
   type ThreadPrPresentation,
 } from "../../state/thread-pr-presentation";
+import { presentThreadLinearIssues } from "../../state/thread-linear-issue-presentation";
 import { useThreadPr } from "../../state/use-thread-pr";
 import { useSwipeRowDormant } from "../home/swipe-row-activation";
 import { ThreadSwipeable } from "../home/thread-swipe-actions";
@@ -676,6 +677,10 @@ export const ThreadListV2Row = memo(function ThreadListV2Row(props: {
 
   const providerInstance = props.providerInstance;
   const pr = useThreadPr(thread);
+  const linearIssues = useMemo(
+    () => presentThreadLinearIssues(thread.linearIssues),
+    [thread.linearIssues],
+  );
   const prBadgeLabel = pr ? resolveThreadPrBadgeAction(pr).accessibilityLabel : null;
   const handleOpenPullRequests = useCallback(() => {
     if (pr) onOpenThreadPullRequests(thread, pr);
@@ -1257,6 +1262,31 @@ export const ThreadListV2Row = memo(function ThreadListV2Row(props: {
               {pr.label}
             </Text>
           </Pressable>
+        ) : null}
+        {linearIssues ? (
+          <View
+            className="flex-row items-center gap-1"
+            accessibilityLabel={linearIssues.accessibilityLabel}
+          >
+            {linearIssues.stateColor ? (
+              <View
+                className="size-1.5 rounded-full"
+                style={{ backgroundColor: linearIssues.stateColor }}
+              />
+            ) : null}
+            <Text
+              accessibilityLabel={linearIssues.accessibilityLabel}
+              className={cn(
+                "text-xs",
+                selected
+                  ? selectedThreadRowColors.mutedForegroundClassName
+                  : rowAppearance.mutedForegroundClassName,
+              )}
+              style={{ fontFamily: MONO_FONT }}
+            >
+              {linearIssues.label}
+            </Text>
+          </View>
         ) : null}
         {providerInstance ? (
           <View className="flex-row items-center">

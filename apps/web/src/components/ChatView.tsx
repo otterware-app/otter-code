@@ -172,6 +172,7 @@ import {
   usePreviewMiniPlayerStore,
 } from "../previewMiniPlayerStore";
 import { threadPullRequestPanelTarget } from "./pullRequest/pullRequestDetail.logic";
+import { LinkLinearIssueDialogHost } from "./linear/LinkLinearIssueDialog";
 import { LinkPullRequestDialogHost } from "./pullRequest/LinkPullRequestDialog";
 import { GuestPendingMessages } from "./chat/GuestShareControls";
 import { useDeviceState } from "~/state/device";
@@ -1933,6 +1934,14 @@ export default function ChatView(props: ChatViewProps) {
   const visiblePullRequestCount = visiblePullRequests.length;
   const pullRequestsSurfaceAvailable =
     isServerThread && supportsThreadPullRequests && visiblePullRequestCount > 0;
+  const linearIssuesSurfaceAvailable =
+    isServerThread && serverConfig?.environment.capabilities.threadLinearIssues === true;
+  const linkedLinearIssueCount = ((activeThreadShell ?? activeThread)?.linearIssues ?? []).length;
+  const addLinearIssuesSurface = () => {
+    if (!activeThreadRef || !linearIssuesSurfaceAvailable) return;
+    useRightPanelStore.getState().open(activeThreadRef, "linear-issues");
+  };
+  const addLinearIssuesSurfaceStable = useStableCallback(addLinearIssuesSurface);
   const { state: deviceState, loaded: deviceStateLoaded } = useDeviceState(
     activeThreadRef?.environmentId ?? null,
   );
@@ -3139,6 +3148,10 @@ export default function ChatView(props: ChatViewProps) {
             ? addPullRequestsSurfaceStable
             : undefined,
       }}
+      linearIssues={{
+        onBack: linkedLinearIssueCount > 1 ? addLinearIssuesSurfaceStable : undefined,
+        onCite: citeAssistantTextStable,
+      }}
       files={{
         projectName: activeProject?.title ?? null,
         workspaceRoot: activeWorkspaceRoot,
@@ -3863,12 +3876,14 @@ export default function ChatView(props: ChatViewProps) {
           onAddPullRequest={addPullRequestSurfaceStable}
           onAddPullRequests={addPullRequestsSurfaceStable}
           onAddDevice={addDeviceSurfaceStable}
+          onAddLinearIssues={addLinearIssuesSurfaceStable}
           browserAvailable={canOperatePreview && browserAvailable}
           terminalAvailable={activeProject !== null && canOperateTerminal}
           diffAvailable={isServerThread && isGitRepo}
           filesAvailable={activeProject !== null}
           pullRequestAvailable={pullRequestSurfaceAvailable}
           pullRequestsAvailable={pullRequestsSurfaceAvailable}
+          linearIssuesAvailable={linearIssuesSurfaceAvailable}
           deviceAvailable={activeThreadRef !== null}
         >
           {rightPanelContent}
@@ -3877,6 +3892,7 @@ export default function ChatView(props: ChatViewProps) {
 
       <RevertConfirmHost threadKey={routeThreadKey} onConfirm={onConfirmRevertStable} />
       <LinkPullRequestDialogHost />
+      <LinkLinearIssueDialogHost />
       <ThreadVisitWatermark threadRef={routeThreadRef} />
       <ExpandedImageDialogHost threadKey={routeThreadKey} />
     </div>

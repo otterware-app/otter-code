@@ -1,6 +1,8 @@
+import { scopeThreadRef } from "@t3tools/client-runtime/environment";
 import type { AssistantCitation } from "@t3tools/contracts";
 import {
   assistantCitationLabel,
+  linearCitationIssue,
   serializeAssistantCitation,
 } from "@t3tools/shared/assistantCitations";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -21,6 +23,7 @@ import {
   assistantCitationNavigation,
 } from "../../lib/assistantCitationNavigation";
 import { cn } from "~/lib/utils";
+import { useRightPanelStore } from "../../rightPanelStore";
 import { ContextChip, ContextChipAction, ContextChipLabel } from "../ContextChip";
 import { ContextChipPopover } from "../contextChipParts";
 import { Button } from "../ui/button";
@@ -101,10 +104,13 @@ export function AssistantCitationChip({
       }
     : undefined;
   const label = assistantCitationLabel(citation);
+  // Linear quotes come from the issue page, not the timeline, so they reopen that page.
+  const linearIssue = linearCitationIssue(citation);
+  const sourceLabel = linearIssue === null ? "View cited assistant text" : "View cited Linear text";
   const sourceLinkProps = {
     to: "/$environmentId/$threadId" as const,
     params: { environmentId: citation.environmentId, threadId: citation.threadId },
-    hash: assistantCitationHash(citation),
+    ...(linearIssue === null ? { hash: assistantCitationHash(citation) } : {}),
     "data-markdown-copy": serializeAssistantCitation(citation),
     resetScroll: false,
     onClick: (event: ReactMouseEvent<HTMLAnchorElement>) => {
@@ -112,14 +118,27 @@ export function AssistantCitationChip({
         return;
       }
       event.preventDefault();
-      void navigate(assistantCitationNavigation(citation));
+      if (linearIssue === null) {
+        void navigate(assistantCitationNavigation(citation));
+        return;
+      }
+      void navigate({
+        to: "/$environmentId/$threadId",
+        params: { environmentId: citation.environmentId, threadId: citation.threadId },
+        resetScroll: false,
+      });
+      useRightPanelStore
+        .getState()
+        .openLinearIssue(scopeThreadRef(citation.environmentId, citation.threadId), {
+          identifier: linearIssue,
+        });
     },
   };
   const composerSourceLink = (
     <Link
       {...sourceLinkProps}
       className="inline-flex h-full min-w-0 items-center gap-[0.33em] rounded-sm text-inherit no-underline focus-visible:outline-2 focus-visible:outline-foreground"
-      aria-label={`View cited assistant text: ${label}`}
+      aria-label={`${sourceLabel}: ${label}`}
     >
       <QuoteIcon aria-hidden="true" />
       <ContextChipLabel className="max-w-[16em]">{label}</ContextChipLabel>

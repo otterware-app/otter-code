@@ -170,6 +170,7 @@ import {
 import { formatRelativeTimeLabel, parseTimestampDate } from "../timestampFormat";
 import type { SidebarThreadSummary } from "../types";
 import { isScratchProject } from "@t3tools/client-runtime/state/projects";
+import { ThreadLinearIssueBadgeControl } from "./linear/ThreadLinearIssueBadge";
 import type { EnvironmentProject } from "@t3tools/client-runtime/state/shell";
 import { cn } from "~/lib/utils";
 import { EnvironmentMachineIcon } from "./EnvironmentMachineIcon";
@@ -1719,6 +1720,24 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
         onOpenPullRequest={handlePrClick}
       />
     ) : null;
+  const handleLinearIssuesClick = useCallback(() => {
+    // Like the pull request badge: one issue opens its page, several open the list.
+    const [onlyIssue, ...others] = thread.linearIssues ?? [];
+    const panel = useRightPanelStore.getState();
+    if (onlyIssue && others.length === 0) {
+      panel.openLinearIssue(threadRef, { identifier: onlyIssue.identifier, url: onlyIssue.url });
+    } else {
+      panel.open(threadRef, "linear-issues");
+    }
+    if (!props.isActive) onThreadActivate(threadRef);
+  }, [onThreadActivate, props.isActive, thread.linearIssues, threadRef]);
+  const linearIssueBadge = (
+    <ThreadLinearIssueBadgeControl
+      environmentId={threadRef.environmentId}
+      issues={thread.linearIssues}
+      onOpen={handleLinearIssuesClick}
+    />
+  );
   const terminalStatusIcon = terminalStatus ? (
     <span
       role="img"
@@ -1844,6 +1863,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
               remain visible AND clickable while the row is hovered. Only
               the time/jump label yields to the settle affordance. */}
             {prBadge}
+            {linearIssueBadge}
             {sortable?.isDragging ? (
               dragDestination
             ) : (
@@ -2183,6 +2203,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: {
               )}
               {terminalStatusIcon}
               {prBadge}
+              {linearIssueBadge}
               {diff ? (
                 <span className="shrink-0 font-mono">
                   <span className="text-diff-addition-foreground">+{diff.insertions}</span>{" "}

@@ -19,6 +19,7 @@ import * as HttpApiBuilder from "effect/http-api/HttpApiBuilder";
 import * as HttpApiScalar from "effect/http-api/HttpApiScalar";
 
 import { RelayApi } from "@t3tools/contracts/relay";
+import { DEFAULT_HOSTED_APP_URL } from "@t3tools/shared/connectAuth";
 
 import {
   RELAY_HTTP_ROUTER_CONFIG,
@@ -44,7 +45,10 @@ import {
   RelayApnsDeliveryQueue,
   RelayFcmDeliveryQueue,
   RelayFcmDeliveryDeadLetterQueue,
+  RelayLinearEventQueue,
 } from "./queues.ts";
+import * as LinearIntegration from "./linear/LinearIntegration.ts";
+import { linearApi, linearRoutes, linearServerApi } from "./linear/LinearApi.ts";
 import * as WebCrypto from "./WebCrypto.ts";
 import * as FcmAssertionSigner from "./agentActivity/FcmAssertionSigner.ts";
 import * as FcmClient from "./agentActivity/FcmClient.ts";
@@ -100,12 +104,16 @@ const layerRelayApi = Layer.mergeAll(
   RelayHttpApi.layerTokenApi,
   RelayHttpApi.layerDpopClientApi,
   RelayHttpApi.layerServerApi,
+  linearApi,
+  linearServerApi,
 );
 
 const CloudMintKeyPair = Alchemy.KeyPair("CloudMintKeyPair");
 const ApnsDeliveryJobSigningSecret = Alchemy.makeRandom("ApnsDeliveryJobSigningSecret", {
   bytes: 32,
 });
+const LinearTokenSealingKey = Alchemy.makeRandom("LinearTokenSealingKey", { bytes: 32 });
+const LinearOAuthStateSigningKey = Alchemy.makeRandom("LinearOAuthStateSigningKey", { bytes: 32 });
 
 export class Api extends Cloudflare.Worker<Api, {}>()("Api") {}
 
@@ -132,10 +140,13 @@ export const layer = Api.make(
     const apnsDeliveryDeadLetterQueue = yield* RelayApnsDeliveryDeadLetterQueue;
     const fcmDeliveryQueue = yield* RelayFcmDeliveryQueue;
     const fcmDeliveryDeadLetterQueue = yield* RelayFcmDeliveryDeadLetterQueue;
+    const linearEventQueue = yield* RelayLinearEventQueue;
     const cloudMintKeyPair = yield* CloudMintKeyPair;
     const relayApiZone = yield* RelayApiZone;
     const managedEndpointZone = yield* ManagedEndpointZone;
     const randomApnsDeliveryJobSigningSecret = yield* ApnsDeliveryJobSigningSecret;
+    const randomLinearTokenSealingKey = yield* LinearTokenSealingKey;
+    const randomLinearOAuthStateSigningKey = yield* LinearOAuthStateSigningKey;
     yield* RelayObservability;
 
     //
@@ -160,6 +171,30 @@ export const layer = Api.make(
     const apnsDeliveryJobSigningSecret = yield* randomApnsDeliveryJobSigningSecret;
     const apnsDeliveryQueueSender = yield* Cloudflare.Queues.WriteQueue(apnsDeliveryQueue);
     const fcmDeliveryQueueSender = yield* Cloudflare.Queues.WriteQueue(fcmDeliveryQueue);
+    const linearEventQueueSender = yield* Cloudflare.Queues.WriteQueue(linearEventQueue);
+    // The Linear agent app is optional: without its client id the integration reports unavailable.
+    const linearClientId = Option.getOrUndefined(
+      Option.filter(
+        yield* Config.option(Config.String("LINEAR_CLIENT_ID")),
+        (value) => value.trim().length > 0,
+      ),
+    );
+    const linearClientSecret = yield* Config.Redacted("LINEAR_CLIENT_SECRET").pipe(
+      Config.withDefault(Redacted.make("")),
+    );
+    const linearWebhookSecret = yield* Config.Redacted("LINEAR_WEBHOOK_SECRET").pipe(
+      Config.withDefault(Redacted.make("")),
+    );
+    // An unset repository variable arrives as an empty string, not a missing key.
+    const hostedAppUrl = Option.getOrElse(
+      Option.filter(
+        yield* Config.option(Config.String("HOSTED_APP_URL")),
+        (value) => value.trim().length > 0,
+      ),
+      () => DEFAULT_HOSTED_APP_URL,
+    );
+    const linearTokenSealingKey = yield* randomLinearTokenSealingKey;
+    const linearOAuthStateSigningKey = yield* randomLinearOAuthStateSigningKey;
 
     const clerkSecretKey = yield* Config.Redacted("CLERK_SECRET_KEY");
     const clerkPublishableKey = yield* Config.String("CLERK_PUBLISHABLE_KEY");
@@ -226,6 +261,17 @@ export const layer = Api.make(
         managedEndpointCleanupMode,
         legacyManagedEndpointCleanupMode,
         ...(legacyTunnelGraceMinutes === undefined ? {} : { legacyTunnelGraceMinutes }),
+        linear:
+          linearClientId === undefined
+            ? undefined
+            : {
+                clientId: linearClientId,
+                clientSecret: linearClientSecret,
+                webhookSecret: linearWebhookSecret,
+                tokenSealingKey: yield* linearTokenSealingKey,
+                stateSigningKey: yield* linearOAuthStateSigningKey,
+                hostedAppUrl,
+              },
       });
     });
 
@@ -320,6 +366,18 @@ export const layer = Api.make(
       Layer.provideMerge(layerWebcrypto),
     );
 
+    const layerLinearRuntime = LinearIntegration.layer.pipe(
+      Layer.provide(
+        Layer.succeed(LinearIntegration.LinearEventQueueSender, {
+          send: (body) =>
+            linearEventQueueSender
+              .send(body)
+              .pipe(Effect.provideService(Alchemy.RuntimeContext, alchemyRuntimeContext)),
+        }),
+      ),
+      Layer.provideMerge(layerRuntime),
+    );
+
     // Fails open: a limiter outage must not drop webhooks the environment would accept.
     const allowWith =
       (limiter: typeof hookRateLimit) =>
@@ -352,7 +410,7 @@ export const layer = Api.make(
       Layer.provideMerge(RelayHttpApi.layerClientAuth),
       Layer.provideMerge(RelayHttpApi.layerDpopClientAuth),
       Layer.provideMerge(RelayHttpApi.layerEnvironmentAuth),
-      Layer.provide(layerRuntime),
+      Layer.provide(layerLinearRuntime),
     );
 
     yield* Cloudflare.Queues.consumeQueueMessages<unknown>(
@@ -391,6 +449,25 @@ export const layer = Api.make(
           Stream.withSpan("relay.fcm_delivery_queue.process_batch"),
           Stream.runForEach(FcmDeliveryQueueConsumer.processMessage),
           Effect.provide(layerRuntime),
+        ),
+    );
+
+    yield* Cloudflare.Queues.consumeQueueMessages<unknown>(
+      linearEventQueue,
+      {
+        batchSize: 5,
+        maxRetries: 2,
+        maxWaitTime: "1 second",
+        retryDelay: "10 seconds",
+      },
+      (stream) =>
+        stream.pipe(
+          Stream.runForEach((message) =>
+            LinearIntegration.LinearIntegration.pipe(
+              Effect.flatMap((linear) => linear.processEvent(message.body)),
+            ),
+          ),
+          Effect.provide(layerLinearRuntime),
         ),
     );
 
@@ -444,6 +521,7 @@ export const layer = Api.make(
         ),
         HttpApiScalar.layer(RelayApi, { path: "/docs" }),
         RelayHttpApi.layerDocsRedirectRoute,
+        linearRoutes.pipe(Layer.provide(layerLinearRuntime)),
       ).pipe(
         Layer.provide([Etag.layerWeak, layerHttpPlatformNotSupported, RelayHttpApi.layerCors]),
       ),

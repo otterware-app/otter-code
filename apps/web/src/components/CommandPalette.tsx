@@ -58,6 +58,7 @@ import {
   FolderPlusIcon,
   MessageSquareDashedIcon,
   LinkIcon,
+  ListTodoIcon,
   MessageSquareIcon,
   MonitorIcon,
   MoonIcon,
@@ -193,6 +194,7 @@ import { Checkbox } from "./ui/checkbox";
 import { ProjectFavicon } from "./ProjectFavicon";
 import { ProjectFilePicker } from "./files/ProjectFilePicker";
 import { openLinkPullRequestDialog } from "./pullRequest/LinkPullRequestDialog";
+import { openLinkLinearIssueDialog } from "./linear/LinkLinearIssueDialog";
 import { ProjectContentSearchDialog } from "./search/ProjectContentSearchDialog";
 import { toggleThemeEditorForTheme } from "./settings/themeEditorStore";
 import { searchSettings, SETTINGS_SECTION_LABELS } from "./settings/settingsSearch";
@@ -2030,6 +2032,34 @@ function OpenCommandPaletteDialog(props: {
           },
         });
         if (refreshed._tag === "Failure") throw squashAtomCommandFailure(refreshed);
+      },
+    });
+  }
+
+  if (
+    activeThread !== null &&
+    activeThreadServerConfig?.environment.capabilities.threadLinearIssues === true
+  ) {
+    const threadRef = scopeThreadRef(activeThread.environmentId, activeThread.id);
+    actionItems.push({
+      kind: "action",
+      value: "action:link-linear-issue",
+      searchTerms: ["link", "linear", "issue", "ticket", "attach"],
+      title: "Link Linear issue to thread",
+      icon: <ListTodoIcon className={ITEM_ICON_CLASS} />,
+      run: async () => {
+        openLinkLinearIssueDialog(threadRef);
+      },
+    });
+    actionItems.push({
+      kind: "action",
+      value: "action:open-thread-linear-issues",
+      searchTerms: ["linear", "issues", "linked", "tickets"],
+      title: "Show linked Linear issues",
+      disabled: (activeThread.linearIssues ?? []).length === 0,
+      icon: <ListTodoIcon className={ITEM_ICON_CLASS} />,
+      run: async () => {
+        useRightPanelStore.getState().open(threadRef, "linear-issues");
       },
     });
   }

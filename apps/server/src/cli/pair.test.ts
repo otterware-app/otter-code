@@ -287,7 +287,7 @@ describe("t3 pair", () => {
         const rendered = String(
           typeof error === "object" && error !== null && "cause" in error ? error.cause : error,
         );
-        assert.include(rendered, "No running T3 Code server found.");
+        assert.include(rendered, "No running Otter Code server found.");
       }),
     ).pipe(Effect.provide(NodeServices.layer)),
   );

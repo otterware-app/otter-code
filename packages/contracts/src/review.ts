@@ -3,16 +3,32 @@ import { TrimmedNonEmptyString } from "./baseSchemas.ts";
 import { GitCommandError } from "./git.ts";
 import { VcsError } from "./vcs.ts";
 
+export const ReviewDiffPreviewSourceKind = Schema.Literals([
+  "working-tree",
+  "branch-range",
+  "all",
+  "commit",
+]);
+export type ReviewDiffPreviewSourceKind = typeof ReviewDiffPreviewSourceKind.Type;
+
+/**
+ * `all` asks for committed and uncommitted work against the merge base as one source instead of
+ * the default working-tree and branch-range pair. Older servers ignore it and answer with the pair.
+ */
+export const ReviewDiffPreviewSourceRequest = Schema.Literal("all");
+export type ReviewDiffPreviewSourceRequest = typeof ReviewDiffPreviewSourceRequest.Type;
+
 export const ReviewDiffPreviewInput = Schema.Struct({
   cwd: TrimmedNonEmptyString,
   baseRef: Schema.optional(TrimmedNonEmptyString),
   commitSha: Schema.optional(TrimmedNonEmptyString),
   ignoreWhitespace: Schema.optionalKey(Schema.Boolean),
+  source: Schema.optionalKey(ReviewDiffPreviewSourceRequest),
   file: Schema.optionalKey(
     Schema.Struct({
       path: Schema.NonEmptyString,
       previousPath: Schema.NullOr(Schema.NonEmptyString),
-      sourceKind: Schema.Literals(["working-tree", "branch-range", "commit"]),
+      sourceKind: ReviewDiffPreviewSourceKind,
     }),
   ),
 });
@@ -35,13 +51,6 @@ export const ReviewBranchCommitsResult = Schema.Struct({
   truncated: Schema.Boolean,
 });
 export type ReviewBranchCommitsResult = typeof ReviewBranchCommitsResult.Type;
-
-export const ReviewDiffPreviewSourceKind = Schema.Literals([
-  "working-tree",
-  "branch-range",
-  "commit",
-]);
-export type ReviewDiffPreviewSourceKind = typeof ReviewDiffPreviewSourceKind.Type;
 
 export const ReviewDiffFileStat = Schema.Struct({
   path: Schema.String,

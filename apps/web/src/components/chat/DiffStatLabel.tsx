@@ -40,12 +40,17 @@ export const DiffStatLabel = memo(function DiffStatLabel(props: {
           className,
         )}
       >
-        <span aria-hidden="true" className="font-mono text-diff-addition">
-          +{formatCompactDiffCount(additions)}
-        </span>
-        <span aria-hidden="true" className="font-mono text-diff-deletion">
-          -{formatCompactDiffCount(deletions)}
-        </span>
+        {/* A zero side is left blank; aligned rows keep the empty cell so columns line up. */}
+        {additions > 0 || layout === "aligned" ? (
+          <span aria-hidden="true" className="font-mono text-diff-addition">
+            {additions > 0 ? `+${formatCompactDiffCount(additions)}` : null}
+          </span>
+        ) : null}
+        {deletions > 0 || layout === "aligned" ? (
+          <span aria-hidden="true" className="font-mono text-diff-deletion">
+            {deletions > 0 ? `-${formatCompactDiffCount(deletions)}` : null}
+          </span>
+        ) : null}
       </span>
       {showParentheses && <span className="text-muted-foreground/70">)</span>}
     </>

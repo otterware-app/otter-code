@@ -3433,6 +3433,10 @@ const layerWsRpc = (
             review.getDiffFileContents(input),
             { "rpc.aggregate": "review" },
           ),
+        [WS_METHODS.reviewListCommits]: (input) =>
+          observeRpcEffect(WS_METHODS.reviewListCommits, review.listCommits(input), {
+            "rpc.aggregate": "review",
+          }),
         [WS_METHODS.terminalOpen]: (input) =>
           observeRpcEffect(WS_METHODS.terminalOpen, terminalManager.open(input), {
             "rpc.aggregate": "terminal",

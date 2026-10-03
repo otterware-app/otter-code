@@ -85,6 +85,8 @@ describe("selectCliRuntimeExternalDependencies", () => {
         "@napi-rs/keyring",
         "node-pty",
         "playwright-core",
+        "pyright",
+        "typescript-tsserver",
         "undici",
       ],
     );

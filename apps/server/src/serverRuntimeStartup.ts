@@ -179,7 +179,7 @@ const recordStartupHeartbeat = Effect.gen(function* () {
   yield* analytics.recordOwners(yield* getServerOwners, "server");
 });
 
-const getAutoBootstrapThreadModelSelection = (): ModelSelection => ({
+export const getAutoBootstrapThreadModelSelection = (): ModelSelection => ({
   instanceId: ProviderInstanceId.make("codex"),
   model: DEFAULT_MODEL,
 });

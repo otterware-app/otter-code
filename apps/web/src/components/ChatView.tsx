@@ -177,6 +177,7 @@ import {
   usePreviewMiniPlayerStore,
 } from "../previewMiniPlayerStore";
 import { threadPullRequestPanelTarget } from "./pullRequest/pullRequestDetail.logic";
+import { LinkLinearIssueDialogHost } from "./linear/LinkLinearIssueDialog";
 import { LinkPullRequestDialogHost } from "./pullRequest/LinkPullRequestDialog";
 import { GuestPendingMessages } from "./chat/GuestShareControls";
 import { useDeviceState } from "~/state/device";
@@ -1969,6 +1970,14 @@ export default function ChatView(props: ChatViewProps) {
   const visiblePullRequestCount = visiblePullRequests.length;
   const pullRequestsSurfaceAvailable =
     isServerThread && supportsThreadPullRequests && visiblePullRequestCount > 0;
+  const linearIssuesSurfaceAvailable =
+    isServerThread && serverConfig?.environment.capabilities.threadLinearIssues === true;
+  const linkedLinearIssueCount = ((activeThreadShell ?? activeThread)?.linearIssues ?? []).length;
+  const addLinearIssuesSurface = () => {
+    if (!activeThreadRef || !linearIssuesSurfaceAvailable) return;
+    useRightPanelStore.getState().open(activeThreadRef, "linear-issues");
+  };
+  const addLinearIssuesSurfaceStable = useStableCallback(addLinearIssuesSurface);
   const { state: deviceState, loaded: deviceStateLoaded } = useDeviceState(
     activeThreadRef?.environmentId ?? null,
   );
@@ -3261,6 +3270,10 @@ export default function ChatView(props: ChatViewProps) {
             ? addPullRequestsSurfaceStable
             : undefined,
       }}
+      linearIssues={{
+        onBack: linkedLinearIssueCount > 1 ? addLinearIssuesSurfaceStable : undefined,
+        onCite: citeAssistantTextStable,
+      }}
       files={{
         projectId: activeProject?.id,
         projectName: activeProject?.title ?? null,
@@ -4034,12 +4047,14 @@ export default function ChatView(props: ChatViewProps) {
           onAddPullRequests={addPullRequestsSurfaceStable}
           onAddDevice={addDeviceSurfaceStable}
           onAddSideChat={sideChatsOffered ? openSideChatStable : undefined}
+          onAddLinearIssues={addLinearIssuesSurfaceStable}
           browserAvailable={canOperatePreview && browserAvailable}
           terminalAvailable={activeProject !== null && canOperateTerminal}
           diffAvailable={isServerThread && isGitRepo}
           filesAvailable={activeProject !== null}
           pullRequestAvailable={pullRequestSurfaceAvailable}
           pullRequestsAvailable={pullRequestsSurfaceAvailable}
+          linearIssuesAvailable={linearIssuesSurfaceAvailable}
           deviceAvailable={activeThreadRef !== null}
           sideChatAvailable={sideChat.available}
           sideChatDisabledReason={sideChatDisabledReason}
@@ -4049,7 +4064,12 @@ export default function ChatView(props: ChatViewProps) {
       ) : null}
 
       <RevertConfirmHost threadKey={routeThreadKey} onConfirm={onConfirmRevertStable} />
-      {embedded ? null : <LinkPullRequestDialogHost />}
+      {embedded ? null : (
+        <>
+          <LinkPullRequestDialogHost />
+          <LinkLinearIssueDialogHost />
+        </>
+      )}
       <ThreadVisitWatermark threadRef={routeThreadRef} />
       <ExpandedImageDialogHost threadKey={routeThreadKey} />
     </div>

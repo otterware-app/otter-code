@@ -71,7 +71,7 @@ function makeFakeBrowserWindow() {
     copyImageAt: vi.fn(),
     focus: vi.fn(),
     isDestroyed: vi.fn(() => false),
-    getURL: vi.fn(() => "t3code-dev://app/"),
+    getURL: vi.fn(() => "ottercode-dev://app/"),
     getZoomLevel: vi.fn(() => zoomLevel),
     getZoomFactor: vi.fn(() => 1.2 ** zoomLevel),
     setZoomLevel: vi.fn((level: number) => {
@@ -1013,9 +1013,9 @@ describe("DesktopWindow", () => {
           return yield* Effect.die("will-navigate listener was not registered");
         }
         for (const [url, expectedPrevented] of [
-          ["t3code-dev://app/threads?id=1#latest", false],
-          ["t3code-dev://other/", true],
-          ["t3code://app/", true],
+          ["ottercode-dev://app/threads?id=1#latest", false],
+          ["ottercode-dev://other/", true],
+          ["ottercode://app/", true],
         ] as const) {
           const preventDefault = vi.fn();
           willNavigate({ preventDefault }, url);
@@ -1085,7 +1085,7 @@ describe("DesktopWindow", () => {
         createCount,
         mainWindow,
         onReveal: () => {
-          foreground = "T3 Code";
+          foreground = "Otter Code";
           operations.push("reveal");
         },
       });
@@ -1094,7 +1094,7 @@ describe("DesktopWindow", () => {
         const desktopWindow = yield* DesktopWindow.DesktopWindow;
         yield* desktopWindow.handleBackendReady(new URL("http://127.0.0.1:3773"));
         yield* desktopWindow.dispatchSnapShotEvent({ type: "started", id: captureOne });
-        assert.equal(foreground, "T3 Code");
+        assert.equal(foreground, "Otter Code");
         foreground = "Explorer";
         yield* desktopWindow.dispatchSnapShotEvent({ type: "ready", id: captureOne });
         yield* desktopWindow.dispatchSnapShotEvent({ type: "failed", id: captureTwo });

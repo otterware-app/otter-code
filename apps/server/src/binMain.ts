@@ -30,6 +30,10 @@ export async function runCliCommand() {
     if (mode !== "discover" && mode !== "model") throw new Error("Unknown speech worker mode.");
     const { runNativeSpeechWorker } = await import("./speech/native.ts");
     await runNativeSpeechWorker(mode, process.argv[4]);
+  } else if (command === "__run-node-script") {
+    // Bundled language servers under the single-executable build (see ./nodeScript.ts).
+    const { runNodeScript } = await import("./nodeScript.ts");
+    runNodeScript(process.argv.slice(3));
   } else {
     enableCliCompileCache();
     // Windows desktop launches without stdin; attach before reading, except on fast paths using pipes.

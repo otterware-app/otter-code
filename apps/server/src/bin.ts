@@ -5,7 +5,8 @@
  * terminal-fallback agents run `t3 acp-mcp-call` per tool call, so their
  * startup sits on first-message latency. Both dispatch here before the full
  * CLI module graph (seconds of evaluation) loads; everything else defers to
- * the real CLI in ./binCli.ts.
+ * the real CLI in ./binCli.ts. `t3 __run-node-script` runs bundled language
+ * servers under the single-executable build (see ./nodeScript.ts).
  */
 import { isEntrypoint } from "./entrypoint.ts";
 
@@ -20,6 +21,9 @@ if (
   if (command === "acp-mcp-bridge" || command === "acp-mcp-call") {
     const { runAcpMcpCliFastPath } = await import("./mcp/AcpMcpStdioBridge.ts");
     await runAcpMcpCliFastPath(command, process.argv.slice(3));
+  } else if (command === "__run-node-script") {
+    const { runNodeScript } = await import("./nodeScript.ts");
+    runNodeScript(process.argv.slice(3));
   } else {
     const { runCli } = await import("./binCli.ts");
     runCli();

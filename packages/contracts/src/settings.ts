@@ -816,6 +816,29 @@ export type UsageLimitSourceConfig = typeof UsageLimitSourceConfig.Type;
 export const SourceControlHostSettings = Schema.Record(Schema.String, Schema.Unknown);
 export type SourceControlHostSettings = typeof SourceControlHostSettings.Type;
 
+export const LinearTeamProject = Schema.Struct({
+  /** Linear team key, e.g. "ENG". */
+  teamKey: TrimmedNonEmptyString,
+  projectId: ProjectId,
+});
+export type LinearTeamProject = typeof LinearTeamProject.Type;
+
+/**
+ * Linear on this environment. The API key reads issue status for linked
+ * issues; it is redacted before reaching a client, like a hub key. Issues
+ * delegated to the Otter agent run in the team's project, else the default.
+ */
+export const LinearSettings = Schema.Struct({
+  apiKey: TrimmedString.pipe(Schema.withDecodingDefault(Effect.succeed("")), secretSetting),
+  defaultProjectId: Schema.NullOr(ProjectId).pipe(Schema.withDecodingDefault(Effect.succeed(null))),
+  teamProjects: Schema.Array(LinearTeamProject).pipe(
+    Schema.withDecodingDefault(Effect.succeed([])),
+  ),
+  /** First message of a delegated thread; empty uses `DEFAULT_LINEAR_PROMPT_TEMPLATE`. */
+  promptTemplate: Schema.String.pipe(Schema.withDecodingDefault(Effect.succeed(""))),
+});
+export type LinearSettings = typeof LinearSettings.Type;
+
 export const ObservabilitySettings = Schema.Struct({
   otlpTracesUrl: TrimmedString.pipe(Schema.withDecodingDefault(Effect.succeed(""))),
   otlpMetricsUrl: TrimmedString.pipe(Schema.withDecodingDefault(Effect.succeed(""))),
@@ -1265,6 +1288,7 @@ export const ServerSettings = Schema.Struct({
   usageModelAliases: Schema.Record(TrimmedNonEmptyString, TrimmedNonEmptyString).pipe(
     Schema.withDecodingDefault(Effect.succeed({})),
   ),
+  linear: LinearSettings.pipe(Schema.withDecodingDefault(Effect.succeed({}))),
 });
 export type ServerSettings = typeof ServerSettings.Type;
 
@@ -1570,6 +1594,15 @@ export const ServerSettingsPatch = Schema.Struct({
 
   usageModelAliases: Schema.optionalKey(
     Schema.Record(TrimmedNonEmptyString, Schema.NullOr(TrimmedNonEmptyString)),
+  ),
+  /** Shallow: each present key replaces the stored value, `teamProjects` as a whole list. */
+  linear: Schema.optionalKey(
+    Schema.Struct({
+      apiKey: Schema.optionalKey(TrimmedString),
+      defaultProjectId: Schema.optionalKey(Schema.NullOr(ProjectId)),
+      teamProjects: Schema.optionalKey(Schema.Array(LinearTeamProject)),
+      promptTemplate: Schema.optionalKey(Schema.String),
+    }),
   ),
 });
 export type ServerSettingsPatch = typeof ServerSettingsPatch.Type;

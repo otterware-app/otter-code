@@ -48,6 +48,17 @@ export interface ApnsCredentials {
   readonly environment: ApnsEnvironment;
 }
 
+/** The Otter Linear agent app. Absent when the relay has no Linear app configured. */
+export interface LinearConfiguration {
+  readonly clientId: string;
+  readonly clientSecret: Redacted.Redacted<string>;
+  readonly webhookSecret: Redacted.Redacted<string>;
+  readonly tokenSealingKey: Redacted.Redacted<string>;
+  readonly stateSigningKey: Redacted.Redacted<string>;
+  /** Hosted web app origin; Linear links point into it. */
+  readonly hostedAppUrl: string;
+}
+
 export class RelayConfiguration extends Context.Service<
   RelayConfiguration,
   {
@@ -65,6 +76,7 @@ export class RelayConfiguration extends Context.Service<
     readonly managedEndpointCleanupMode?: ManagedEndpointCleanupMode;
     readonly legacyManagedEndpointCleanupMode?: ManagedEndpointCleanupMode;
     readonly legacyTunnelGraceMinutes?: number;
+    readonly linear?: LinearConfiguration | undefined;
   }
 >()("t3code-relay/Config/RelayConfiguration") {}
 

@@ -667,6 +667,17 @@ export class DesktopBuildNoArtifactsProducedError extends Schema.TaggedError<Des
   }
 }
 
+export class TypeScriptServerLibMissingError extends Schema.TaggedError<TypeScriptServerLibMissingError>()(
+  "TypeScriptServerLibMissingError",
+  {
+    packagePath: Schema.String,
+  },
+) {
+  override get message(): string {
+    return `typescript-tsserver at ${this.packagePath} has no lib.*.d.ts files; tsserver would run without the standard library.`;
+  }
+}
+
 export class WslRuntimeArchiveMissingError extends Schema.TaggedError<WslRuntimeArchiveMissingError>()(
   "WslRuntimeArchiveMissingError",
   {
@@ -970,8 +981,23 @@ export const DESKTOP_FILE_EXCLUSIONS = [
   "!apps/desktop/gnome-extension",
   "!apps/desktop/gnome-extension/**/*",
 ] as const;
+// electron-builder drops every *.d.ts below node_modules from app.asar, which
+// strips TypeScript's standard library (lib.*.d.ts) and leaves tsserver unable
+// to type `Set` or `string`. Mac and Linux ship the package as loose files in
+// resources/node_modules instead, where Node resolution from app.asar finds it.
+// Windows runs tsserver from server.asar, which is packed by hand and keeps them.
+export const TSSERVER_RESOURCE_SOURCE_DIR = "apps/desktop/prod-resources/typescript-tsserver";
+export const TSSERVER_FILE_EXCLUSIONS = [
+  "!**/node_modules/typescript-tsserver/**/*",
+  `!${TSSERVER_RESOURCE_SOURCE_DIR}`,
+  `!${TSSERVER_RESOURCE_SOURCE_DIR}/**/*`,
+] as const;
+export const TSSERVER_EXTRA_RESOURCES = [
+  { from: TSSERVER_RESOURCE_SOURCE_DIR, to: "node_modules/typescript-tsserver" },
+] as const;
 // Windows terminal helpers cannot run on macOS and slow signing and notarization.
 export const MAC_FILE_EXCLUSIONS = [
+  ...TSSERVER_FILE_EXCLUSIONS,
   "!**/node_modules/node-pty/prebuilds/win32-*/**/*",
   "!**/node_modules/node-pty/third_party/conpty/**/*",
 ] as const;
@@ -1378,6 +1404,22 @@ export const stageCursorSdkPlatformPackages = Effect.fn("stageCursorSdkPlatformP
     }
   },
 );
+
+export const stageTypeScriptServerPackage = Effect.fn("stageTypeScriptServerPackage")(function* (
+  nodeModulesDir: string,
+  destination: string,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  const source = yield* fs.realPath(path.join(nodeModulesDir, "typescript-tsserver"));
+  const libFiles = (yield* fs.readDirectory(path.join(source, "lib"))).filter((name) =>
+    /^lib\..*\.d\.ts$/.test(name),
+  );
+  if (libFiles.length === 0) {
+    return yield* new TypeScriptServerLibMissingError({ packagePath: source });
+  }
+  yield* fs.copy(source, destination);
+});
 
 export interface ClerkPasskeyNativeArtifact {
   readonly packageName: string;
@@ -2693,6 +2735,7 @@ export const createBuildConfig = Effect.fn("createBuildConfig")(function* (
       : {}),
     extraResources: [
       ...DESKTOP_EXTRA_RESOURCES,
+      ...(platform === "win" ? [] : TSSERVER_EXTRA_RESOURCES),
       ...(platform === "linux" ? LINUX_CAPTURE_EXTRA_RESOURCES : []),
       ...(platform === "linux" ? LINUX_BROWSER_SECRET_EXTRA_RESOURCES : []),
       ...(platform === "win" ? WINDOWS_SERVER_EXTRA_RESOURCES : []),
@@ -3797,6 +3840,12 @@ const buildDesktopArtifact = Effect.fn("buildDesktopArtifact")(function* (
     ),
     path.join(stageProdResourcesDir, "cursor-sdk"),
   );
+  if (options.platform !== "win") {
+    yield* stageTypeScriptServerPackage(
+      path.join(stageAppDir, "node_modules"),
+      path.join(stageAppDir, TSSERVER_RESOURCE_SOURCE_DIR),
+    );
+  }
   if (
     options.wslRuntime !== undefined &&
     bundlesWslRuntime({ platform: options.platform, runtimeArchivePath: options.wslRuntime })

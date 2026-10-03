@@ -48,6 +48,8 @@ import * as WorktreeMcpService from "./WorktreeMcpService.ts";
 import * as PullRequestsHandlers from "./toolkits/pullRequests/handlers.ts";
 import { PullRequestsToolkit } from "./toolkits/pullRequests/tools.ts";
 import * as DeviceHandlers from "./toolkits/device/handlers.ts";
+import * as LinearIssuesHandlers from "./toolkits/linearIssues/handlers.ts";
+import { LinearIssuesToolkit } from "./toolkits/linearIssues/tools.ts";
 import {
   DeviceScreenshotTool,
   DeviceScreenshotToolkit,
@@ -742,6 +744,10 @@ export const layerPullRequestsToolkit = McpServer.toolkit(PullRequestsToolkit).p
   Layer.provide(PullRequestsHandlers.layer),
 );
 
+const layerLinearIssuesToolkitRegistration = McpServer.toolkit(LinearIssuesToolkit).pipe(
+  Layer.provide(LinearIssuesHandlers.layer),
+);
+
 const layerDeviceStandardToolkitRegistration = McpServer.toolkit(DeviceStandardToolkit).pipe(
   Layer.provide(DeviceHandlers.layerStandard),
 );
@@ -772,6 +778,7 @@ export const layer = Layer.mergeAll(
   layerPreviewControlsRegistration,
   layerWorktreeToolkitRegistration,
   layerPullRequestsToolkit,
+  layerLinearIssuesToolkitRegistration,
   layerDeviceToolkit,
   layerHtmlToolkit,
 ).pipe(Layer.provideMerge(layerMcpTransport));

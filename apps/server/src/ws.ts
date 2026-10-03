@@ -225,6 +225,7 @@ import * as PullRequestService from "./pullRequest/PullRequestService.ts";
 import { listLinkedPullRequestThreads } from "./pullRequest/linkedThreads.ts";
 import { pullRequestSyncKey } from "./pullRequest/pullRequestSyncKey.ts";
 import * as SqlClient from "effect/sql/SqlClient";
+import * as LinearIssueSyncReactor from "./linear/LinearIssueSyncReactor.ts";
 import * as PullRequestSyncReactor from "./orchestration-v2/PullRequestSyncReactor.ts";
 import * as SourceControlDiscovery from "./sourceControl/SourceControlDiscovery.ts";
 import * as SourceControlRepositoryService from "./sourceControl/SourceControlRepositoryService.ts";
@@ -1222,6 +1223,7 @@ const layerWsRpc = (
       const secretRequests = yield* SecretRequests.SecretRequests;
       const pullRequests = yield* PullRequestService.PullRequestService;
       const pullRequestSync = yield* PullRequestSyncReactor.PullRequestSyncReactor;
+      const linearIssues = yield* LinearIssueSyncReactor.LinearIssueSyncReactor;
       const deviceService = yield* DeviceService.DeviceService;
       const deviceHostContext =
         yield* Effect.context<Effect.Services<ReturnType<typeof remoteSshDeviceHosts>>>();
@@ -2764,6 +2766,16 @@ const layerWsRpc = (
             ),
             { "rpc.aggregate": "pull-requests" },
           ),
+        [WS_METHODS.linearIssueDetail]: (input) =>
+          observeRpcEffect(
+            WS_METHODS.linearIssueDetail,
+            linearIssues.readIssueDetail(input.reference),
+            { "rpc.aggregate": "linear" },
+          ),
+        [WS_METHODS.linearSubscribeIssueChanges]: () =>
+          observeRpcStream(WS_METHODS.linearSubscribeIssueChanges, linearIssues.issueChanges, {
+            "rpc.aggregate": "linear",
+          }),
         [WS_METHODS.pullRequestsDetail]: (input) =>
           observeRpcEffect(
             WS_METHODS.pullRequestsDetail,

@@ -10,13 +10,35 @@ import {
   EnvironmentHttpUnauthorizedError,
 } from "@t3tools/contracts";
 import * as Effect from "effect/Effect";
+import * as Option from "effect/Option";
+import * as Schema from "effect/Schema";
 import * as HttpEffect from "effect/http/HttpEffect";
 import { HttpServerRequest, HttpServerResponse } from "effect/http";
 import * as HttpApiBuilder from "effect/http-api/HttpApiBuilder";
 
 import { requireEnvironmentScope } from "../auth/http.ts";
 import * as EnvironmentAuth from "../auth/EnvironmentAuth.ts";
+import * as ServerSecretStore from "../auth/ServerSecretStore.ts";
+import * as ServerEnvironment from "../environment/ServerEnvironment.ts";
+import {
+  deliverLinearAgentPrompt,
+  handleLinearAgentPromptRequest,
+} from "../linear/LinearAgentPrompts.ts";
+import {
+  handleLinearAgentSessionRequest,
+  launchLinearAgentSession,
+  type LinearRelayProofChecks,
+} from "../linear/LinearAgentSessionLauncher.ts";
+import { handleLinearIssueChangesRequest } from "../linear/LinearIssueChanges.ts";
+import * as LinearIssueSyncReactor from "../linear/LinearIssueSyncReactor.ts";
 import * as CloudLink from "./CloudLink.ts";
+import {
+  CLOUD_LINKED_USER_ID,
+  CLOUD_MINT_PUBLIC_KEY,
+  RELAY_ISSUER_SECRET,
+  RELAY_URL_SECRET,
+} from "./config.ts";
+import { hasBoundedCloudProofLifetime } from "./linkChecks.ts";
 import type { RelayRequestError } from "./relayResponse.ts";
 import { traceRelayRequest } from "./traceRelayRequest.ts";
 
@@ -105,11 +127,81 @@ const toHttpErrorOrUnavailable = <A, R>(
     ),
   );
 
+const readCloudSecretString = (
+  secrets: ServerSecretStore.ServerSecretStore["Service"],
+  name: string,
+  missing: () => EnvironmentAuth.ServerAuthInternalError,
+) =>
+  secrets.get(name).pipe(
+    Effect.mapError(() => missing()),
+    Effect.flatMap((bytes) =>
+      Option.isSome(bytes)
+        ? Effect.succeed(new TextDecoder().decode(bytes.value))
+        : Effect.fail(missing()),
+    ),
+  );
+
+/** The relay proof checks shared by the Linear session, prompt, and issue change requests. */
+const linearRelayProofChecks = (
+  secrets: ServerSecretStore.ServerSecretStore["Service"],
+  environment: ServerEnvironment.ServerEnvironment["Service"],
+): LinearRelayProofChecks => ({
+  secrets,
+  environment,
+  cloudMintPublicKey: readCloudSecretString(
+    secrets,
+    CLOUD_MINT_PUBLIC_KEY,
+    () => new EnvironmentAuth.ServerAuthCloudMintPublicKeyMissingError({}),
+  ),
+  relayIssuer: readCloudSecretString(
+    secrets,
+    RELAY_ISSUER_SECRET,
+    () => new EnvironmentAuth.ServerAuthCloudRelayIssuerMissingError({}),
+  ).pipe(
+    Effect.catch(() =>
+      readCloudSecretString(
+        secrets,
+        RELAY_URL_SECRET,
+        () => new EnvironmentAuth.ServerAuthCloudRelayIssuerMissingError({}),
+      ),
+    ),
+  ),
+  linkedCloudUserId: readCloudSecretString(
+    secrets,
+    CLOUD_LINKED_USER_ID,
+    () => new EnvironmentAuth.ServerAuthLinkedCloudAccountMissingError({}),
+  ),
+  isValidProofWindow: hasBoundedCloudProofLifetime,
+  consumeReplayGuards: (names, value) =>
+    CloudLink.consumeCloudReplayGuards({ secrets, names, value }),
+});
+
+const isLinearRequestError = Schema.is(
+  Schema.Union([EnvironmentHttpUnauthorizedError, EnvironmentHttpConflictError]),
+);
+
+type LinearHttpError =
+  | EnvironmentHttpUnauthorizedError
+  | EnvironmentHttpConflictError
+  | EnvironmentHttpInternalServerError;
+
+/** Rejected proofs keep their status; anything else is logged and answers 500. */
+const toLinearHttpError =
+  (message: string) =>
+  <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, LinearHttpError, R> =>
+    Effect.catch(effect, (error): Effect.Effect<never, LinearHttpError> =>
+      isLinearRequestError(error) ? Effect.fail(error) : internalServerError({ message }, error),
+    );
+
 export const layer = HttpApiBuilder.group(
   EnvironmentHttpApi,
   "connect",
   Effect.fnUntraced(function* (handlers) {
     const cloudLink = yield* CloudLink.CloudLink;
+    const linearChecks = linearRelayProofChecks(
+      yield* ServerSecretStore.ServerSecretStore,
+      yield* ServerEnvironment.ServerEnvironment,
+    );
     return handlers
       .handle("linkProof", ({ payload }) =>
         Effect.gen(function* () {
@@ -155,6 +247,46 @@ export const layer = HttpApiBuilder.group(
           toHttpError(cloudLink.mintCredential(payload)).pipe(
             Effect.tap(() => appendCloudCredentialResponseHeaders),
           ),
+        ),
+      )
+      .handle("linearAgentSession", ({ payload }) =>
+        traceRelayRequest(
+          handleLinearAgentSessionRequest(
+            { ...linearChecks, launch: launchLinearAgentSession },
+            payload,
+          ).pipe(
+            Effect.tap(() => appendCloudCredentialResponseHeaders),
+            toLinearHttpError("Could not start the delegated Linear issue."),
+          ),
+        ),
+      )
+      .handle("linearAgentPrompt", ({ payload }) =>
+        traceRelayRequest(
+          handleLinearAgentPromptRequest(
+            { ...linearChecks, deliver: deliverLinearAgentPrompt },
+            payload,
+          ).pipe(
+            Effect.tap(() => appendCloudCredentialResponseHeaders),
+            toLinearHttpError("Could not deliver the Linear message."),
+          ),
+        ),
+      )
+      .handle("linearIssueChanges", ({ payload }) =>
+        traceRelayRequest(
+          handleLinearIssueChangesRequest(
+            {
+              ...linearChecks,
+              // A replayed "issue changed" only triggers one extra read of an issue this
+              // environment already follows, and these arrive for every Linear edit, so
+              // they skip the replay guards that would otherwise pile up in the secret store.
+              consumeReplayGuards: () => Effect.succeed(true),
+              deliver: (changes) =>
+                LinearIssueSyncReactor.LinearIssueSyncReactor.pipe(
+                  Effect.flatMap((reactor) => reactor.publishIssueChanges(changes)),
+                ),
+            },
+            payload,
+          ).pipe(toLinearHttpError("Could not accept Linear issue changes.")),
         ),
       );
   }),

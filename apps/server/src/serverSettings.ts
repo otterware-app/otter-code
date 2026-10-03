@@ -151,6 +151,8 @@ function providerEnvironmentSecretName(input: {
  */
 const SECRET_REDACTED = "\u2022\u2022\u2022\u2022\u2022\u2022";
 
+const LINEAR_API_KEY_SECRET_NAME = "linear-api-key";
+
 function usageLimitSourceSecretName(sourceId: string): string {
   return `usage-limit-source-${Buffer.from(sourceId, "utf8").toString("base64url")}`;
 }
@@ -204,7 +206,8 @@ export function redactServerSettingsForClient(settings: ServerSettings): ServerS
     accessToken: redactSecret(settings.bitbucket.accessToken),
     apiToken: redactSecret(settings.bitbucket.apiToken),
   };
-  return { ...settings, providerInstances, usageLimitSources, bitbucket };
+  const linear = { ...settings.linear, apiKey: redactSecret(settings.linear.apiKey) };
+  return { ...settings, providerInstances, usageLimitSources, bitbucket, linear };
 }
 
 export function applyProviderInstanceMutation(
@@ -882,11 +885,26 @@ const make = Effect.gen(function* () {
           );
         bitbucket[field] = Option.isSome(secret) ? textDecoder.decode(secret.value) : "";
       }
+      let linear = settings.linear;
+      if (linear.apiKey === SECRET_REDACTED) {
+        const secret = yield* secretStore
+          .get(LINEAR_API_KEY_SECRET_NAME)
+          .pipe(
+            Effect.mapError(
+              (cause) => new ServerSettingsError({ settingsPath, operation: "read-secret", cause }),
+            ),
+          );
+        linear = {
+          ...linear,
+          apiKey: Option.isSome(secret) ? textDecoder.decode(secret.value) : "",
+        };
+      }
       return {
         ...settings,
         providerInstances: providerInstances as ServerSettings["providerInstances"],
         usageLimitSources: usageLimitSources as ServerSettings["usageLimitSources"],
         bitbucket,
+        linear,
       };
     });
 
@@ -1047,12 +1065,33 @@ const make = Effect.gen(function* () {
         bitbucket[field] = SECRET_REDACTED;
       }
 
+      let linear = next.linear;
+      if (linear.apiKey !== SECRET_REDACTED) {
+        if (linear.apiKey.length === 0) {
+          if (current.linear.apiKey.length > 0) {
+            changes.push({
+              kind: "remove",
+              secretName: LINEAR_API_KEY_SECRET_NAME,
+              operation: "remove-secret",
+            });
+          }
+        } else {
+          changes.push({
+            kind: "write",
+            secretName: LINEAR_API_KEY_SECRET_NAME,
+            value: textEncoder.encode(linear.apiKey),
+          });
+          linear = { ...linear, apiKey: SECRET_REDACTED };
+        }
+      }
+
       return {
         settings: {
           ...next,
           providerInstances: providerInstances as ServerSettings["providerInstances"],
           usageLimitSources: usageLimitSources as ServerSettings["usageLimitSources"],
           bitbucket,
+          linear,
         },
         changes,
       };

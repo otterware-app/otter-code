@@ -1,4 +1,7 @@
-import { usePreviewPanelInlineSize } from "../../hooks/usePreviewPanelInlineSize";
+import {
+  PREVIEW_PANEL_WIDTH_STORAGE_KEY,
+  usePreviewPanelInlineSize,
+} from "../../hooks/usePreviewPanelInlineSize";
 import { RightPanelSheet } from "../RightPanelSheet";
 import { RightPanelTabs, type RightPanelTabsProps } from "../RightPanelTabs";
 
@@ -30,6 +33,8 @@ export function ChatRightPanel(props: ChatRightPanelProps) {
   const inlineSize = usePreviewPanelInlineSize({
     container: workspaceLayoutElement,
     widthStorageKey,
+    // A thread without its own width opens at the last width dragged in any thread.
+    fallbackWidthStorageKey: PREVIEW_PANEL_WIDTH_STORAGE_KEY,
   });
   if (!sheet) {
     return <RightPanelTabs {...tabs} mode="inline" maximized={maximized} inlineSize={inlineSize} />;

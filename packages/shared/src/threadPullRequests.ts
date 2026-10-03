@@ -1,4 +1,8 @@
-import type { ThreadLinkedPullRequest, ThreadPullRequestLink } from "@t3tools/contracts";
+import type {
+  ThreadLinearIssueLink,
+  ThreadLinkedPullRequest,
+  ThreadPullRequestLink,
+} from "@t3tools/contracts";
 
 /** Tombstones prevent sync from re-adding hidden members. */
 export function visibleThreadPullRequests(
@@ -56,10 +60,17 @@ export function threadPullRequestSearchTerms(thread: {
   readonly pullRequests?: ReadonlyArray<ThreadPullRequestLink> | undefined;
   readonly linkedPullRequest?: ThreadLinkedPullRequest | null | undefined;
   readonly branchPullRequest?: ThreadLinkedPullRequest | null | undefined;
+  readonly linearIssues?: ReadonlyArray<ThreadLinearIssueLink> | undefined;
 }): string[] {
-  return threadSearchPullRequests(thread).flatMap((pullRequest) => [
-    `#${pullRequest.number}`,
-    ...pullRequest.references,
-    ...(pullRequest.title ? [pullRequest.title] : []),
+  const linearTerms = (thread.linearIssues ?? []).flatMap((issue) => [
+    issue.identifier,
+    issue.snapshot?.title ?? "",
   ]);
+  return threadSearchPullRequests(thread)
+    .flatMap((pullRequest) => [
+      `#${pullRequest.number}`,
+      ...pullRequest.references,
+      ...(pullRequest.title ? [pullRequest.title] : []),
+    ])
+    .concat(linearTerms);
 }

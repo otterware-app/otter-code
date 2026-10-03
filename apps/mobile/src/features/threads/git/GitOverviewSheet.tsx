@@ -37,6 +37,10 @@ import {
   NativeStackScreenOptions,
   nativeHeaderScrollEdgeEffects,
 } from "../../../native/StackHeader";
+import { tryOpenExternalUrl } from "../../../lib/openExternalUrl";
+import {
+  linearIssueDetail,
+} from "../../../state/thread-linear-issue-presentation";
 import { useEnvironmentQuery } from "../../../state/query";
 import { useThreadSelection } from "../../../state/use-thread-selection";
 import { useSelectedThreadGitActions } from "../../../state/use-selected-thread-git-actions";
@@ -94,6 +98,7 @@ function GitOverviewSheetContent(props: GitOverviewSheetProps) {
     project: selectedThreadProject,
     runtime: selectedEnvironmentRuntime,
   });
+  const linearIssues = selectedThread?.linearIssues ?? [];
   const gitState = useSelectedThreadGitState();
   const gitActions = useSelectedThreadGitActions();
   const { canWriteSourceControl, canChangeThreadBranch } = gitActions;
@@ -331,6 +336,23 @@ function GitOverviewSheetContent(props: GitOverviewSheetProps) {
         </ListSection>
       ) : null}
 
+      {linearIssues.length > 0 ? (
+        <ListSection title="Linear issues">
+          {linearIssues.map((issue) => (
+            <ListRow
+              key={issue.issueId ?? issue.identifier}
+              icon="ticket"
+              label={issue.snapshot === null ? issue.identifier : `${issue.identifier} ${issue.snapshot.title}`}
+              description={linearIssueDetail(issue)}
+              onPress={() => {
+                void tryOpenExternalUrl(issue.url, "linear-issue").then((opened) => {
+                  if (!opened) Dialog.alert("Unable to open issue", "The Linear issue could not be opened.");
+                });
+              }}
+            />
+          ))}
+        </ListSection>
+      ) : null}
       {currentWorktreePath ? (
         <ListSection title="Worktree">
           <Text selectable textRole="footnote" className="p-4 text-foreground-muted">

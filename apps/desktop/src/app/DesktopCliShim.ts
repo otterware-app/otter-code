@@ -10,6 +10,9 @@ import { makeComponentLogger } from "./DesktopObservability.ts";
 // AppImage mounts change each run; the launcher must mount the image itself.
 const { logInfo, logWarning } = makeComponentLogger("desktop-cli-shim");
 
+/** The command a person types; never `t3`, so it sits beside an installed T3 Code. */
+export const COMMAND = "otter-code";
+
 export const MARKER = "Written by T3 Code: runs the desktop app's bundled t3 CLI.";
 
 const SERVER_ENTRY = "apps/server/dist/bin.mjs";
@@ -118,7 +121,7 @@ export const launcherPath = (environment: DesktopEnvironment.DesktopEnvironment[
   environment.path.join(
     environment.baseDir,
     "bin",
-    environment.platform === "win32" ? "t3.cmd" : "t3",
+    environment.platform === "win32" ? `${COMMAND}.cmd` : COMMAND,
   );
 
 export const install = Effect.gen(function* () {

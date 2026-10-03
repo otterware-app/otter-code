@@ -88,7 +88,7 @@ const repositoryIdentity = {
   provider: SourceControlProviderKind.make("github"),
   owner: "t3tools",
   name: "t3code",
-  displayName: "T3 Code",
+  displayName: "Otter Code",
 };
 
 function makeProject(
@@ -299,7 +299,7 @@ describe("buildProjectGroups", () => {
 
     const label = (projects: ReadonlyArray<EnvironmentProject>) =>
       buildProjectGroups({ projects, settings: settings("repository") })[0]?.label;
-    expect(label(folderTitles)).toBe("T3 Code");
+    expect(label(folderTitles)).toBe("Otter Code");
     expect(label(renamed)).toBe("t3code");
   });
 

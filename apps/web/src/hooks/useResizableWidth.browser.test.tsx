@@ -15,13 +15,16 @@ function Panel({
   edge = "left",
   maxWidth = 800,
   storageKey = "test-panel-width",
+  fallbackStorageKey,
 }: {
   edge?: "left" | "right";
   maxWidth?: number;
   storageKey?: string;
+  fallbackStorageKey?: string;
 }) {
   const { width, handlers } = useResizableWidth({
     storageKey,
+    fallbackStorageKey,
     defaultWidth: 400,
     minWidth: 200,
     maxWidth,
@@ -246,5 +249,22 @@ describe("panel width storage changes", () => {
     expect(setItem).not.toHaveBeenCalled();
     await render(<Panel />);
     expect(shownWidth()).toBe(400);
+  });
+  it("opens a thread without its own width at the last width dragged in any thread", async () => {
+    localStorage.setItem("thread-a", "300");
+    await render(<Panel storageKey="thread-a" fallbackStorageKey="shared" />);
+    expect(shownWidth()).toBe(300);
+    await render(<Panel storageKey="thread-b" fallbackStorageKey="shared" />);
+    expect(shownWidth()).toBe(400);
+    await act(() => {
+      pointer("pointerdown");
+      pointer("pointerup", -100);
+    });
+    expect(localStorage.getItem("thread-b")).toBe("600");
+    expect(localStorage.getItem("shared")).toBe("600");
+    await render(<Panel storageKey="thread-c" fallbackStorageKey="shared" />);
+    expect(shownWidth()).toBe(600);
+    await render(<Panel storageKey="thread-a" fallbackStorageKey="shared" />);
+    expect(shownWidth()).toBe(300);
   });
 });

@@ -1,4 +1,4 @@
-import { OrchestrationDispatchCommandError } from "@t3tools/contracts";
+import { LanguageServiceError, OrchestrationDispatchCommandError } from "@t3tools/contracts";
 import * as Context from "effect/Context";
 import * as Crypto from "effect/Crypto";
 import * as Orchestrator from "./orchestration-v2/Orchestrator.ts";
@@ -203,6 +203,8 @@ import * as PortScanner from "./preview/PortScanner.ts";
 import * as WorkspaceEntries from "./workspace/WorkspaceEntries.ts";
 import * as KnownWorkspaces from "./workspace/KnownWorkspaces.ts";
 import * as WorkspaceFileSystem from "./workspace/WorkspaceFileSystem.ts";
+import { WorkspaceLanguageService } from "./workspace/WorkspaceLanguageService.ts";
+import { languageServerStatuses } from "./workspace/languageServers.ts";
 import { readWorkflowScript } from "./orchestration-v2/workflowScriptQuery.ts";
 import * as WorkspacePaths from "./workspace/WorkspacePaths.ts";
 import * as VcsStatusBroadcaster from "./vcs/VcsStatusBroadcaster.ts";
@@ -1230,12 +1232,15 @@ export const subscribeOrchestrationV2Shell = Effect.fn("ws.orchestrationV2.subsc
   },
 );
 
+const isLanguageServiceError = Schema.is(LanguageServiceError);
+
 export const layerWsRpc = (
   currentSession: EnvironmentAuth.AuthenticatedSession,
   clientOrigin: OrchestrationClientOrigin,
   clientAnalyticsProps: Readonly<Record<string, unknown>>,
   previewAutomationBroker: PreviewAutomationBroker.PreviewAutomationBroker["Service"],
   serverBrowser: ServerBrowser.ServerBrowser["Service"],
+  workspaceLanguage: WorkspaceLanguageService,
 ) =>
   Layer.effectContext(
     Effect.gen(function* () {
@@ -2817,6 +2822,33 @@ export const layerWsRpc = (
                 }),
             ),
           ),
+        [WS_METHODS.projectsLanguage]: (input) =>
+          serverSettings.getSettings.pipe(
+            Effect.map((settings) => settings.codeIntelligence),
+            // Unreadable settings must not take code intelligence down with them.
+            Effect.orElseSucceed(() => ({})),
+            Effect.flatMap((codeIntelligence) =>
+              Effect.tryPromise({
+                try: () => workspaceLanguage.request(input, codeIntelligence),
+                catch: (error) =>
+                  isLanguageServiceError(error)
+                    ? error
+                    : new LanguageServiceError({
+                        message: error instanceof Error ? error.message : String(error),
+                        resync: false,
+                      }),
+              }),
+            ),
+          ),
+        [WS_METHODS.projectsLanguageServers]: () =>
+          serverSettings.getSettings.pipe(
+            Effect.map((settings) => settings.codeIntelligence),
+            Effect.orElseSucceed(() => ({})),
+            Effect.flatMap((codeIntelligence) =>
+              Effect.promise(() => languageServerStatuses(codeIntelligence)),
+            ),
+            Effect.map((servers) => ({ servers })),
+          ),
         [WS_METHODS.projectsReadFile]: (input) =>
           workspaceFileSystem.readFile(input).pipe(
             Effect.mapError(
@@ -3345,6 +3377,11 @@ export const layer = Layer.unwrap(
         const clientAnalyticsProps = readClientAnalyticsProps(request);
         yield* sessions.recordClientConnection(session.sessionId, clientOrigin);
         yield* analytics.recordOwners(readClientOwners(request), "client");
+        // Language sessions hold unsaved editor buffers and child processes for this connection only.
+        const workspaceLanguage = yield* Effect.acquireRelease(
+          Effect.sync(() => new WorkspaceLanguageService()),
+          (service) => Effect.sync(() => service.dispose()),
+        );
         const rpcWebSocketHttpEffect = yield* Effect.gen(function* () {
           const { protocol, httpEffect } = yield* RpcServer.makeProtocolWithHttpEffectWebsocket;
           yield* RpcServer.make(ServerWsRpcGroup, WS_RPC_SERVER_OPTIONS).pipe(
@@ -3380,6 +3417,7 @@ export const layer = Layer.unwrap(
               clientAnalyticsProps,
               previewAutomationBroker,
               serverBrowser,
+              workspaceLanguage,
             ).pipe(
               Layer.provideMerge(RpcSerialization.layerJson),
               // Handler-context reporters see only request defects, not server-wide defects.

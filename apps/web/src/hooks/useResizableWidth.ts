@@ -11,6 +11,12 @@ export const RESIZABLE_WIDTH_PROPERTY = "--resizable-width";
 
 export interface UseResizableWidthOptions {
   readonly storageKey: string;
+  /**
+   * Shared key for a panel whose width is stored per context (such as per
+   * thread): a context without its own width starts at the last width dragged
+   * anywhere, and every drag updates it.
+   */
+  readonly fallbackStorageKey?: string | undefined;
   readonly defaultWidth: number;
   readonly minWidth: number;
   readonly maxWidth: number;
@@ -31,7 +37,7 @@ export function useResizableWidth(options: UseResizableWidthOptions): {
   readonly width: number;
   readonly handlers: ResizableWidthHandlers;
 } {
-  const { storageKey, defaultWidth, minWidth, maxWidth, edge } = options;
+  const { storageKey, fallbackStorageKey, defaultWidth, minWidth, maxWidth, edge } = options;
 
   const clamp = (value: number): number => {
     if (!Number.isFinite(value)) return defaultWidth;
@@ -41,7 +47,9 @@ export function useResizableWidth(options: UseResizableWidthOptions): {
   const readWidth = () => {
     if (typeof window === "undefined") return defaultWidth;
     try {
-      const stored = getLocalStorageItem(storageKey, WidthSchema);
+      const stored =
+        getLocalStorageItem(storageKey, WidthSchema) ??
+        (fallbackStorageKey ? getLocalStorageItem(fallbackStorageKey, WidthSchema) : null);
       return clamp(stored ?? defaultWidth);
     } catch (error) {
       console.error("Could not read persisted panel width.", error);
@@ -62,6 +70,7 @@ export function useResizableWidth(options: UseResizableWidthOptions): {
     // The drag commits to the key and width it started from, even if the panel
     // switches keys before the pointer is released.
     const startStorageKey = storageKey;
+    const startFallbackStorageKey = fallbackStorageKey;
     const startWidth = clampedWidth;
     return {
       width: startWidth,
@@ -75,6 +84,8 @@ export function useResizableWidth(options: UseResizableWidthOptions): {
         setWidthState({ storageKey: startStorageKey, width: finalWidth });
         try {
           setLocalStorageItem(startStorageKey, finalWidth, WidthSchema);
+          if (startFallbackStorageKey)
+            setLocalStorageItem(startFallbackStorageKey, finalWidth, WidthSchema);
         } catch (error) {
           console.error("Could not persist panel width.", error);
         }

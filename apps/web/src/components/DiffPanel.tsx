@@ -33,6 +33,7 @@ import { openDiffFilePrimaryAction } from "../diffFileActions";
 import { useCheckpointDiff } from "~/lib/checkpointDiffState";
 import { cn } from "~/lib/utils";
 import { selectThreadDiffPanelSelection, useDiffPanelStore } from "../diffPanelStore";
+import { useRightPanelStore } from "../rightPanelStore";
 import { useCopyToClipboard } from "../hooks/useCopyToClipboard";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import { useResizableWidth } from "../hooks/useResizableWidth";
@@ -58,6 +59,7 @@ import { DiffPanelLoadingState, DiffPanelShell, type DiffPanelMode } from "./Dif
 import { DiffStatLabel } from "./chat/DiffStatLabel";
 import { AnnotatableCodeView, type AnnotatableCodeViewHandle } from "./diffs/AnnotatableCodeView";
 import { DiffChangesTree, type DiffChangesTreeFile } from "./diffs/DiffChangesTree";
+import { DiffCodeIntelligence } from "./diffs/DiffCodeIntelligence";
 import { orderDiffChangesTreeFiles } from "./diffs/diffChangesTree.logic";
 import { DiffScopeMenu, type DiffScopeChoice, type DiffScopeMenuTurn } from "./diffs/DiffScopeMenu";
 import { DiffTargetBranchPicker } from "./diffs/DiffTargetBranchPicker";
@@ -801,6 +803,13 @@ export default function DiffPanel({
     },
     [activeCwd, activeRepositoryRoot, openInPreferredEditor, routeThreadRef],
   );
+  const codeSurfaceRef = useRef<HTMLDivElement>(null);
+  const openCodeLocation = useCallback(
+    (path: string, line: number) => {
+      if (routeThreadRef) useRightPanelStore.getState().openFile(routeThreadRef, path, line);
+    },
+    [routeThreadRef],
+  );
   const collapseDefaultsRef = useRef({ collapseScopeKey, defaultCollapsedDiffFileKeys });
   useLayoutEffect(() => {
     collapseDefaultsRef.current = { collapseScopeKey, defaultCollapsedDiffFileKeys };
@@ -1232,7 +1241,19 @@ export default function DiffPanel({
               )
             ) : lazySource || renderablePatch?.kind === "files" ? (
               <div className="flex min-h-0 flex-1 overflow-hidden">
+                {activeThread && activeCwd ? (
+                  <DiffCodeIntelligence
+                    root={codeSurfaceRef}
+                    environmentId={activeThread.environmentId}
+                    cwd={activeCwd}
+                    repositoryRoot={activeRepositoryRoot}
+                    files={codeViewFiles}
+                    loadDiffFiles={currentLoadDiffFiles}
+                    onOpenLocation={openCodeLocation}
+                  />
+                ) : null}
                 <div
+                  ref={codeSurfaceRef}
                   className="min-h-0 min-w-0 flex-1"
                   onClickCapture={(event) => {
                     const composedPath = event.nativeEvent.composedPath?.() ?? [];

@@ -1,3 +1,4 @@
+import { CodeIntelligenceSettings } from "./language.ts";
 import { SshDeviceHostConfigs } from "./device.ts";
 import {
   AuthSettingsWriteScope,
@@ -1207,6 +1208,8 @@ export const ServerSettings = Schema.Struct({
    * settings UI is not undone by the next server start.
    */
   projectSettingsFolded: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
+  /** Language servers for the file and diff editors, keyed by `CodeIntelligenceServerId`. */
+  codeIntelligence: CodeIntelligenceSettings.pipe(Schema.withDecodingDefault(Effect.succeed({}))),
   /**
    * Whether agents may drive simulators and emulators. Gates the `device_*`
    * MCP tools and the preconfigured `agent-device` CLI the same way
@@ -1534,6 +1537,7 @@ export const ServerSettingsPatch = Schema.Struct({
   enableDeviceSupport: Schema.optionalKey(Schema.Boolean),
   deviceOnboardingCompleted: Schema.optionalKey(Schema.Boolean),
   deviceHosts: Schema.optionalKey(SshDeviceHostConfigs),
+  codeIntelligence: Schema.optionalKey(CodeIntelligenceSettings),
   sidebarAutoSettleAfterDays: Schema.optionalKey(Schema.NullOr(SidebarAutoSettleAfterDays)),
   sidebarAutoSettleOnMerge: Schema.optionalKey(Schema.Boolean),
   autoResumeLimitedThreads: Schema.optionalKey(Schema.Boolean),

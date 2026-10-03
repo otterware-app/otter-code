@@ -505,7 +505,12 @@ export default defineConfig({
       },
       {
         // Third-party marks must retain their exact colors.
-        files: ["apps/web/src/components/Icons.tsx", "apps/web/src/components/JetBrainsIcons.tsx"],
+        files: [
+          "apps/web/src/components/Icons.tsx",
+          "apps/web/src/components/JetBrainsIcons.tsx",
+          // Linear's status and priority glyphs (Otter Code).
+          "apps/web/src/components/linear/LinearStatusIcon.tsx",
+        ],
         rules: { "shadcn/no-raw-colors": "off" },
       },
       {

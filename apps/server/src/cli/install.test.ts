@@ -22,11 +22,11 @@ const setup = Effect.gen(function* () {
   const executable = path.join(runtimeDir, "versions", VERSION, "t3");
   yield* fs.makeDirectory(path.dirname(executable), { recursive: true });
   yield* fs.writeFileString(executable, "");
-  const npmPackage = path.join(root, ".npm/_npx/abc/node_modules/t3");
+  const npmPackage = path.join(root, ".npm/_npx/abc/node_modules/otter-code");
   yield* fs.makeDirectory(path.join(npmPackage, "bin"), { recursive: true });
   yield* fs.writeFileString(
     path.join(npmPackage, "package.json"),
-    JSON.stringify({ name: "t3", version: VERSION }),
+    JSON.stringify({ name: "otter-code", version: VERSION }),
   );
   const binDir = path.join(root, "bin");
   const provide = <A, E, R>(effect: Effect.Effect<A, E, R>, env: NodeJS.ProcessEnv = {}) =>
@@ -43,7 +43,14 @@ const setup = Effect.gen(function* () {
         ...env,
       }),
     );
-  return { root, npmPackage, runtimeDir, executable, link: path.join(binDir, "t3"), provide };
+  return {
+    root,
+    npmPackage,
+    runtimeDir,
+    executable,
+    link: path.join(binDir, "otter-code"),
+    provide,
+  };
 });
 
 it.layer(NodeServices.layer)("t3 install", (it) => {
@@ -71,30 +78,30 @@ it.layer(NodeServices.layer)("t3 install", (it) => {
       // Another t3 earlier on PATH still runs first, so `t3` would not run this one.
       const otherBin = path.join(root, "other-bin");
       yield* fs.makeDirectory(otherBin);
-      yield* fs.writeFileString(path.join(otherBin, "t3"), "");
+      yield* fs.writeFileString(path.join(otherBin, "otter-code"), "");
       const shadowed = yield* provide(installCli(), {
         PATH: `${otherBin}:${path.join(root, "bin")}`,
       });
       assert.isFalse(shadowed.onPath);
-      assert.equal(shadowed.shadowedBy, path.join(otherBin, "t3"));
+      assert.equal(shadowed.shadowedBy, path.join(otherBin, "otter-code"));
       assert.isUndefined(shadowed.pathCommand);
       const recorded = yield* fs.readFileString(path.join(runtimeDir, "launchers"));
-      assert.equal(recorded, `\n${yield* fs.realPath(path.join(root, "bin"))}/t3\n`);
+      assert.equal(recorded, `\n${yield* fs.realPath(path.join(root, "bin"))}/otter-code\n`);
 
       yield* fs.remove(link);
       yield* fs.writeFileString(link, "#!/bin/sh\n");
       const error = yield* provide(installCli()).pipe(Effect.flip);
-      assert.include(error.message, "Another t3 is already at");
+      assert.include(error.message, "Another otter-code is already at");
       assert.equal(yield* fs.readFileString(link), "#!/bin/sh\n");
 
       // Only `<version>/t3` is ours, not another program inside a version.
       yield* fs.remove(link);
       yield* fs.symlink(path.join(runtimeDir, "versions/0.0.1/node"), link);
       const sibling = yield* provide(installCli()).pipe(Effect.flip);
-      assert.include(sibling.message, "Another t3 is already at");
+      assert.include(sibling.message, "Another otter-code is already at");
       // This home's desktop launcher is replaced, as install.sh does.
       yield* fs.remove(link);
-      yield* fs.symlink(path.join(root, ".t3/bin/t3"), link);
+      yield* fs.symlink(path.join(root, ".t3/bin/otter-code"), link);
       yield* provide(installCli());
       assert.equal(yield* fs.readLink(link), executable);
 
@@ -124,14 +131,14 @@ it.layer(NodeServices.layer)("t3 install", (it) => {
       yield* fs.remove(link);
 
       // Windows writes a t3.cmd: only over its own, and only for paths cmd can run.
-      const shim = path.join(root, "bin", "t3.cmd");
+      const shim = path.join(root, "bin", "otter-code.cmd");
       const windows = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
         provide(effect.pipe(Effect.provideService(HostProcess.Platform, "win32")));
       const desktopShim =
         '@echo off\r\nrem Written by T3 Code\r\n"C:\\T3 Code\\T3 Code.exe" "x" %*\r\n';
       yield* fs.writeFileString(shim, desktopShim);
       const foreignShim = yield* windows(installCli()).pipe(Effect.flip);
-      assert.include(foreignShim.message, "Another t3 is already at");
+      assert.include(foreignShim.message, "Another otter-code is already at");
       assert.equal(yield* fs.readFileString(shim), desktopShim);
       // A user's wrapper that also runs a managed t3.exe is still theirs.
       const wrapper = `@echo off\r\nset FOO=1\r\n"${path.join(runtimeDir, "versions/0.0.1/t3.exe")}" %*`;
@@ -208,7 +215,7 @@ it.layer(NodeServices.layer)("t3 install", (it) => {
       yield* offer(false, { args: ["status", "--json=true"] });
       const globalBin = path.join(root, "global-bin");
       yield* fs.makeDirectory(globalBin);
-      yield* fs.writeFileString(path.join(globalBin, "t3"), "");
+      yield* fs.writeFileString(path.join(globalBin, "otter-code"), "");
       yield* offer(false, { env: { PATH: globalBin } });
       assert.equal(asked, 0);
       assert.isFalse(yield* fs.exists(link));
@@ -218,7 +225,7 @@ it.layer(NodeServices.layer)("t3 install", (it) => {
       const pnpmBin = path.join(root, ".cache/pnpm/dlx/abc/node_modules/.bin");
       for (const bin of [npxBin, pnpmBin]) {
         yield* fs.makeDirectory(bin, { recursive: true });
-        yield* fs.writeFileString(path.join(bin, "t3"), "");
+        yield* fs.writeFileString(path.join(bin, "otter-code"), "");
       }
       assert.isFalse(yield* offer(undefined, { env: { PATH: `${npxBin}:${pnpmBin}` } }));
       assert.equal(asked, 1);

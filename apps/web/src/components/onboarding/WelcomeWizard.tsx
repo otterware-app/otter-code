@@ -39,7 +39,6 @@ import { useEffect, useRef, useState } from "react";
 import { TYPOGRAPHY_ADVANCED_STORAGE_KEY } from "../../appearanceFonts";
 import { useLocalStorage } from "../../hooks/useLocalStorage";
 import { hasCloudPublicConfig } from "../../cloud/publicConfig";
-import { PRIVACY_POLICY_URL } from "../../legalLinks";
 import { useT3ConnectAuthPrompt } from "../clerk/useT3ConnectAuthPrompt";
 import { completeOnboarding } from "../../onboarding/firstRun";
 import {
@@ -61,11 +60,7 @@ import { newProjectId, randomUUID } from "../../lib/utils";
 import { agentSessionImport } from "../../state/agentSessions";
 import { readProjects, waitForProject } from "../../state/entities";
 import { useEnvironments, usePrimaryEnvironment } from "../../state/environments";
-import {
-  managedInstanceLocks,
-  managedTelemetryOffMessage,
-  usePrimaryManagedPolicy,
-} from "../../state/managedPolicy";
+import { managedInstanceLocks } from "../../state/managedPolicy";
 import {
   isOnboardingRelayEnvironment,
   resolveOnboardingSetup,
@@ -92,10 +87,9 @@ import { TerminalViewport } from "../ThreadTerminalDrawer";
 import { CloudEnvironmentConnectRows } from "../cloud/CloudEnvironmentConnectList";
 import { presentSavedCloudEnvironmentConnection } from "../cloud/cloudEnvironmentConnectionPresentation";
 import { ProviderInstanceIcon } from "../chat/ProviderInstanceIcon";
-import { T3Wordmark } from "../T3Wordmark";
 import { Alert, AlertDescription } from "../ui/alert";
 import { Button } from "../ui/button";
-import { InstallT3Commands } from "../InstallT3Commands";
+import { CommandBlock } from "../CommandBlock";
 import { Checkbox } from "../ui/checkbox";
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "../ui/collapsible";
 import { Input } from "../ui/input";
@@ -240,10 +234,12 @@ export function WelcomeWizard({
         initialFocus={() => document.getElementById("onboarding-pairing-url") ?? true}
       >
         <WizardHeader
-          title="Set up T3 Code"
+          title="Set up Otter Code"
           identity={
-            <div className="flex items-baseline gap-1.5" role="img" aria-label="T3 Code">
-              <T3Wordmark className="h-4 w-auto shrink-0" aria-hidden />
+            <div className="flex items-baseline gap-1.5" role="img" aria-label="Otter Code">
+              <span className="shrink-0 text-2xl font-medium tracking-tight" aria-hidden>
+                Otter
+              </span>
               <span className="text-2xl font-medium tracking-tight text-muted-foreground">
                 Code
               </span>
@@ -320,7 +316,6 @@ function ConnectionStep({
   readonly onPaired: (environmentId: EnvironmentId) => void;
 }) {
   const { environments } = useEnvironments();
-  const telemetryOff = managedTelemetryOffMessage(usePrimaryManagedPolicy());
   const cloudEnabled = hasCloudPublicConfig();
   const directEnvironments = environments.filter(
     (environment) => !cloudEnabled || !isOnboardingRelayEnvironment(environment),
@@ -443,23 +438,8 @@ function ConnectionStep({
           {skippedLabels.length === 1 ? "it" : "them"} up later from Settings.
         </p>
       ) : null}
-      <div className="mt-6 flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-        <p className="min-w-0 text-xs leading-relaxed text-muted-foreground">
-          {telemetryOff ?? "T3 Code collects anonymous usage data to help us improve it."} To read
-          more about how your data is used{telemetryOff === undefined ? " and how to opt out" : ""},
-          see our{" "}
-          <a
-            className="underline underline-offset-2 hover:text-foreground"
-            href={PRIVACY_POLICY_URL}
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            privacy policy
-          </a>
-          .
-        </p>
+      <div className="mt-6 flex items-center justify-end gap-3">
         <Button
-          className="shrink-0 self-end"
           ref={continueRef}
           autoFocus={!expandPairingInitially}
           disabled={!ready || isPairing}
@@ -508,7 +488,7 @@ function ConnectAccountOption({
           }
         >
           <CloudIcon className="size-4 text-muted-foreground" />
-          <span className="flex-1 text-left">T3 Connect</span>
+          <span className="flex-1 text-left">Otter Connect</span>
           <span className="text-xs text-muted-foreground">
             {!isLoaded
               ? "Loading sign-in…"
@@ -542,9 +522,9 @@ function ConnectAccountOption({
             <p className="text-sm text-muted-foreground">
               Run this on each computer you want to connect.
             </p>
-            <InstallT3Commands command="t3 connect" className="mt-3" />
+            <CommandBlock command="npx otter-code connect" className="mt-3" />
             <p className="mt-3 text-xs text-muted-foreground">
-              Keep T3 Code running. Select the computers you want to set up above.
+              Keep Otter Code running. Select the computers you want to set up above.
             </p>
           </div>
         </CollapsiblePanel>
@@ -649,12 +629,14 @@ function PairingForm({
             </Button>
           </div>
           <CollapsiblePanel>
-            <p className="pt-3 text-sm text-muted-foreground">On the computer with your code:</p>
-            <InstallT3Commands command="t3 pair" className="mt-2" />
+            <p className="pt-3 text-sm text-muted-foreground">
+              On the computer with your code, start Otter Code or run{" "}
+              <code className="font-mono">npx otter-code serve</code>, then run:
+            </p>
+            <CommandBlock command="npx otter-code pair" className="mt-2" />
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-              Start T3 Code or run <code className="font-mono">t3 serve</code> there before{" "}
-              <code className="font-mono">t3 pair</code>. On a tailnet, run{" "}
-              <code className="font-mono">t3 pair --tailscale</code> instead.
+              On a tailnet, run <code className="font-mono">npx otter-code pair --tailscale</code>{" "}
+              instead.
             </p>
           </CollapsiblePanel>
         </Collapsible>

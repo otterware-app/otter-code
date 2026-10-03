@@ -41,7 +41,7 @@ describe("sanitizeLinkedPrompt", () => {
 describe("parseNewThreadLink", () => {
   it("reads a shared prompt with its optional repository and model", () => {
     const result = parseNewThreadLink(
-      "?prompt=Rate+me&repo=https://github.com/pingdotgg/t3code.git&provider=Codex&model=gpt-5",
+      "?prompt=Rate+me&repo=https://github.com/otterware-app/otter-code.git&provider=Codex&model=gpt-5",
     );
     expect(result).toEqual({
       ok: true,
@@ -57,9 +57,9 @@ describe("parseNewThreadLink", () => {
 
   it("reads a pull request link, whose prompt is optional", () => {
     for (const pr of [
-      "pingdotgg/t3code/42",
-      "pingdotgg/t3code%2342",
-      "https://github.com/pingdotgg/t3code/pull/42/files",
+      "otterware-app/otter-code/42",
+      "otterware-app/otter-code%2342",
+      "https://github.com/otterware-app/otter-code/pull/42/files",
     ]) {
       expect(parseNewThreadLink(`?pr=${pr}`)).toEqual({
         ok: true,
@@ -116,27 +116,27 @@ describe("link round trips", () => {
     const path = promptLinkAppPath(link);
     expect(path).toBe("/env-1/mcp%3A1");
     const deepLink = promptLinkDeepLink(path!);
-    expect(deepLink).toBe("t3code://threads/env-1/mcp%3A1");
+    expect(deepLink).toBe("ottercode://threads/env-1/mcp%3A1");
     expect(promptLinkAppPath(deepLink)).toBe(path);
   });
 
   it("maps app scheme and hosted links to in-app paths, and nothing else", () => {
-    expect(promptLinkAppPath("t3code://new?prompt=hi")).toBe("/new?prompt=hi");
-    expect(promptLinkAppPath("t3code-dev://threads/env-1/thread-1")).toBe("/env-1/thread-1");
-    expect(promptLinkAppPath("https://app.t3.codes/env-1/thread-1?prompt=go")).toBe(
+    expect(promptLinkAppPath("ottercode://new?prompt=hi")).toBe("/new?prompt=hi");
+    expect(promptLinkAppPath("ottercode-dev://threads/env-1/thread-1")).toBe("/env-1/thread-1");
+    expect(promptLinkAppPath("https://code.otterware.app/env-1/thread-1?prompt=go")).toBe(
       "/env-1/thread-1?prompt=go",
     );
-    expect(promptLinkAppPath("https://app.t3.codes/threads/env-1/thread-1")).toBe(
+    expect(promptLinkAppPath("https://code.otterware.app/threads/env-1/thread-1")).toBe(
       "/env-1/thread-1",
     );
-    expect(promptLinkAppPath("https://app.t3.codes/threads/env-1/thread-1?prompt=go")).toBe(
+    expect(promptLinkAppPath("https://code.otterware.app/threads/env-1/thread-1?prompt=go")).toBe(
       "/env-1/thread-1?prompt=go",
     );
     // The web app's own thread route, reloaded, is no link.
-    expect(promptLinkAppPath("https://app.t3.codes/env-1/thread-1")).toBeNull();
-    expect(promptLinkAppPath("https://app.t3.codes/threads/env-1")).toBeNull();
-    expect(promptLinkAppPath("https://app.t3.codes/settings/general")).toBeNull();
+    expect(promptLinkAppPath("https://code.otterware.app/env-1/thread-1")).toBeNull();
+    expect(promptLinkAppPath("https://code.otterware.app/threads/env-1")).toBeNull();
+    expect(promptLinkAppPath("https://code.otterware.app/settings/general")).toBeNull();
     expect(promptLinkAppPath("https://evil.test/new?prompt=hi")).toBeNull();
-    expect(promptLinkAppPath("t3code://app/index.html")).toBeNull();
+    expect(promptLinkAppPath("ottercode://app/index.html")).toBeNull();
   });
 });

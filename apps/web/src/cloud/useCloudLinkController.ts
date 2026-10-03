@@ -88,14 +88,15 @@ export function useCloudLinkController(environmentId: EnvironmentId | null) {
   const [tunnelLimit, setTunnelLimit] = useState<number | null>(null);
 
   const reportUpdateFailure = (cause: unknown, reason?: string) => {
-    const message = cause instanceof Error ? cause.message : "Could not update T3 Connect access.";
+    const message =
+      cause instanceof Error ? cause.message : "Could not update Otter Connect access.";
     const traceId = findErrorTraceId(cause);
-    console.error("[t3-connect] Could not update T3 Connect", { message, traceId, cause });
+    console.error("[t3-connect] Could not update Otter Connect", { message, traceId, cause });
     setOperationError(traceId ? `${message} Trace ID: ${traceId}` : message);
     toastManager.add(
       stackedThreadToast({
         type: "error",
-        title: "Could not update T3 Connect",
+        title: "Could not update Otter Connect",
         description: reason ?? relayFailureReason(cause) ?? message,
         ...(traceId
           ? {
@@ -188,7 +189,7 @@ export function useCloudLinkController(environmentId: EnvironmentId | null) {
       }
       const clerkToken = tokenResult.value;
       if (!clerkToken) {
-        reportUpdateFailure(new Error("Sign in to T3 Connect before enabling this."));
+        reportUpdateFailure(new Error("Sign in to Otter Connect before enabling this."));
         return false;
       }
       const currentManagedTunnel = isManagedTunnelActive(currentLinkState, relayProviderKind);

@@ -34,6 +34,10 @@ if (
   } else if (command === "acp-mcp-bridge" || command === "acp-mcp-call") {
     const { runAcpMcpCliFastPath } = await import("./mcp/AcpMcpStdioBridge.ts");
     await runAcpMcpCliFastPath(command, process.argv.slice(3));
+  } else if (command === "__run-node-script") {
+    // Bundled language servers under the single-executable build (see ./nodeScript.ts).
+    const { runNodeScript } = await import("./nodeScript.ts");
+    runNodeScript(process.argv.slice(3));
   } else {
     // Windows desktop launches without stdin; attach before reading, except on fast paths using pipes.
     const { attachConsoleStdin } = await import("./cli/consoleStdin.ts");

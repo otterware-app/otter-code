@@ -45,6 +45,11 @@ import {
 } from "./checkpointDiff.ts";
 import { ModelSelection } from "./modelSelection.ts";
 import {
+  ThreadLinearIssueLink,
+  ThreadLinearIssueLinkSource,
+  ThreadLinearIssueSnapshot,
+} from "./linear.ts";
+import {
   ThreadLinkedPullRequest,
   ThreadPullRequestLink,
   ThreadPullRequestKey,
@@ -367,6 +372,7 @@ export const OrchestrationV2AppThread = Schema.Struct({
   linkedPullRequest: Schema.optional(Schema.NullOr(ThreadLinkedPullRequest)),
   pullRequests: Schema.optional(Schema.Array(ThreadPullRequestLink)),
   branchPullRequest: Schema.optional(Schema.NullOr(ThreadLinkedPullRequest)),
+  linearIssues: Schema.optional(Schema.Array(ThreadLinearIssueLink)),
   activeProviderThreadId: Schema.NullOr(ProviderThreadId),
   historyOrigin: Schema.optional(OrchestrationV2ThreadHistoryOrigin),
   lineage: OrchestrationV2AppThreadLineage,
@@ -1798,6 +1804,7 @@ export const OrchestrationV2ThreadShell = Schema.Struct({
   linkedPullRequest: Schema.optional(Schema.NullOr(ThreadLinkedPullRequest)),
   pullRequests: Schema.optional(Schema.Array(ThreadPullRequestLink)),
   branchPullRequest: Schema.optional(Schema.NullOr(ThreadLinkedPullRequest)),
+  linearIssues: Schema.optional(Schema.Array(ThreadLinearIssueLink)),
   lineage: OrchestrationV2AppThreadLineage,
   forkedFrom: Schema.NullOr(OrchestrationV2AppThread.fields.forkedFrom),
   activeProviderThreadId: Schema.NullOr(ProviderThreadId),
@@ -2700,6 +2707,29 @@ export const OrchestrationV2Command = Schema.Union([
     link: Schema.optional(
       Schema.Struct({ url: TrimmedNonEmptyString, source: ThreadPullRequestLinkSource }),
     ),
+  }),
+  Schema.Struct({
+    type: Schema.Literal("thread.linear-issue.link"),
+    commandId: CommandId,
+    threadId: ThreadId,
+    identifier: TrimmedNonEmptyString,
+    url: TrimmedNonEmptyString,
+    source: ThreadLinearIssueLinkSource,
+  }),
+  Schema.Struct({
+    type: Schema.Literal("thread.linear-issue.unlink"),
+    commandId: CommandId,
+    threadId: ThreadId,
+    identifier: TrimmedNonEmptyString,
+  }),
+  Schema.Struct({
+    type: Schema.Literal("thread.linear-issue-link.sync"),
+    commandId: CommandId,
+    threadId: ThreadId,
+    identifier: TrimmedNonEmptyString,
+    issueId: TrimmedNonEmptyString,
+    url: TrimmedNonEmptyString,
+    snapshot: ThreadLinearIssueSnapshot,
   }),
   Schema.Struct({
     type: Schema.Literal("thread.pull-request.sync"),

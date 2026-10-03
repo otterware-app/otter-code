@@ -30,9 +30,11 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  CircleDot,
   FileDiff,
   Files,
   Globe2,
+  ListTodo,
   Plus,
   TerminalSquare,
 } from "lucide-react";
@@ -138,6 +140,7 @@ interface RightPanelTabsProps {
   onAddFiles: () => void;
   onAddPullRequest: () => void;
   onAddPullRequests: () => void;
+  onAddLinearIssues: () => void;
   onAddDevice: () => void;
   browserAvailable: boolean;
   terminalAvailable: boolean;
@@ -145,6 +148,7 @@ interface RightPanelTabsProps {
   filesAvailable: boolean;
   pullRequestAvailable: boolean;
   pullRequestsAvailable: boolean;
+  linearIssuesAvailable: boolean;
   deviceAvailable: boolean;
   pullRequestStatusSeeds?: Readonly<Record<string, PullRequestTabStatusSeed>>;
   children: ReactNode;
@@ -173,6 +177,7 @@ const SURFACE_DISABLED_REASONS = {
   diff: "Diff is only available for server threads in Git repositories.",
   pullRequest: "This thread's branch has no pull request yet.",
   pullRequests: "No linked pull requests are available for this thread.",
+  linearIssues: "Linear issues are only available for server threads.",
   device: "Devices are only available from a thread.",
 } as const;
 
@@ -194,6 +199,7 @@ const SURFACE_UNAVAILABLE_HINTS = {
   diff: "Available for Git repositories.",
   pullRequest: "No pull request on this branch yet.",
   pullRequests: "No linked pull requests available.",
+  linearIssues: "Available for server threads.",
   device: "Available from a thread.",
 } as const;
 
@@ -315,6 +321,7 @@ function RightPanelEmptyState(props: {
   onAddFiles: () => void;
   onAddPullRequest: () => void;
   onAddPullRequests: () => void;
+  onAddLinearIssues: () => void;
   onAddDevice: () => void;
   browserAvailable: boolean;
   terminalAvailable: boolean;
@@ -322,6 +329,7 @@ function RightPanelEmptyState(props: {
   filesAvailable: boolean;
   pullRequestAvailable: boolean;
   pullRequestsAvailable: boolean;
+  linearIssuesAvailable: boolean;
   deviceAvailable: boolean;
 }) {
   const [highlight, setHighlight] = useState(-1);
@@ -374,6 +382,14 @@ function RightPanelEmptyState(props: {
       available: props.pullRequestsAvailable,
       disabledReason: SURFACE_UNAVAILABLE_HINTS.pullRequests,
       onClick: props.onAddPullRequests,
+    },
+    {
+      label: "Linear issues",
+      icon: ListTodo,
+      shortcut: "I",
+      available: props.linearIssuesAvailable,
+      disabledReason: SURFACE_UNAVAILABLE_HINTS.linearIssues,
+      onClick: props.onAddLinearIssues,
     },
     {
       label: "Device",
@@ -575,6 +591,10 @@ function surfaceTitle(
       return `#${surface.number}`;
     case "pull-requests":
       return "Pull requests";
+    case "linear-issues":
+      return "Linear issues";
+    case "linear-issue":
+      return surface.identifier;
     case "device":
       return surface.title ?? surface.target?.name ?? "Device";
     case "preview": {
@@ -658,6 +678,10 @@ function SurfaceIcon({
       );
     case "pull-requests":
       return <PullRequestGlyph.link className="size-3 shrink-0" />;
+    case "linear-issues":
+      return <ListTodo className="size-3 shrink-0" />;
+    case "linear-issue":
+      return <CircleDot className="size-3 shrink-0" />;
     case "device":
       return surface.target?.platform === "ios" ? (
         <AppleIcon className="size-3 shrink-0" />
@@ -932,6 +956,14 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
       available: props.pullRequestsAvailable,
       disabledReason: SURFACE_DISABLED_REASONS.pullRequests,
       onClick: props.onAddPullRequests,
+    },
+    {
+      label: "Linear issues",
+      icon: ListTodo,
+      shortcut: "I",
+      available: props.linearIssuesAvailable,
+      disabledReason: SURFACE_DISABLED_REASONS.linearIssues,
+      onClick: props.onAddLinearIssues,
     },
     {
       label: "Device",
@@ -1403,6 +1435,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             onAddFiles={props.onAddFiles}
             onAddPullRequest={props.onAddPullRequest}
             onAddPullRequests={props.onAddPullRequests}
+            onAddLinearIssues={props.onAddLinearIssues}
             onAddDevice={props.onAddDevice}
             browserAvailable={props.browserAvailable}
             terminalAvailable={props.terminalAvailable}
@@ -1410,6 +1443,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             filesAvailable={props.filesAvailable}
             pullRequestAvailable={props.pullRequestAvailable}
             pullRequestsAvailable={props.pullRequestsAvailable}
+            linearIssuesAvailable={props.linearIssuesAvailable}
             deviceAvailable={props.deviceAvailable}
           />
         ) : (

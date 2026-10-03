@@ -731,7 +731,7 @@ describe("ssh tunnel scripts", () => {
         const serverScript = path.join(home, "fake-t3.cjs");
         yield* fs.writeFileString(serverScript, fakeT3Serve(publishDelayMs));
         // A launch that died holding the lock must not block or double-admit later ones.
-        const launchLock = path.join(home, ".t3", "ssh-launch", ".launch.lock");
+        const launchLock = path.join(home, ".otter-code", "ssh-launch", ".launch.lock");
         yield* fs.makeDirectory(path.dirname(launchLock), { recursive: true });
         yield* fs.writeFileString(launchLock, "999999999\n");
         const targets = [
@@ -749,7 +749,7 @@ describe("ssh tunnel scripts", () => {
         ).pipe(Effect.provide(localRemoteShellLayer(home)));
 
         const ownerPid = Number(
-          yield* fs.readFileString(path.join(home, ".t3", "userdata", "server.lock")),
+          yield* fs.readFileString(path.join(home, ".otter-code", "userdata", "server.lock")),
         );
         assert.sameMembers(
           launches.map((launch) => launch.remoteServerKind),
@@ -763,7 +763,7 @@ describe("ssh tunnel scripts", () => {
           if (launch.remoteServerKind !== "managed") continue;
           const stateKey = yield* remoteStateKey(targets[index]!);
           const recordedPid = yield* fs.readFileString(
-            path.join(home, ".t3", "ssh-launch", stateKey, "pid"),
+            path.join(home, ".otter-code", "ssh-launch", stateKey, "pid"),
           );
           assert.equal(
             Number(recordedPid.trim()),

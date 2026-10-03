@@ -22,7 +22,7 @@ describe.skipIf(HostProcess.Platform.defaultValue() !== "linux")("installer home
     const home = NodePath.join(root, homeName);
     const version = "1.2.3";
     const target = NodePath.join(home, "runtime/versions", version);
-    const launcher = NodePath.join(root, "bin/t3");
+    const launcher = NodePath.join(root, "bin/otter-code");
     try {
       await NodeFSP.mkdir(target, { recursive: true });
       await NodeFSP.writeFile(NodePath.join(target, ".install-complete"), `${version}\n`);
@@ -46,7 +46,7 @@ describe.skipIf(HostProcess.Platform.defaultValue() !== "linux")("installer home
         },
       );
       expect(status, stdout + stderr).toBe(0);
-      expect(stderr).toContain(`Installed T3 Code ${version}`);
+      expect(stderr).toContain(`Installed Otter Code ${version}`);
       expect(await NodeFSP.readlink(launcher)).toBe(NodePath.join(target, "t3"));
       expect(
         NodeChildProcess.execFileSync(launcher, ["--version"], {
@@ -168,13 +168,13 @@ describe.skipIf(HostProcess.Platform.defaultValue() !== "linux")("install.sh t3 
     try {
       const home = NodePath.join(root, "home");
       const binDir = NodePath.join(root, "bin");
-      const link = NodePath.join(binDir, "t3");
+      const link = NodePath.join(binDir, "otter-code");
       await NodeFSP.mkdir(binDir, { recursive: true });
 
       await NodeFSP.writeFile(link, "#!/bin/sh\necho mine\n");
       const foreign = await installOver({ script: "install.sh", home, binDir });
       expect(foreign.code).not.toBe(0);
-      expect(foreign.output).toContain(`another t3 is already at ${link}`);
+      expect(foreign.output).toContain(`another otter-code is already at ${link}`);
       expect(await NodeFSP.readFile(link, "utf8")).toBe("#!/bin/sh\necho mine\n");
       // Not even from inside the versions folder, where `.` would resolve into it.
       const fromVersions = await installOver({
@@ -240,7 +240,7 @@ describe.skipIf(HostProcess.Platform.defaultValue() !== "linux")("install.sh t3 
         env: { HOME: root, PATH: `${binDir}/:/usr/bin:/bin` },
       });
       expect(slashed.code, slashed.output).toBe(0);
-      expect(slashed.output).toContain("Run t3 to use T3 Code here");
+      expect(slashed.output).toContain("Run otter-code to use Otter Code here");
 
       // A relative folder is made absolute, so the PATH command never follows the working directory.
       const relative = await installOver({
@@ -254,7 +254,7 @@ describe.skipIf(HostProcess.Platform.defaultValue() !== "linux")("install.sh t3 
       expect(relative.output).toContain(`'export PATH="$PATH:$HOME/bin"'`);
 
       await NodeFSP.rm(link);
-      await NodeFSP.symlink(NodePath.join(home, "bin/t3"), link);
+      await NodeFSP.symlink(NodePath.join(home, "bin/otter-code"), link);
       const overDesktop = await installOver({
         script: "install.sh",
         home: `${home}//`,

@@ -30,6 +30,7 @@ import { Route as SettingsIntegrationsRouteImport } from './routes/settings.inte
 import { Route as SettingsGeneralRouteImport } from './routes/settings.general'
 import { Route as SettingsDiagnosticsRouteImport } from './routes/settings.diagnostics'
 import { Route as SettingsConnectionsRouteImport } from './routes/settings.connections'
+import { Route as SettingsCodeIntelligenceRouteImport } from './routes/settings.code-intelligence'
 import { Route as SettingsBetaRouteImport } from './routes/settings.beta'
 import { Route as SettingsArchivedRouteImport } from './routes/settings.archived'
 import { Route as SettingsAppearanceRouteImport } from './routes/settings.appearance'
@@ -144,6 +145,12 @@ const SettingsConnectionsRoute = SettingsConnectionsRouteImport.update({
   path: '/connections',
   getParentRoute: () => SettingsRoute,
 } as any)
+const SettingsCodeIntelligenceRoute =
+  SettingsCodeIntelligenceRouteImport.update({
+    id: '/code-intelligence',
+    path: '/code-intelligence',
+    getParentRoute: () => SettingsRoute,
+  } as any)
 const SettingsBetaRoute = SettingsBetaRouteImport.update({
   id: '/beta',
   path: '/beta',
@@ -201,6 +208,7 @@ export interface FileRoutesByFullPath {
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/archived': typeof SettingsArchivedRoute
   '/settings/beta': typeof SettingsBetaRoute
+  '/settings/code-intelligence': typeof SettingsCodeIntelligenceRoute
   '/settings/connections': typeof SettingsConnectionsRoute
   '/settings/diagnostics': typeof SettingsDiagnosticsRoute
   '/settings/general': typeof SettingsGeneralRoute
@@ -230,6 +238,7 @@ export interface FileRoutesByTo {
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/archived': typeof SettingsArchivedRoute
   '/settings/beta': typeof SettingsBetaRoute
+  '/settings/code-intelligence': typeof SettingsCodeIntelligenceRoute
   '/settings/connections': typeof SettingsConnectionsRoute
   '/settings/diagnostics': typeof SettingsDiagnosticsRoute
   '/settings/general': typeof SettingsGeneralRoute
@@ -262,6 +271,7 @@ export interface FileRoutesById {
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/archived': typeof SettingsArchivedRoute
   '/settings/beta': typeof SettingsBetaRoute
+  '/settings/code-intelligence': typeof SettingsCodeIntelligenceRoute
   '/settings/connections': typeof SettingsConnectionsRoute
   '/settings/diagnostics': typeof SettingsDiagnosticsRoute
   '/settings/general': typeof SettingsGeneralRoute
@@ -295,6 +305,7 @@ export interface FileRouteTypes {
     | '/settings/appearance'
     | '/settings/archived'
     | '/settings/beta'
+    | '/settings/code-intelligence'
     | '/settings/connections'
     | '/settings/diagnostics'
     | '/settings/general'
@@ -324,6 +335,7 @@ export interface FileRouteTypes {
     | '/settings/appearance'
     | '/settings/archived'
     | '/settings/beta'
+    | '/settings/code-intelligence'
     | '/settings/connections'
     | '/settings/diagnostics'
     | '/settings/general'
@@ -355,6 +367,7 @@ export interface FileRouteTypes {
     | '/settings/appearance'
     | '/settings/archived'
     | '/settings/beta'
+    | '/settings/code-intelligence'
     | '/settings/connections'
     | '/settings/diagnostics'
     | '/settings/general'
@@ -533,6 +546,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsConnectionsRouteImport
       parentRoute: typeof SettingsRoute
     }
+    '/settings/code-intelligence': {
+      id: '/settings/code-intelligence'
+      path: '/code-intelligence'
+      fullPath: '/settings/code-intelligence'
+      preLoaderRoute: typeof SettingsCodeIntelligenceRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/settings/beta': {
       id: '/settings/beta'
       path: '/beta'
@@ -614,6 +634,7 @@ interface SettingsRouteChildren {
   SettingsAppearanceRoute: typeof SettingsAppearanceRoute
   SettingsArchivedRoute: typeof SettingsArchivedRoute
   SettingsBetaRoute: typeof SettingsBetaRoute
+  SettingsCodeIntelligenceRoute: typeof SettingsCodeIntelligenceRoute
   SettingsConnectionsRoute: typeof SettingsConnectionsRoute
   SettingsDiagnosticsRoute: typeof SettingsDiagnosticsRoute
   SettingsGeneralRoute: typeof SettingsGeneralRoute
@@ -632,6 +653,7 @@ const SettingsRouteChildren: SettingsRouteChildren = {
   SettingsAppearanceRoute: SettingsAppearanceRoute,
   SettingsArchivedRoute: SettingsArchivedRoute,
   SettingsBetaRoute: SettingsBetaRoute,
+  SettingsCodeIntelligenceRoute: SettingsCodeIntelligenceRoute,
   SettingsConnectionsRoute: SettingsConnectionsRoute,
   SettingsDiagnosticsRoute: SettingsDiagnosticsRoute,
   SettingsGeneralRoute: SettingsGeneralRoute,

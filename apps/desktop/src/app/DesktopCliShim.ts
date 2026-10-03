@@ -14,6 +14,9 @@ import { makeComponentLogger } from "./DesktopObservability.ts";
 // so its launcher mounts the AppImage itself instead of pointing into it.
 const { logInfo, logWarning } = makeComponentLogger("desktop-cli-shim");
 
+/** The command a person types; never `t3`, so it sits beside an installed T3 Code. */
+export const COMMAND = "otter-code";
+
 export const MARKER = "Written by T3 Code: runs the desktop app's bundled t3 CLI.";
 
 /** Server entry inside the app, relative to its server root (an asar archive when packaged). */
@@ -125,12 +128,12 @@ export const renderCliShim = (input: {
   ].join("\n");
 };
 
-/** Where the packaged app keeps its launcher: `<T3 home>/bin/t3`, `t3.cmd` on Windows. */
+/** Where the packaged app keeps its launcher: `<T3 home>/bin/otter-code`, `otter-code.cmd` on Windows. */
 export const launcherPath = (environment: DesktopEnvironment.DesktopEnvironment["Service"]) =>
   environment.path.join(
     environment.baseDir,
     "bin",
-    environment.platform === "win32" ? "t3.cmd" : "t3",
+    environment.platform === "win32" ? `${COMMAND}.cmd` : COMMAND,
   );
 
 /**

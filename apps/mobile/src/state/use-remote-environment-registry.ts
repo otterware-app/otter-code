@@ -173,11 +173,11 @@ export function useRemoteConnections() {
       if (environment.isRelayManaged) {
         Alert.alert(
           "Remove from this device?",
-          `Forget ${environment.environmentLabel} and its cached threads on this device.\n\nIt stays on your T3 Connect account and keeps its host space. Deregister it under T3 Account → T3 Connect to free it.`,
+          `Forget ${environment.environmentLabel} and its cached threads on this device.\n\nIt stays on your Otter Connect account and keeps its host space. Deregister it under Otter Code Account → Otter Connect to free it.`,
           [
             { text: "Cancel", style: "cancel" },
             {
-              text: "Open T3 Account",
+              text: "Open Otter Code Account",
               onPress: () => navigation.navigate("SettingsSheet", { screen: "SettingsAuth" }),
             },
             remove,

@@ -240,6 +240,7 @@ import * as PullRequestReviewGuideService from "./pullRequest/PullRequestReviewG
 import { listLinkedPullRequestThreads } from "./pullRequest/linkedThreads.ts";
 import { pullRequestSyncKey } from "./pullRequest/pullRequestSyncKey.ts";
 import * as SqlClient from "effect/sql/SqlClient";
+import * as LinearIssueSyncReactor from "./linear/LinearIssueSyncReactor.ts";
 import * as PullRequestSyncReactor from "./orchestration-v2/PullRequestSyncReactor.ts";
 import * as SourceControlDiscovery from "./sourceControl/SourceControlDiscovery.ts";
 import * as OtlpEndpointCheck from "./observability/OtlpEndpointCheck.ts";
@@ -1265,6 +1266,7 @@ export const layerWsRpc = (
       const pullRequests = yield* PullRequestService.PullRequestService;
       const reviewGuides = yield* PullRequestReviewGuideService.PullRequestReviewGuideService;
       const pullRequestSync = yield* PullRequestSyncReactor.PullRequestSyncReactor;
+      const linearIssues = yield* LinearIssueSyncReactor.LinearIssueSyncReactor;
       const deviceService = yield* DeviceService.DeviceService;
       const deviceHostContext =
         yield* Effect.context<Effect.Services<ReturnType<typeof remoteSshDeviceHosts>>>();
@@ -2581,6 +2583,8 @@ export const layerWsRpc = (
                   ),
             ),
           ),
+        [WS_METHODS.linearIssueDetail]: (input) => linearIssues.readIssueDetail(input.reference),
+        [WS_METHODS.linearSubscribeIssueChanges]: () => linearIssues.issueChanges,
         [WS_METHODS.pullRequestsDetail]: (input) =>
           withPullRequestViewer(input, pullRequests.detail(input)),
         [WS_METHODS.pullRequestsPreview]: (input) =>

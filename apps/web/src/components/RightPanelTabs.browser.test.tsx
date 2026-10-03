@@ -105,6 +105,7 @@ describe("RightPanelTabs", () => {
           onAddFiles={noop}
           onAddPullRequest={noop}
           onAddPullRequests={noop}
+          onAddLinearIssues={noop}
           onAddDevice={noop}
           browserAvailable={false}
           terminalAvailable
@@ -112,6 +113,7 @@ describe("RightPanelTabs", () => {
           filesAvailable={false}
           pullRequestAvailable={false}
           pullRequestsAvailable={false}
+          linearIssuesAvailable={false}
           deviceAvailable={false}
         >
           {null}
@@ -178,6 +180,7 @@ function panel(activeSurface: RightPanelSurface) {
     onAddFiles: noop,
     onAddPullRequest: noop,
     onAddPullRequests: noop,
+    onAddLinearIssues: noop,
     onAddDevice: noop,
     browserAvailable: true,
     terminalAvailable: true,
@@ -185,6 +188,7 @@ function panel(activeSurface: RightPanelSurface) {
     filesAvailable: true,
     pullRequestAvailable: true,
     pullRequestsAvailable: true,
+    linearIssuesAvailable: false,
     deviceAvailable: true,
     children: (
       <div data-testid="surface-content">

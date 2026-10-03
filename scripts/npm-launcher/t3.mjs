@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Share the installer's runtime cache; pre-0.0.41 services re-enter here over IPC.
+// The `otter-code` npm package shares the installer's runtime cache; pre-0.0.41 services re-enter here over IPC.
 import { spawn, spawnSync } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -14,7 +14,7 @@ const SUPPORTED = ["darwin-arm64", "linux-arm64", "linux-x64", "win32-arm64", "w
 
 function t3Home() {
   const raw = (process.env.T3CODE_HOME || "").trim();
-  if (raw === "") return path.join(os.homedir(), ".t3");
+  if (raw === "") return path.join(os.homedir(), ".otter-code");
   if (raw === "~") return os.homedir();
   if (raw.startsWith("~/") || raw.startsWith("~\\")) return path.join(os.homedir(), raw.slice(2));
   return path.resolve(raw);
@@ -50,7 +50,7 @@ async function download(url, file) {
         shown = step;
         const percent = total ? ` ${step}%` : "";
         process.stderr.write(
-          `\r\x1b[2Kt3: downloading T3 Code ${version}${percent} (${(received / 1048576).toFixed(1)} MB)`,
+          `\r\x1b[2Kotter-code: downloading Otter Code ${version}${percent} (${(received / 1048576).toFixed(1)} MB)`,
         );
       }
     }
@@ -64,7 +64,8 @@ async function download(url, file) {
 async function install(dir, key) {
   const archive = `t3-${version}-${key}.${process.platform === "win32" ? "zip" : "tar.gz"}`;
   const base = (
-    process.env.T3CODE_RELEASE_BASE_URL || "https://github.com/pingdotgg/t3code/releases/download"
+    process.env.T3CODE_RELEASE_BASE_URL ||
+    "https://github.com/otterware-app/otter-code/releases/download"
   ).replace(/\/+$/, "");
   const sums = await (await get(`${base}/v${version}/SHA256SUMS`)).text();
   const expected = /^([0-9a-f]{64})\s+\*?(.+)$/im;
@@ -146,8 +147,8 @@ async function main() {
   const key = `${process.platform}-${process.arch}`;
   if (!SUPPORTED.includes(key)) {
     throw new Error(
-      `no T3 Code CLI build is available for ${key} (supported: ${SUPPORTED.join(", ")}).\n` +
-        "The desktop app is at https://github.com/pingdotgg/t3code/releases",
+      `no Otter Code CLI build is available for ${key} (supported: ${SUPPORTED.join(", ")}).\n` +
+        "The desktop app is at https://github.com/otterware-app/otter-code/releases",
     );
   }
   const dir = path.join(t3Home(), "runtime", "versions", version);
@@ -179,7 +180,7 @@ async function main() {
 }
 
 function fail(error) {
-  process.stderr.write(`t3: ${error.message}\n`);
+  process.stderr.write(`otter-code: ${error.message}\n`);
   process.exit(1);
 }
 

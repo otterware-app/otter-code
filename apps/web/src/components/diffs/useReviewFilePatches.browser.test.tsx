@@ -53,6 +53,7 @@ function Probe({ source }: { source: ReviewDiffPreviewSource }) {
     ignoreWhitespace: false,
     theme: "dark",
     previewInput: { cwd: "/project", metadataOnly: true },
+    sourceRequest: undefined,
     preview: null,
   });
   return (

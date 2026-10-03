@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Builds the `t3` npm package behind `npx t3` / `npm i -g t3`: a launcher
+ * Builds the `otter-code` npm package behind `npx otter-code` / `npm i -g otter-code`: a launcher
  * with no dependencies that downloads this exact version's CLI archive from
  * the GitHub Release on first run (scripts/npm-launcher/t3.mjs).
  * The executables are not published to npm. npm's publish-time scanning held
@@ -8,7 +8,7 @@
  * live, and every install in that window ran a launcher with nothing to
  * launch.
  *
- * Output: `<output-dir>/t3/` (the package tree) and `<output-dir>/t3.tgz`,
+ * Output: `<output-dir>/otter-code/` (the package tree) and `<output-dir>/otter-code.tgz`,
  * which is what gets published.
  */
 import * as NodeRuntime from "@effect/platform-node/NodeRuntime";
@@ -28,7 +28,7 @@ import serverPackageJson from "../apps/server/package.json" with { type: "json" 
 
 import { windowsSystemTar } from "./build-cli-archive.ts";
 
-export const NPM_LAUNCHER_PACKAGE_NAME = "t3";
+export const NPM_LAUNCHER_PACKAGE_NAME = "otter-code";
 
 const encodePackageJson = Schema.encodeEffect(fromJsonStringPretty(Schema.Unknown));
 
@@ -47,10 +47,10 @@ export function npmLauncherPackageManifest(version: string) {
     name: NPM_LAUNCHER_PACKAGE_NAME,
     version,
     description:
-      "T3 Code CLI. Downloads the self-contained executable for this platform from the GitHub Release.",
+      "Otter Code CLI. Downloads the self-contained executable for this platform from the GitHub Release.",
     license: serverPackageJson.license,
     repository: serverPackageJson.repository,
-    bin: { t3: "./bin/t3.mjs" },
+    bin: { "otter-code": "./bin/t3.mjs" },
     files: ["bin", "dist"],
     engines: { node: ">=20.11" },
   };
@@ -115,7 +115,7 @@ const command = Command.make(
     outputDir: Flag.String("output-dir").pipe(Flag.withDefault("npm-packages")),
   },
   buildNpmLauncher,
-).pipe(Command.withDescription("Build the t3 npm launcher package."));
+).pipe(Command.withDescription("Build the otter-code npm launcher package."));
 
 if (import.meta.main) {
   Command.run(command, { version: "0.0.0" }).pipe(

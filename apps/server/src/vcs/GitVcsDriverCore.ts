@@ -515,7 +515,7 @@ function classifyGitFailure(stderr: string): GitCommandFailureReason | null {
     .filter(
       (line) =>
         GIT_DIAGNOSTIC_LINE_PATTERN.test(line) ||
-        (!/^remote:/.test(line) && SSH_TRANSPORT_REFUSAL_PATTERN.test(line)),
+        (!line.startsWith("remote:") && SSH_TRANSPORT_REFUSAL_PATTERN.test(line)),
     )
     .join("\n");
   if (diagnostics.length === 0) return null;
@@ -3650,7 +3650,7 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
       };
     }
 
-    const dirtyRef = sourceKind === "branch-range" ? null : "HEAD";
+    const dirtyRef = sourceKind === "branch-range" || input.source === "all" ? null : "HEAD";
     const review =
       sourceKind === "working-tree"
         ? { baseRef: input.baseRef ?? null, mergeBase: null }
@@ -3774,9 +3774,12 @@ export const makeGitVcsDriverCore = Effect.fn("makeGitVcsDriverCore")(function* 
     return {
       cwd: input.cwd,
       generatedAt: yield* DateTime.now,
-      sources: input.sourceKind
-        ? sources.filter((source) => source.kind === input.sourceKind)
-        : sources,
+      sources:
+        input.source === "all"
+          ? [{ ...sources[1]!, id: "all", kind: "all" as const }]
+          : input.sourceKind
+            ? sources.filter((source) => source.kind === input.sourceKind)
+            : sources,
       ...(input.trackedOnly ? { incomplete: true } : {}),
     };
   });

@@ -2380,6 +2380,54 @@ it.layer(layerTest)("GitVcsDriver core integration", (it) => {
       }),
     );
 
+    it.effect("answers the all source as one source through every preview read", () =>
+      Effect.gen(function* () {
+        const cwd = yield* makeTmpDir();
+        const { initialBranch } = yield* initRepoWithCommit(cwd);
+        const driver = yield* GitVcsDriver.GitVcsDriver;
+        yield* git(cwd, ["checkout", "-b", "feature/all"]);
+        yield* writeTextFile(cwd, "committed.md", "committed\n");
+        yield* git(cwd, ["add", "committed.md"]);
+        yield* git(cwd, ["commit", "-m", "committed"]);
+        yield* writeTextFile(cwd, "README.md", "uncommitted\n");
+        const request = {
+          cwd,
+          baseRef: initialBranch,
+          source: "all",
+          sourceKind: "branch-range",
+        } as const;
+
+        const complete = yield* driver.getReviewDiffPreview(request);
+        assert.deepStrictEqual(
+          complete.sources.map((source) => source.kind),
+          ["all"],
+        );
+        assert.include(complete.sources[0]!.diff, "+committed");
+        assert.include(complete.sources[0]!.diff, "+uncommitted");
+
+        const metadata = yield* driver.getReviewDiffPreview({ ...request, metadataOnly: true });
+        assert.deepStrictEqual(metadata.sources[0]!.files, complete.sources[0]!.files);
+        assert.isTrue(metadata.sources[0]!.patchesDeferred);
+        assert.isEmpty(metadata.sources[0]!.diff);
+
+        const tracked = yield* driver.getReviewDiffPreview({ ...request, trackedOnly: true });
+        assert.isTrue(tracked.incomplete);
+        assert.deepStrictEqual(
+          tracked.sources.map((source) => source.kind),
+          ["all"],
+        );
+
+        const file = yield* driver.getReviewDiffPreview({
+          cwd,
+          baseRef: initialBranch,
+          source: "all",
+          file: { path: "README.md", previousPath: null, sourceKind: "all" },
+        });
+        assert.include(file.sources[0]!.diff, "+uncommitted");
+        assert.notInclude(file.sources[0]!.diff, "+committed");
+      }),
+    );
+
     it.effect("lists the branch's commits newest first, at most 100, and flags the rest", () =>
       Effect.gen(function* () {
         const cwd = yield* makeTmpDir();
@@ -3068,6 +3116,10 @@ it.layer(layerTest)("GitVcsDriver core integration", (it) => {
           yield* writeTextFile(cwd, "tab\tand\nnewline.txt", "unusual path\n");
         }
         yield* git(cwd, ["add", "."]);
+        if ((yield* HostProcess.Platform) !== "win32") {
+          const fs = yield* FileSystem.FileSystem;
+          yield* fs.chmod(`${cwd}/mode-only.sh`, 0o755);
+        }
         yield* git(cwd, ["update-index", "--chmod=+x", "mode-only.sh"]);
         yield* git(cwd, ["commit", "-m", "rename and add files"]);
         const preview = yield* driver.getReviewDiffPreview({

@@ -1089,6 +1089,11 @@ export interface DesktopBridge {
   checkSystemPermission: (pane: SystemSettingsPane) => Promise<boolean>;
   probeRemoteEditors: () => Promise<readonly EditorId[]>;
   pasteAsText: () => Promise<void>;
+  /**
+   * The thread path (`/<environmentId>/<threadId>`) from an `ottercode://` link
+   * the window hasn't opened yet, if any. Optional: older desktop builds lack it.
+   */
+  takePendingThreadLink?: () => Promise<string | null>;
   onMenuAction: (listener: (action: string) => void) => () => void;
   onSnapShotEvent: (listener: (event: DesktopSnapShotEvent) => void) => () => void;
   onQuitShortcut: (listener: (event: QuitShortcutHintEvent) => void) => () => void;

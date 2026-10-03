@@ -60,6 +60,7 @@ import {
 } from "react";
 
 import { useRightPanelStore } from "../../rightPanelStore";
+import { ThreadLinearIssueBadgeControl } from "../linear/ThreadLinearIssueBadge";
 import { useOpenPrLink } from "../../lib/openPullRequestLink";
 import { useUiStateStore } from "../../uiStateStore";
 import { useThreadSelectionStore } from "../../threadSelectionStore";
@@ -1063,6 +1064,24 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
         onOpenPullRequest={handlePrClick}
       />
     ) : null;
+  const handleLinearIssuesClick = () => {
+    // Like the pull request badge: one issue opens its page, several open the list.
+    const [onlyIssue, ...others] = thread.linearIssues ?? [];
+    const panel = useRightPanelStore.getState();
+    if (onlyIssue && others.length === 0) {
+      panel.openLinearIssue(threadRef, { identifier: onlyIssue.identifier, url: onlyIssue.url });
+    } else {
+      panel.open(threadRef, "linear-issues");
+    }
+    if (!props.isRouteThread) onThreadActivate(threadRef);
+  };
+  const linearIssueBadge = (
+    <ThreadLinearIssueBadgeControl
+      environmentId={threadRef.environmentId}
+      issues={thread.linearIssues}
+      onOpen={handleLinearIssuesClick}
+    />
+  );
   const terminalStatusIcon = (
     <ThreadTerminalStatusButton
       threadRef={threadRef}
@@ -1128,6 +1147,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
     !thread.branch &&
     !showsScratchMachine &&
     prBadge === null &&
+    !thread.linearIssues?.length &&
     diff === null &&
     !isRemote &&
     runningTerminalIds.length === 0;
@@ -1154,6 +1174,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
       )}
       {terminalStatusIcon}
       {prBadge}
+      {linearIssueBadge}
       {diff ? (
         <span className="shrink-0 font-mono">
           <span className="text-diff-addition-foreground">+{formatDiffCount(diff.insertions)}</span>{" "}

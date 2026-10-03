@@ -12,6 +12,12 @@ export const RESIZABLE_WIDTH_PROPERTY = "--resizable-width";
 
 export interface UseResizableWidthOptions {
   readonly storageKey: string;
+  /**
+   * Shared key for a panel whose width is stored per context (such as per
+   * thread): a context without its own width starts at the last width dragged
+   * anywhere, and every drag updates it.
+   */
+  readonly fallbackStorageKey?: string | undefined;
   readonly defaultWidth: number;
   readonly minWidth: number;
   readonly maxWidth: number;
@@ -33,7 +39,7 @@ export function useResizableWidth(options: UseResizableWidthOptions): {
   readonly setWidth: (width: number) => void;
   readonly handlers: ResizableWidthHandlers;
 } {
-  const { storageKey, defaultWidth, minWidth, maxWidth, edge } = options;
+  const { storageKey, fallbackStorageKey, defaultWidth, minWidth, maxWidth, edge } = options;
 
   const clamp = (value: number): number => {
     if (!Number.isFinite(value)) return defaultWidth;
@@ -43,7 +49,9 @@ export function useResizableWidth(options: UseResizableWidthOptions): {
   const readWidth = (): number | null => {
     if (typeof window === "undefined") return null;
     try {
-      const stored = getLocalStorageItem(storageKey, WidthSchema);
+      const stored =
+        getLocalStorageItem(storageKey, WidthSchema) ??
+        (fallbackStorageKey ? getLocalStorageItem(fallbackStorageKey, WidthSchema) : null);
       return stored === null ? null : clamp(stored);
     } catch (error) {
       console.error("Could not read persisted panel width.", error);
@@ -60,11 +68,17 @@ export function useResizableWidth(options: UseResizableWidthOptions): {
     host?.style.setProperty(RESIZABLE_WIDTH_PROPERTY, `${clampedWidth}px`);
   });
 
-  const commitWidth = (nextStorageKey: string, nextWidth: number) => {
+  const commitWidth = (
+    nextStorageKey: string,
+    nextFallbackStorageKey: string | undefined,
+    nextWidth: number,
+  ) => {
     // Resizing remains usable for this session when browser storage is unavailable.
     setWidthState({ storageKey: nextStorageKey, width: nextWidth });
     try {
       setLocalStorageItem(nextStorageKey, nextWidth, WidthSchema);
+      if (nextFallbackStorageKey)
+        setLocalStorageItem(nextFallbackStorageKey, nextWidth, WidthSchema);
     } catch (error) {
       console.error("Could not persist panel width.", error);
     }
@@ -77,6 +91,7 @@ export function useResizableWidth(options: UseResizableWidthOptions): {
     // The drag commits to the key and width it started from, even if the panel
     // switches keys before the pointer is released.
     const startStorageKey = storageKey;
+    const startFallbackStorageKey = fallbackStorageKey;
     const startWidth = clampedWidth;
     return {
       width: startWidth,
@@ -87,7 +102,7 @@ export function useResizableWidth(options: UseResizableWidthOptions): {
         return nextWidth;
       },
       finish(finalWidth, moved) {
-        if (moved) commitWidth(startStorageKey, finalWidth);
+        if (moved) commitWidth(startStorageKey, startFallbackStorageKey, finalWidth);
         else restoreWidth(host);
       },
       cleanup(committed) {
@@ -105,7 +120,7 @@ export function useResizableWidth(options: UseResizableWidthOptions): {
 
   return {
     width: clampedWidth,
-    setWidth: (value) => commitWidth(storageKey, clamp(value)),
+    setWidth: (value) => commitWidth(storageKey, fallbackStorageKey, clamp(value)),
     handlers: {
       ref: drag.ref,
       onPointerDown: drag.onPointerDown,

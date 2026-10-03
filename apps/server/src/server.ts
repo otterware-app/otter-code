@@ -8,6 +8,8 @@ import * as StorageCleanup from "./storageCleanup.ts";
 import * as PullRequestSyncReactor from "./orchestration-v2/PullRequestSyncReactor.ts";
 import * as PullRequestWatchReactor from "./orchestration-v2/PullRequestWatchReactor.ts";
 import * as DelegatedTaskQuestionReactor from "./orchestration-v2/DelegatedTaskQuestionReactor.ts";
+import * as LinearIssueSyncReactor from "./linear/LinearIssueSyncReactor.ts";
+import * as LinearSessionMirror from "./linear/LinearSessionMirror.ts";
 // @effect-diagnostics nodeBuiltinImport:off
 import * as NodeHttp from "node:http";
 
@@ -582,6 +584,20 @@ const layerRuntimeCoreDependenciesBase = Layer.mergeAll(
       yield* service.start();
     }),
   ).pipe(Layer.provide(DelegatedTaskQuestionReactor.layer), Layer.provide(ProjectionStoreV2.layer)),
+  Layer.effectDiscard(
+    Effect.gen(function* () {
+      const service = yield* LinearIssueSyncReactor.LinearIssueSyncReactor;
+      yield* service.start();
+    }),
+  ).pipe(Layer.provideMerge(LinearIssueSyncReactor.layer), Layer.provide(ProjectionStoreV2.layer)),
+  Layer.effectDiscard(
+    Effect.gen(function* () {
+      const service = yield* LinearSessionMirror.LinearSessionMirror;
+      yield* service.start();
+    }),
+  ).pipe(Layer.provideMerge(LinearSessionMirror.layer)),
+  // Subscribes to `account.rate-limits.updated` so usage bars track live
+  // telemetry instead of waiting for the next status probe.
   ProviderUsageLimitsIngestion.layer,
   layerProviderInstallationRefresh,
   ReplayMarkers.layer,

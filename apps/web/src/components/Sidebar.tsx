@@ -178,6 +178,7 @@ import { buildThreadRouteParams, resolveActiveThreadRouteRef } from "../threadRo
 import { formatRelativeTimeLabel, parseTimestampDate } from "../timestampFormat";
 import type { SidebarThreadSummary } from "../types";
 import { isScratchProject } from "@t3tools/client-runtime/state/projects";
+import { ThreadLinearIssueBadgeControl } from "./linear/ThreadLinearIssueBadge";
 import type { EnvironmentProject } from "@t3tools/client-runtime/state/shell";
 import { cn } from "~/lib/utils";
 import { EnvironmentMachineIcon } from "./EnvironmentMachineIcon";
@@ -2026,6 +2027,24 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
         onOpenPullRequest={handlePrClick}
       />
     ) : null;
+  const handleLinearIssuesClick = useCallback(() => {
+    // Like the pull request badge: one issue opens its page, several open the list.
+    const [onlyIssue, ...others] = thread.linearIssues ?? [];
+    const panel = useRightPanelStore.getState();
+    if (onlyIssue && others.length === 0) {
+      panel.openLinearIssue(threadRef, { identifier: onlyIssue.identifier, url: onlyIssue.url });
+    } else {
+      panel.open(threadRef, "linear-issues");
+    }
+    if (!props.isActive) onThreadActivate(threadRef);
+  }, [onThreadActivate, props.isActive, thread.linearIssues, threadRef]);
+  const linearIssueBadge = (
+    <ThreadLinearIssueBadgeControl
+      environmentId={threadRef.environmentId}
+      issues={thread.linearIssues}
+      onOpen={handleLinearIssuesClick}
+    />
+  );
   const terminalStatusIcon = (
     <ThreadTerminalStatusButton
       threadRef={threadRef}
@@ -2135,6 +2154,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
               </span>
             ) : null}
             {prBadge}
+            {linearIssueBadge}
             {sortable?.isDragging ? (
               dragDestination
             ) : (
@@ -2466,6 +2486,7 @@ const SidebarThreadRow = memo(function SidebarThreadRow(props: SidebarThreadRowP
               )}
               {terminalStatusIcon}
               {prBadge}
+              {linearIssueBadge}
               {diff ? (
                 <span className="shrink-0 font-mono">
                   <span className="text-diff-addition-foreground">

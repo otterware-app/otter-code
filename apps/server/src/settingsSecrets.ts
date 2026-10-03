@@ -2,6 +2,7 @@ import {
   AntigravitySettings,
   ClaudeSettings,
   CodexSettings,
+  LinearSettings,
   type ServerSettings,
   UsageLimitSourceConfig,
   secretSettingsFields,
@@ -31,6 +32,7 @@ const providerSecretFields = new Map([
   ),
 ]);
 const usageLimitSecretFields = secretSettingsFields(UsageLimitSourceConfig);
+const linearSecretFields = secretSettingsFields(LinearSettings);
 const encode = (value: string) => Buffer.from(value, "utf8").toString("base64url");
 
 export interface SettingsSecret {
@@ -142,5 +144,9 @@ export function mapSettingsSecrets(
     ]),
   ) as ServerSettings["usageLimitSources"];
 
-  return { ...settings, providerInstances, sourceControlHosts, usageLimitSources };
+  const linear = mapFields(settings.linear, linearSecretFields, (field) =>
+    field === "apiKey" ? "linear-api-key" : `linear-${encode(field)}`,
+  ) as ServerSettings["linear"];
+
+  return { ...settings, providerInstances, sourceControlHosts, usageLimitSources, linear };
 }

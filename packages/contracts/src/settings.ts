@@ -1013,6 +1013,29 @@ export const BitbucketSettings = Schema.Struct({
 });
 export type BitbucketSettings = typeof BitbucketSettings.Type;
 
+export const LinearTeamProject = Schema.Struct({
+  /** Linear team key, e.g. "ENG". */
+  teamKey: TrimmedNonEmptyString,
+  projectId: ProjectId,
+});
+export type LinearTeamProject = typeof LinearTeamProject.Type;
+
+/**
+ * Linear on this environment. The API key reads issue status for linked
+ * issues; it is redacted before reaching a client, like a hub key. Issues
+ * delegated to the Otter agent run in the team's project, else the default.
+ */
+export const LinearSettings = Schema.Struct({
+  apiKey: TrimmedString.pipe(Schema.withDecodingDefault(Effect.succeed(""))),
+  defaultProjectId: Schema.NullOr(ProjectId).pipe(Schema.withDecodingDefault(Effect.succeed(null))),
+  teamProjects: Schema.Array(LinearTeamProject).pipe(
+    Schema.withDecodingDefault(Effect.succeed([])),
+  ),
+  /** First message of a delegated thread; empty uses `DEFAULT_LINEAR_PROMPT_TEMPLATE`. */
+  promptTemplate: Schema.String.pipe(Schema.withDecodingDefault(Effect.succeed(""))),
+});
+export type LinearSettings = typeof LinearSettings.Type;
+
 export const ObservabilitySettings = Schema.Struct({
   otlpTracesUrl: TrimmedString.pipe(Schema.withDecodingDefault(Effect.succeed(""))),
   otlpMetricsUrl: TrimmedString.pipe(Schema.withDecodingDefault(Effect.succeed(""))),
@@ -1443,6 +1466,7 @@ export const ServerSettings = Schema.Struct({
   usageModelAliases: Schema.Record(TrimmedNonEmptyString, TrimmedNonEmptyString).pipe(
     Schema.withDecodingDefault(Effect.succeed({})),
   ),
+  linear: LinearSettings.pipe(Schema.withDecodingDefault(Effect.succeed({}))),
 });
 export type ServerSettings = typeof ServerSettings.Type;
 
@@ -1744,6 +1768,15 @@ export const ServerSettingsPatch = Schema.Struct({
   /** Each entry replaces one model's mapping; `null` removes it. */
   usageModelAliases: Schema.optionalKey(
     Schema.Record(TrimmedNonEmptyString, Schema.NullOr(TrimmedNonEmptyString)),
+  ),
+  /** Shallow: each present key replaces the stored value, `teamProjects` as a whole list. */
+  linear: Schema.optionalKey(
+    Schema.Struct({
+      apiKey: Schema.optionalKey(TrimmedString),
+      defaultProjectId: Schema.optionalKey(Schema.NullOr(ProjectId)),
+      teamProjects: Schema.optionalKey(Schema.Array(LinearTeamProject)),
+      promptTemplate: Schema.optionalKey(Schema.String),
+    }),
   ),
 });
 export type ServerSettingsPatch = typeof ServerSettingsPatch.Type;

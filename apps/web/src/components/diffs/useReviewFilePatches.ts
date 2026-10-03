@@ -1,6 +1,10 @@
 import { RegistryContext, useAtomValue } from "@effect/atom-react";
 import type { FileDiffMetadata } from "@pierre/diffs";
-import type { EnvironmentId, ReviewDiffPreviewSource } from "@t3tools/contracts";
+import type {
+  EnvironmentId,
+  ReviewDiffPreviewSource,
+  ReviewDiffPreviewSourceRequest,
+} from "@t3tools/contracts";
 import * as AsyncResult from "effect/reactivity/AsyncResult";
 import * as Atom from "effect/reactivity/Atom";
 import {
@@ -19,6 +23,7 @@ export function useReviewFilePatches({
   environmentId,
   cwd,
   source,
+  sourceRequest,
   baseRef,
   ignoreWhitespace,
   theme,
@@ -28,6 +33,8 @@ export function useReviewFilePatches({
   environmentId: EnvironmentId | undefined;
   cwd: string | undefined;
   source: ReviewDiffPreviewSource | null;
+  /** The preview's `source` request, repeated so each file is read from the same diff. */
+  sourceRequest: ReviewDiffPreviewSourceRequest | undefined;
   baseRef: string | null;
   ignoreWhitespace: boolean;
   theme: "light" | "dark";
@@ -72,6 +79,7 @@ export function useReviewFilePatches({
                     request: {
                       cwd,
                       ...(baseRef ? { baseRef } : {}),
+                      ...(sourceRequest ? { source: sourceRequest } : {}),
                       ignoreWhitespace,
                       file: {
                         path: file.path,
@@ -83,7 +91,7 @@ export function useReviewFilePatches({
                 }),
               };
             }),
-    [environmentId, cwd, source, files, indices, scope, baseRef, ignoreWhitespace],
+    [environmentId, cwd, source, sourceRequest, files, indices, scope, baseRef, ignoreWhitespace],
   );
   const previousPreview = useRef({ scope, revision, queries: [] as typeof queries });
   useEffect(() => {

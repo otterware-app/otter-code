@@ -73,7 +73,7 @@ export function resolveVersionMismatch(
   return {
     clientVersion: normalizedClientVersion,
     serverVersion: normalizedServerVersion,
-    hint: "Version mismatch. Try syncing the client and server to the same T3 Code version.",
+    hint: "Version mismatch. Try syncing the client and server to the same Otter Code version.",
   };
 }
 
@@ -101,7 +101,7 @@ export function manualServerUpdateCommand(
 ): string {
   const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
   if (installation?.kind === "npm-global") {
-    return `npm install --global --prefix ${quote(installation.prefix)} t3@${targetVersion}`;
+    return `npm install --global --prefix ${quote(installation.prefix)} otter-code@${targetVersion}`;
   }
   if (installation?.kind === "t3-launcher") {
     // An inherited T3CODE_HOME would otherwise send the update to a home the launcher is not in.
@@ -109,7 +109,7 @@ export function manualServerUpdateCommand(
   }
   const runner =
     installation?.kind === "pnpm-dlx" ? "pnpm dlx" : installation?.kind === "bunx" ? "bunx" : "npx";
-  return `${runner} t3@${targetVersion}`;
+  return `${runner} otter-code@${targetVersion}`;
 }
 
 export function buildVersionMismatchDismissalKey(

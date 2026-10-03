@@ -126,7 +126,7 @@ export function SettingsNotificationsRouteScreen() {
           contentContainerClassName="px-5 pt-4"
         >
           <Text className="text-base text-foreground-muted">
-            Notifications require T3 Connect in this app build.
+            Notifications require Otter Connect in this app build.
           </Text>
         </ScrollView>
       </SettingsScreen>
@@ -207,7 +207,7 @@ function ConfiguredSettingsNotificationsRouteScreen() {
       } else {
         Dialog.alert(
           "Couldn't finish enabling notifications",
-          "Notification access was granted, but this device could not be registered with T3 Connect. Notifications will start once registration succeeds.",
+          "Notification access was granted, but this device could not be registered with Otter Connect. Notifications will start once registration succeeds.",
         );
       }
       return;
@@ -237,8 +237,8 @@ function ConfiguredSettingsNotificationsRouteScreen() {
 
   const promptSignIn = () => {
     Dialog.alert(
-      "Sign in to T3 Connect",
-      "Live Activity updates require T3 Connect so relay can deliver updates to this device.",
+      "Sign in to Otter Connect",
+      "Live Activity updates require Otter Connect so relay can deliver updates to this device.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -338,7 +338,7 @@ function ConfiguredSettingsNotificationsRouteScreen() {
     } else {
       Dialog.alert(
         "Couldn't finish enabling activity updates",
-        "This device could not be registered with T3 Connect, so activity updates won't appear yet. They'll start once registration succeeds.",
+        "This device could not be registered with Otter Connect, so activity updates won't appear yet. They'll start once registration succeeds.",
       );
     }
   };
@@ -355,7 +355,7 @@ function ConfiguredSettingsNotificationsRouteScreen() {
 
     Dialog.alert(
       "Disable notifications",
-      "Open system Settings to disable notifications for T3 Code.",
+      "Open system Settings to disable notifications for Otter Code.",
       [
         { text: "Cancel", style: "cancel" },
         { text: "Open Settings", onPress: () => void Linking.openSettings() },
@@ -487,7 +487,7 @@ function ConfiguredSettingsNotificationsRouteScreen() {
                 void openAndroidLiveUpdateSettings().catch(() => {
                   Dialog.alert(
                     "Couldn't open Settings",
-                    "Open Android Settings, select T3 Code, then enable Live Updates in Notifications.",
+                    "Open Android Settings, select Otter Code, then enable Live Updates in Notifications.",
                   );
                 });
               }}

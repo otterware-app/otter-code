@@ -6,6 +6,7 @@ import type {
   ResolvedKeybindingsConfig,
   ScopedThreadRef,
 } from "@t3tools/contracts";
+import { codeLanguageForPath } from "@t3tools/contracts";
 import { filePreviewDelimiter } from "@t3tools/shared/delimitedPreview";
 import {
   isWorkspaceAudioPreviewPath,
@@ -21,10 +22,10 @@ import {
   squashAtomCommandFailure,
 } from "@t3tools/client-runtime/state/runtime";
 import { mediaFileReference } from "@t3tools/client-runtime/media-reference";
-import { FolderTree, Globe2, WrapTextIcon } from "lucide-react";
+import { ArrowLeft, ArrowRight, FolderTree, Globe2, WrapTextIcon } from "lucide-react";
 import { Code2, Eye, Table2 } from "lucide";
 import * as Schema from "effect/Schema";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { isBrowserPreviewFile, openFileInPreview } from "~/browser/openFileInPreview";
 import { useAssetUrlRefresh, useAssetUrlState } from "~/assets/assetUrls";
@@ -57,6 +58,8 @@ import { AudioPreview } from "./AudioPreview";
 import { BrowserDocumentFrame, isPdfPreviewFile } from "./BrowserDocumentFrame";
 import { DelimitedTablePreview } from "./DelimitedTablePreview";
 import FileBrowserPanel from "./FileBrowserPanel";
+import type { FileCodeNavigation } from "./FileCodeIntelligence";
+import { useCodeNavigationHistory } from "./useCodeNavigationHistory";
 import { FileBreadcrumbs } from "./FileBreadcrumbs";
 import { FileMarkdownPreview } from "./FileMarkdownPreview";
 import {
@@ -546,7 +549,10 @@ function useFileLineReveal(
   );
 }
 
+const FileCodeIntelligence = lazy(() => import("./FileCodeIntelligence"));
+
 interface EditableFileSurfaceProps {
+  codeNavigation?: FileCodeNavigation;
   environmentId: EnvironmentId;
   cwd: string;
   relativePath: string;
@@ -575,7 +581,9 @@ function EditableFileSurface({
   wordWrap,
   onPostRender,
   onPendingChange,
+  codeNavigation,
 }: EditableFileSurfaceProps) {
+  const [editorAttached, setEditorAttached] = useState(false);
   const addReviewComment = useComposerDraftStore((store) => store.addReviewComment);
   const removeReviewComment = useComposerDraftStore((store) => store.removeReviewComment);
   const [lineAnnotations, setLineAnnotations] = useState<FileCommentLineAnnotation[]>([]);
@@ -599,6 +607,7 @@ function EditableFileSurface({
   const editor = useMemo(
     () =>
       new Editor<FileCommentAnnotationGroup>({
+        onAttach: () => setEditorAttached(true),
         persistState: true,
         persistStateStorage: "inMemory",
         onChange: (file, nextLineAnnotations) => {
@@ -744,7 +753,7 @@ function EditableFileSurface({
     return installFileEditorDismissal({
       root,
       editor,
-      isBlocked: () => hasOpenCommentForm,
+      isBlocked: () => hasOpenCommentForm || root.querySelector("[data-file-code-popup]") !== null,
       onDismiss: () => setSelectedRange(null),
     });
   }, [editor, hasOpenCommentForm, setSelectedRange]);
@@ -779,7 +788,20 @@ function EditableFileSurface({
 
   return (
     <EditProvider editor={editor}>
-      <div ref={surfaceRef} className="flex min-h-0 flex-1">
+      <div ref={surfaceRef} className="flex min-h-0 min-w-0 flex-1 flex-col">
+        {codeNavigation && editorAttached ? (
+          <Suspense fallback={null}>
+            <FileCodeIntelligence
+              {...codeNavigation}
+              editor={editor}
+              root={surfaceRef}
+              environmentId={environmentId}
+              cwd={cwd}
+              relativePath={relativePath}
+              contents={contents}
+            />
+          </Suspense>
+        ) : null}
         <Virtualizer
           className="file-preview-virtualizer min-h-0 flex-1 overflow-auto"
           config={{
@@ -925,6 +947,12 @@ export default function FilePreviewPanel({
 }: FilePreviewPanelProps) {
   const relativePath =
     attachment === undefined ? resolveFilePreviewPath(requestedPath, cwd) : requestedPath;
+  const codeNavigation = useCodeNavigationHistory({
+    relativePath,
+    revealLine,
+    revealRequestId,
+    onOpenFile,
+  });
   const { resolvedTheme } = useTheme();
   const wordWrap = useClientSettings((settings) => settings.wordWrap);
   const primaryEnvironmentId = usePrimaryEnvironmentId();
@@ -1036,7 +1064,11 @@ export default function FilePreviewPanel({
     isBrowserPreviewFile(previewPath);
   const absolutePath =
     relativePath && attachment === undefined ? resolvePathLinkTarget(relativePath, cwd) : null;
-  const onFilePostRender = useFileLineReveal(relativePath, revealLine, revealRequestId);
+  const onFilePostRender = useFileLineReveal(
+    relativePath,
+    codeNavigation.reveal?.line ?? revealLine,
+    codeNavigation.reveal?.id ?? revealRequestId,
+  );
   useWorkspaceMutationRefresh({
     enabled:
       attachment === undefined &&
@@ -1099,6 +1131,25 @@ export default function FilePreviewPanel({
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
       {relativePath && attachment === undefined ? (
         <div className={FILE_SURFACE_SUBHEADER_CLASS} data-surface-subheader>
+          {/* A definition outside the workspace opens read-only, without the code toolbar. */}
+          {isHostFile && (codeNavigation.back || codeNavigation.forward) ? (
+            <>
+              <FileSurfaceAction
+                label="Go back"
+                disabled={!codeNavigation.back}
+                onPress={() => codeNavigation.back?.()}
+              >
+                <ArrowLeft className="size-3.5" />
+              </FileSurfaceAction>
+              <FileSurfaceAction
+                label="Go forward"
+                disabled={!codeNavigation.forward}
+                onPress={() => codeNavigation.forward?.()}
+              >
+                <ArrowRight className="size-3.5" />
+              </FileSurfaceAction>
+            </>
+          ) : null}
           <ScrollArea
             radius="none"
             ref={breadcrumbRef}
@@ -1280,10 +1331,21 @@ export default function FilePreviewPanel({
                   composerDraftTarget={composerDraftTarget}
                   contents={file.data.contents}
                   resolvedTheme={resolvedTheme}
-                  revealRequestId={revealRequestId}
+                  revealRequestId={codeNavigation.reveal?.id ?? revealRequestId}
                   wordWrap={wordWrap}
                   onPostRender={onFilePostRender}
                   onPendingChange={onPendingChange}
+                  {...(codeLanguageForPath(relativePath)
+                    ? {
+                        codeNavigation: {
+                          reveal: codeNavigation.reveal,
+                          workspaceMutationId,
+                          onNavigate: codeNavigation.navigate,
+                          onBack: codeNavigation.back,
+                          onForward: codeNavigation.forward,
+                        },
+                      }
+                    : {})}
                 />
               </DiffWorkerPoolProvider>
             )

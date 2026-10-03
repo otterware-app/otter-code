@@ -46,6 +46,11 @@ import {
   WindowsDesktopBuildPrerequisitesMissingError,
   WindowsPackagedPayloadValidationError,
   stageCursorSdkPlatformPackages,
+  stageTypeScriptServerPackage,
+  TSSERVER_EXTRA_RESOURCES,
+  TSSERVER_FILE_EXCLUSIONS,
+  TSSERVER_RESOURCE_SOURCE_DIR,
+  TypeScriptServerLibMissingError,
   WINDOWS_PACKAGED_PAYLOAD_FILE_LIMIT,
   WINDOWS_SERVER_ASAR_IGNORE_GLOBS,
   WINDOWS_SERVER_ASAR_RESOURCE,
@@ -628,6 +633,41 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
           assert.isTrue(
             WINDOWS_SERVER_ASAR_IGNORE_GLOBS.some((glob) =>
               NodePath.matchesGlob(packagedPath, glob),
+            ),
+          );
+        }
+      }),
+    ),
+  );
+
+  it.effect("ships tsserver with its standard library outside asar", () =>
+    Effect.scoped(
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const root = yield* fs.makeTempDirectoryScoped({ prefix: "t3-tsserver-" });
+        const nodeModules = path.join(root, "node_modules");
+        const packageDir = path.join(nodeModules, "typescript-tsserver");
+        yield* fs.makeDirectory(path.join(packageDir, "lib"), { recursive: true });
+        yield* fs.writeFileString(path.join(packageDir, "lib/tsserver.js"), "");
+
+        const destination = path.join(root, TSSERVER_RESOURCE_SOURCE_DIR);
+        const missing = yield* Effect.flip(stageTypeScriptServerPackage(nodeModules, destination));
+        assert.instanceOf(missing, TypeScriptServerLibMissingError);
+
+        yield* fs.writeFileString(path.join(packageDir, "lib/lib.es5.d.ts"), "interface Set {}");
+        yield* stageTypeScriptServerPackage(nodeModules, destination);
+        assert.equal(
+          yield* fs.readFileString(path.join(destination, "lib/lib.es5.d.ts")),
+          "interface Set {}",
+        );
+        for (const packagedPath of [
+          "node_modules/typescript-tsserver/lib/tsserver.js",
+          `${TSSERVER_RESOURCE_SOURCE_DIR}/lib/lib.es5.d.ts`,
+        ]) {
+          assert.isTrue(
+            TSSERVER_FILE_EXCLUSIONS.some((glob) =>
+              NodePath.matchesGlob(packagedPath, glob.slice(1)),
             ),
           );
         }

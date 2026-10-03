@@ -122,7 +122,9 @@ export const layer = Api.make(
       main: import.meta.filename,
       compatibility: {
         date: "2026-05-22",
-        flags: ["nodejs_compat"],
+        // Otter Code keeps tunnels in the relay's own zone. Without this flag, fetches to
+        // same-zone tunnel hostnames bypass Cloudflare's front door and fail with 530.
+        flags: ["nodejs_compat", "global_fetch_strictly_public"],
       },
       // Requests run several Postgres queries in sequence. At the user's edge
       // each one paid the round trip to the database (~300 ms from JNB); next

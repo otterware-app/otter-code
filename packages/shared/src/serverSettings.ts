@@ -270,6 +270,8 @@ export function applyServerSettingsPatch(
     sourceControlHosts: sourceControlHostsPatch,
     usagePriceOverrides: usagePriceOverridesPatch,
     usageModelAliases: usageModelAliasesPatch,
+    // Shallow per key: deepMerge would merge the team list index by index.
+    linear: linearPatch,
     // Entry replacement: deepMerge would keep keys the client meant to clear.
     projectSettingsOverrides: projectSettingsOverridesPatch,
     // Already translated into `projectSettingsOverrides` above; the legacy
@@ -382,6 +384,7 @@ export function applyServerSettingsPatch(
           },
         }
       : {}),
+    ...(linearPatch !== undefined ? { linear: { ...current.linear, ...linearPatch } } : {}),
     ...(projectSettingsOverridesPatch !== undefined
       ? {
           projectSettingsOverrides: Object.fromEntries(

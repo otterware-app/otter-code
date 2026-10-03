@@ -11,6 +11,16 @@ import * as HttpApiBuilder from "effect/http-api/HttpApiBuilder";
 
 import * as EnvironmentAuth from "../auth/EnvironmentAuth.ts";
 import * as AuthHttp from "../auth/http.ts";
+import * as ServerSecretStore from "../auth/ServerSecretStore.ts";
+import * as ServerEnvironment from "../environment/ServerEnvironment.ts";
+import * as ServerConfig from "../config.ts";
+import { GitWorkflowService } from "../git/GitWorkflowService.ts";
+import { LinearIssueSyncReactor } from "../linear/LinearIssueSyncReactor.ts";
+import { OrchestratorV2 } from "../orchestration-v2/Orchestrator.ts";
+import { ThreadLaunchService } from "../orchestration-v2/ThreadLaunchService.ts";
+import { ThreadManagementService } from "../orchestration-v2/ThreadManagementService.ts";
+import { ProjectService } from "../project/ProjectService.ts";
+import { ServerSettingsService } from "../serverSettings.ts";
 import * as CloudLink from "./CloudLink.ts";
 import * as ConnectHttp from "./http.ts";
 
@@ -33,6 +43,21 @@ const answerHealthWith = async (failure: HealthFailure) => {
     // The session-gated routes are declared too; this request never reaches them.
     Layer.provide(AuthHttp.layerAuthenticatedAuth),
     Layer.provide(Layer.mock(EnvironmentAuth.EnvironmentAuth)({})),
+    // Only the Linear routes read these.
+    Layer.provide(Layer.mock(ServerSecretStore.ServerSecretStore)({})),
+    Layer.provide(Layer.mock(ServerEnvironment.ServerEnvironment)({})),
+    Layer.provideMerge(
+      Layer.mergeAll(
+        Layer.mock(LinearIssueSyncReactor)({}),
+        Layer.mock(OrchestratorV2)({}),
+        Layer.mock(ThreadLaunchService)({}),
+        Layer.mock(ThreadManagementService)({}),
+        Layer.mock(ProjectService)({}),
+        Layer.mock(GitWorkflowService)({}),
+        Layer.mock(ServerSettingsService)({}),
+        ServerConfig.layerTest(process.cwd(), { prefix: "t3code-connect-http-test-" }),
+      ),
+    ),
     Layer.provideMerge(
       HttpPlatform.layer.pipe(
         Layer.provideMerge(NodeServices.layer),

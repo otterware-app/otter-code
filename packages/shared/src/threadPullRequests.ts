@@ -1,5 +1,6 @@
 import type {
   RepositoryIdentity,
+  ThreadLinearIssueLink,
   SourceControlProviderKind,
   ThreadLinkedPullRequest,
   ThreadPullRequestKey,
@@ -308,12 +309,17 @@ export function resolveThreadPullRequestBadge(
   return { kind: "pull-request", others: visible.length - 1, state };
 }
 
-/** Search terms for visible PR links, the legacy projection, and the branch PR. */
+/** Search terms for PR links, the legacy projection, the branch PR, and Linear issues. */
 export function threadPullRequestSearchTerms(thread: {
   readonly pullRequests?: ReadonlyArray<ThreadPullRequestLink> | undefined;
   readonly linkedPullRequest?: ThreadLinkedPullRequest | null | undefined;
   readonly branchPullRequest?: ThreadLinkedPullRequest | null | undefined;
+  readonly linearIssues?: ReadonlyArray<ThreadLinearIssueLink> | undefined;
 }): string[] {
+  const linearTerms = (thread.linearIssues ?? []).flatMap((issue) => [
+    issue.identifier,
+    issue.snapshot?.title ?? "",
+  ]);
   const branch = thread.branchPullRequest;
   const terms = branch
     ? [`#${branch.number}`, `${branch.repository}#${branch.number}`, branch.url]
@@ -326,12 +332,16 @@ export function threadPullRequestSearchTerms(thread: {
         link.url,
         link.snapshot?.title ?? "",
       ]),
+      linearTerms,
     );
   }
   const legacy = thread.linkedPullRequest;
   return legacy
-    ? terms.concat([`#${legacy.number}`, `${legacy.repository}#${legacy.number}`, legacy.url])
-    : terms;
+    ? terms.concat(
+        [`#${legacy.number}`, `${legacy.repository}#${legacy.number}`, legacy.url],
+        linearTerms,
+      )
+    : terms.concat(linearTerms);
 }
 
 /** Older V2 event payloads stored one link; an explicit empty array means it was unlinked. */

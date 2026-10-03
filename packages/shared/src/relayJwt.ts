@@ -14,6 +14,10 @@ export const RELAY_MANAGED_TUNNEL_RECOVERY_TYP = "t3-env-managed-tunnel-recovery
 export const RELAY_HOOK_DELIVERY_TYP = "t3-relay-hook-delivery+jwt";
 /** Header carrying the signed proof that a webhook request came from the relay. */
 export const RELAY_HOOK_DELIVERY_HEADER = "x-t3-relay-delivery";
+export const RELAY_LINEAR_SESSION_REQUEST_TYP = "t3-cloud-linear-session+jwt";
+export const RELAY_LINEAR_SESSION_RESPONSE_TYP = "t3-env-linear-session+jwt";
+export const RELAY_LINEAR_PROMPT_REQUEST_TYP = "t3-cloud-linear-prompt+jwt";
+export const RELAY_LINEAR_CHANGES_REQUEST_TYP = "t3-cloud-linear-changes+jwt";
 
 export class RelayJwtError extends Schema.TaggedError<RelayJwtError>()("RelayJwtError", {
   operation: Schema.Literals(["sign", "verify"]),

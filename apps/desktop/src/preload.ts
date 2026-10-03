@@ -10,6 +10,7 @@ import { exposeClerkBridge } from "@clerk/electron/preload";
 import { contextBridge, ipcRenderer, webFrame, webUtils } from "electron";
 
 import * as IpcChannels from "./ipc/channels.ts";
+import * as PreviewExtensionChannels from "./preview/extensions/channels.ts";
 
 const SNAP_SHOT_EVENT_TYPES = new Set([
   "requested",
@@ -407,6 +408,36 @@ contextBridge.exposeInMainWorld("desktopBridge", {
       ipcRenderer.on(IpcChannels.PREVIEW_POINTER_EVENT_CHANNEL, wrappedListener);
       return () =>
         ipcRenderer.removeListener(IpcChannels.PREVIEW_POINTER_EVENT_CHANNEL, wrappedListener);
+    },
+  },
+  previewExtensions: {
+    list: () => ipcRenderer.invoke(PreviewExtensionChannels.LIST_CHANNEL),
+    actions: (webContentsId) =>
+      ipcRenderer.invoke(PreviewExtensionChannels.ACTIONS_CHANNEL, webContentsId),
+    runAction: (input) => ipcRenderer.invoke(PreviewExtensionChannels.RUN_ACTION_CHANNEL, input),
+    setActiveTab: (webContentsId) =>
+      ipcRenderer.invoke(PreviewExtensionChannels.SET_ACTIVE_TAB_CHANNEL, webContentsId),
+    openOptions: (extensionId) =>
+      ipcRenderer.invoke(PreviewExtensionChannels.OPEN_OPTIONS_CHANNEL, extensionId),
+    openWebStore: () => ipcRenderer.invoke(PreviewExtensionChannels.OPEN_WEB_STORE_CHANNEL),
+    setEnabled: (extensionId, enabled) =>
+      ipcRenderer.invoke(PreviewExtensionChannels.SET_ENABLED_CHANNEL, extensionId, enabled),
+    remove: (extensionId) =>
+      ipcRenderer.invoke(PreviewExtensionChannels.REMOVE_CHANNEL, extensionId),
+    loadUnpacked: () => ipcRenderer.invoke(PreviewExtensionChannels.LOAD_UNPACKED_CHANNEL),
+    onChanged: (listener) => {
+      const wrappedListener = () => listener();
+      ipcRenderer.on(PreviewExtensionChannels.CHANGED_CHANNEL, wrappedListener);
+      return () =>
+        ipcRenderer.removeListener(PreviewExtensionChannels.CHANGED_CHANNEL, wrappedListener);
+    },
+    onOpenTab: (listener) => {
+      const wrappedListener = (_event: Electron.IpcRendererEvent, url: unknown) => {
+        if (typeof url === "string") listener(url);
+      };
+      ipcRenderer.on(PreviewExtensionChannels.OPEN_TAB_CHANNEL, wrappedListener);
+      return () =>
+        ipcRenderer.removeListener(PreviewExtensionChannels.OPEN_TAB_CHANNEL, wrappedListener);
     },
   },
 } satisfies DesktopBridge);

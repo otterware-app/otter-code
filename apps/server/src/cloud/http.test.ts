@@ -33,6 +33,13 @@ import * as ServerEnvironment from "../environment/ServerEnvironment.ts";
 import * as SqlitePersistence from "../persistence/Sqlite.ts";
 import * as AgentAwarenessRelay from "../relay/AgentAwarenessRelay.ts";
 import * as CliTokenManager from "./CliTokenManager.ts";
+import { GitWorkflowService } from "../git/GitWorkflowService.ts";
+import { LinearIssueSyncReactor } from "../linear/LinearIssueSyncReactor.ts";
+import { OrchestratorV2 } from "../orchestration-v2/Orchestrator.ts";
+import { ThreadLaunchService } from "../orchestration-v2/ThreadLaunchService.ts";
+import { ThreadManagementService } from "../orchestration-v2/ThreadManagementService.ts";
+import { ProjectService } from "../project/ProjectService.ts";
+import { ServerSettingsService } from "../serverSettings.ts";
 import * as CloudLink from "./CloudLink.ts";
 import * as ConnectHttp from "./http.ts";
 import * as ConnectReachability from "./ConnectReachability.ts";
@@ -81,7 +88,14 @@ const layerLinkProofRoutes = HttpApiBuilder.layer(LinkProofTestApi).pipe(
     Layer.mock(ConnectReachability.ConnectReachability)({ latest: Effect.succeed(Option.none()) }),
   ),
   Layer.provide(EnvironmentAuth.layer),
-  Layer.provide([
+  Layer.provideMerge([
+    Layer.mock(LinearIssueSyncReactor)({}),
+    Layer.mock(OrchestratorV2)({}),
+    Layer.mock(ThreadLaunchService)({}),
+    Layer.mock(ThreadManagementService)({}),
+    Layer.mock(ProjectService)({}),
+    Layer.mock(GitWorkflowService)({}),
+    Layer.mock(ServerSettingsService)({}),
     SqlitePersistence.layerMemory,
     ServerEnvironment.layerIdentity,
     Layer.mock(ServerEnvironment.ServerEnvironment)({
@@ -105,7 +119,7 @@ const layerLinkProofRoutes = HttpApiBuilder.layer(LinkProofTestApi).pipe(
     ),
   ]),
   Layer.provideMerge(ServerSecretStore.layer),
-  Layer.provide(layerConfig),
+  Layer.provideMerge(layerConfig),
   Layer.provideMerge(HttpPlatform.layer.pipe(Layer.provideMerge(Etag.layerWeak))),
   Layer.provideMerge(NodeServices.layer),
 );

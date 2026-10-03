@@ -38,6 +38,7 @@ import { EnvironmentIconMenu } from "./EnvironmentIconPicker";
 import { FoldedSettingsSection } from "./FoldedSettingsSection";
 import { LoadBalancingSettings } from "./LoadBalancingSettings";
 import { GitHubRoutingSettings } from "./GitHubRoutingSettings";
+import { LinearSettings } from "./LinearAgentSettings";
 import { Input } from "../ui/input";
 import {
   Dialog,
@@ -1532,6 +1533,7 @@ export function ConnectionsSettings() {
           }}
         />
       ) : null}
+      <LinearSettings primaryEnvironmentId={primaryEnvironmentId} />
       <LoadBalancingSettings environments={loadBalancingEnvironments} />
       <GitHubRoutingSettings environments={loadBalancingEnvironments} />
     </SettingsPageContainer>

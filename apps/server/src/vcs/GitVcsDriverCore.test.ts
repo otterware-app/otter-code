@@ -331,7 +331,7 @@ it.effect("uses stable diagnostics for every parsed non-repository command", () 
 
     assert.deepStrictEqual(commands, [
       { args: ["rev-parse", "--git-path", "index"], lcAll: "C" },
-      { args: ["status", "--porcelain=2", "--branch"], lcAll: "C" },
+      { args: ["status", "--porcelain=2", "-z", "--branch"], lcAll: "C" },
       { args: ["rev-parse", "--abbrev-ref", "HEAD"], lcAll: "C" },
       { args: ["rev-parse", "--git-common-dir"], lcAll: "C" },
     ]);
@@ -353,6 +353,59 @@ it.effect("invalidates origin remote cache when a driver mutation adds origin", 
 
     const after = yield* driver.statusDetailsLocal(cwd);
     assert.equal(after.hasOriginRemote, true);
+  }).pipe(Effect.provide(TestLayer)),
+);
+
+it.effect("lists each working tree change once, including renames", () =>
+  Effect.gen(function* () {
+    const driver = yield* GitVcsDriver.GitVcsDriver;
+    const cwd = yield* makeTmpDir();
+    yield* initRepoWithCommit(cwd);
+    yield* writeTextFile(cwd, "apps/desktop/src/moved.ts", "one\ntwo\n");
+    yield* writeTextFile(cwd, "apps/desktop/src/edited.ts", "one\ntwo\nthree\nfour\n");
+    yield* git(cwd, ["add", "."]);
+    yield* git(cwd, ["commit", "-m", "desktop files"]);
+    // Shared path segments make git abbreviate renames as `{apps/desktop => packages/core}/...`.
+    const fileSystem = yield* FileSystem.FileSystem;
+    yield* fileSystem.makeDirectory(`${cwd}/packages/core/src`, { recursive: true });
+    yield* git(cwd, ["mv", "apps/desktop/src/moved.ts", "packages/core/src/moved.ts"]);
+    yield* git(cwd, ["mv", "apps/desktop/src/edited.ts", "packages/core/src/edited.ts"]);
+    yield* writeTextFile(cwd, "packages/core/src/edited.ts", "one\ntwo\nthree\nFOUR\n");
+    yield* writeTextFile(cwd, "README.md", "# changed\n");
+    yield* writeTextFile(cwd, "staged.txt", "staged\n");
+    yield* git(cwd, ["add", "staged.txt"]);
+    yield* writeTextFile(cwd, "untracked file.txt", "new\n");
+
+    const status = yield* driver.statusDetailsLocal(cwd);
+
+    assert.deepStrictEqual(status.workingTree.files, [
+      { path: "packages/core/src/edited.ts", insertions: 1, deletions: 1 },
+      { path: "packages/core/src/moved.ts", insertions: 0, deletions: 0 },
+      { path: "README.md", insertions: 1, deletions: 1 },
+      { path: "staged.txt", insertions: 1, deletions: 0 },
+      { path: "untracked file.txt", insertions: 0, deletions: 0 },
+    ]);
+    assert.equal(status.workingTree.insertions, 3);
+    assert.equal(status.workingTree.deletions, 2);
+  }).pipe(Effect.provide(TestLayer)),
+);
+
+it.effect("lists staged and unstaged changes before the first commit", () =>
+  Effect.gen(function* () {
+    const driver = yield* GitVcsDriver.GitVcsDriver;
+    const cwd = yield* makeTmpDir();
+    yield* driver.initRepo({ cwd });
+    yield* writeTextFile(cwd, "staged.txt", "one\n");
+    yield* git(cwd, ["add", "staged.txt"]);
+    yield* writeTextFile(cwd, "staged.txt", "one\ntwo\n");
+    yield* writeTextFile(cwd, "untracked.txt", "new\n");
+
+    const status = yield* driver.statusDetailsLocal(cwd);
+
+    assert.deepStrictEqual(status.workingTree.files, [
+      { path: "staged.txt", insertions: 2, deletions: 0 },
+      { path: "untracked.txt", insertions: 0, deletions: 0 },
+    ]);
   }).pipe(Effect.provide(TestLayer)),
 );
 
@@ -1595,6 +1648,10 @@ it.layer(TestLayer)("GitVcsDriver core integration", (it) => {
         }
         yield* git(cwd, ["add", "."]);
         yield* git(cwd, ["update-index", "--chmod=+x", "mode-only.sh"]);
+        if ((yield* HostProcessPlatform) !== "win32") {
+          const fileSystem = yield* FileSystem.FileSystem;
+          yield* fileSystem.chmod(`${cwd}/mode-only.sh`, 0o755);
+        }
         yield* git(cwd, ["commit", "-m", "rename and add files"]);
         const preview = yield* driver.getReviewDiffPreview({
           cwd,
@@ -1909,6 +1966,103 @@ it.layer(TestLayer)("GitVcsDriver core integration", (it) => {
             [{ path: "feature.txt", previousPath: null, additions: 1, deletions: 0 }],
           );
         }
+      }),
+    );
+  });
+
+  describe("review diff scopes", () => {
+    it.effect("combines committed, uncommitted and untracked work against the merge base", () =>
+      Effect.gen(function* () {
+        const cwd = yield* makeTmpDir();
+        const { initialBranch } = yield* initRepoWithCommit(cwd);
+        const driver = yield* GitVcsDriver.GitVcsDriver;
+        yield* git(cwd, ["checkout", "-b", "feature/all"]);
+        yield* writeTextFile(cwd, "committed.ts", "committed\n");
+        yield* git(cwd, ["add", "committed.ts"]);
+        yield* git(cwd, ["commit", "-m", "add committed"]);
+        yield* writeTextFile(cwd, "README.md", "# dirty\n");
+        yield* writeTextFile(cwd, "untracked.ts", "untracked\n");
+
+        const preview = yield* driver.getReviewDiffPreview({
+          cwd,
+          baseRef: initialBranch,
+          source: "all",
+        });
+
+        assert.deepStrictEqual(
+          preview.sources.map((source) => [source.kind, source.baseRef]),
+          [["all", initialBranch]],
+        );
+        const diff = preview.sources[0]?.diff;
+        assert.include(diff, "+++ b/committed.ts");
+        assert.include(diff, "+++ b/README.md");
+        assert.include(diff, "+++ b/untracked.ts");
+
+        const contents = yield* driver.getReviewDiffFileContents(
+          makeReviewDiffFileContentsInput(cwd, { sourceKind: "all", baseRef: initialBranch }),
+        );
+        assert.deepStrictEqual(contents, { oldContents: "# test\n", newContents: "# dirty\n" });
+      }),
+    );
+
+    it.effect("lists branch commits newest first and diffs one against its parent", () =>
+      Effect.gen(function* () {
+        const cwd = yield* makeTmpDir();
+        const { initialBranch } = yield* initRepoWithCommit(cwd);
+        const driver = yield* GitVcsDriver.GitVcsDriver;
+        yield* git(cwd, ["checkout", "-b", "feature/commits"]);
+        yield* writeTextFile(cwd, "first.ts", "first\n");
+        yield* git(cwd, ["add", "first.ts"]);
+        yield* git(cwd, ["commit", "-m", "add first"]);
+        yield* writeTextFile(cwd, "second.ts", "second\n");
+        yield* git(cwd, ["add", "second.ts"]);
+        yield* git(cwd, ["commit", "-m", "add second"]);
+
+        const listed = yield* driver.listReviewCommits({ cwd, baseRef: initialBranch });
+        const { commits } = listed;
+        assert.deepStrictEqual(
+          commits.map((commit) => commit.subject),
+          ["add second", "add first"],
+        );
+        assert.strictEqual(listed.baseRef, initialBranch);
+        assert.strictEqual(listed.truncated, false);
+        assert.isTrue(commits.every((commit) => (commit.authorName ?? "").length > 0));
+        const first = commits[1]!;
+
+        const preview = yield* driver.getReviewDiffPreview({
+          cwd,
+          source: { commit: first.sha.slice(0, 7) },
+        });
+        const [commit] = preview.sources;
+        assert.strictEqual(commit?.kind, "commit");
+        assert.strictEqual(commit?.headRef, first.sha);
+        assert.include(commit?.diff, "+++ b/first.ts");
+        assert.notInclude(commit?.diff, "second.ts");
+
+        const contents = yield* driver.getReviewDiffFileContents(
+          makeReviewDiffFileContentsInput(cwd, {
+            sourceKind: "commit",
+            changeType: "new",
+            baseRef: commit!.baseRef,
+            headRef: first.sha,
+            oldPath: "first.ts",
+            newPath: "first.ts",
+          }),
+        );
+        assert.deepStrictEqual(contents, { oldContents: "", newContents: "first\n" });
+      }),
+    );
+
+    it.effect("diffs a root commit against the empty tree", () =>
+      Effect.gen(function* () {
+        const cwd = yield* makeTmpDir();
+        yield* initRepoWithCommit(cwd);
+        const driver = yield* GitVcsDriver.GitVcsDriver;
+        const root = yield* git(cwd, ["rev-parse", "HEAD"]);
+
+        const preview = yield* driver.getReviewDiffPreview({ cwd, source: { commit: root } });
+
+        assert.include(preview.sources[0]?.diff, "+++ b/README.md");
       }),
     );
   });

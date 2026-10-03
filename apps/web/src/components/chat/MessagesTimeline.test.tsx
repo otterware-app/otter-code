@@ -2541,8 +2541,8 @@ describe("MessagesTimeline", () => {
       />,
     );
 
-    expect(markup).toContain('viewBox="15.5309 37 94.3941 56.96"');
-    expect(markup).toContain("Read a T3 thread");
+    expect(markup).toContain('d="M8.6 5.2 1.8 12l6.8 6.8');
+    expect(markup).toContain("Read an Otter Code thread");
     expect(markup).not.toContain("mcp__t3-code__t3_thread_read");
   });
 

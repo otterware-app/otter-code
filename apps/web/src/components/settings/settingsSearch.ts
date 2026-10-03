@@ -526,16 +526,10 @@ export const SETTINGS_SEARCH_ITEMS = [
   },
   {
     id: "cli-command",
-    title: "t3 command",
+    title: "otter-code command",
     to: "/settings/general",
     searchTerms: ["cli terminal shell path install command line"],
     desktopOnly: true,
-  },
-  {
-    id: "privacy-policy",
-    title: "Privacy policy",
-    to: "/settings/general",
-    searchTerms: ["telemetry analytics usage data tracking legal opt out"],
   },
   {
     id: "telemetry-export",
@@ -915,7 +909,7 @@ export const SETTINGS_SEARCH_ITEMS = [
   {
     id: "t3-connect",
     localEnvironmentOnly: true,
-    title: "T3 Connect",
+    title: "Otter Connect",
     to: "/settings/connections",
     targetId: "connections-environment",
     searchTerms: ["managed tunnel cloud other devices remote"],

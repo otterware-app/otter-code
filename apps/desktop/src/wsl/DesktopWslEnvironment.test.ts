@@ -175,12 +175,12 @@ describe("WSL runtime cache", () => {
 
   it("installs through a temporary directory and only reuses valid completed caches", () => {
     const script = buildWslRuntimeInstallScript(
-      "/mnt/c/Program Files/T3 Code/wsl-runtime.tar.gz",
+      "/mnt/c/Program Files/Otter Code/wsl-runtime.tar.gz",
       "1.2.3-x64",
       "b".repeat(64),
     );
 
-    expect(script).toContain('runtime_parent="$HOME/.t3/wsl-runtime"');
+    expect(script).toContain('runtime_parent="$HOME/.otter-code/wsl-runtime"');
     expect(script).toContain('  [ -f "$ready_marker" ] &&');
     expect(script).toContain('    runtime_entry_runs "$runtime_root" &&');
     expect(script).toContain("if runtime_is_ready; then");
@@ -195,7 +195,7 @@ describe("WSL runtime cache", () => {
     // The release archive wraps everything in one `t3-<version>-linux-x64/`
     // directory; stripping it puts the executable at `$runtime_root/t3`.
     expect(script).toContain(
-      "tar -xzf '/mnt/c/Program Files/T3 Code/wsl-runtime.tar.gz' -C \"$runtime_tmp\" --strip-components=1",
+      "tar -xzf '/mnt/c/Program Files/Otter Code/wsl-runtime.tar.gz' -C \"$runtime_tmp\" --strip-components=1",
     );
     expect(script).toContain('if ! runtime_entry_runs "$runtime_tmp"; then');
     expect(script).toContain('mv -T "$runtime_tmp" "$runtime_root"');
@@ -211,14 +211,14 @@ describe("WSL runtime cache", () => {
 
   it("verifies the archive digest before extracting, and only on a cache miss", () => {
     const script = buildWslRuntimeInstallScript(
-      "/mnt/c/Program Files/T3 Code/wsl-runtime.tar.gz",
+      "/mnt/c/Program Files/Otter Code/wsl-runtime.tar.gz",
       "1.2.3-x64",
       "b".repeat(64),
     );
 
     const expected = "b".repeat(64);
     expect(script).toContain(
-      "archive_sha=$(sha256sum '/mnt/c/Program Files/T3 Code/wsl-runtime.tar.gz' | cut -d ' ' -f 1)",
+      "archive_sha=$(sha256sum '/mnt/c/Program Files/Otter Code/wsl-runtime.tar.gz' | cut -d ' ' -f 1)",
     );
     expect(script).toContain(`if [ "$archive_sha" != '${expected}' ]; then`);
 
@@ -233,7 +233,7 @@ describe("WSL runtime cache", () => {
 
   it("moves an in-use runtime aside instead of deleting it under a live backend", () => {
     const script = buildWslRuntimeInstallScript(
-      "/mnt/c/Program Files/T3 Code/wsl-runtime.tar.gz",
+      "/mnt/c/Program Files/Otter Code/wsl-runtime.tar.gz",
       "sha256-" + "c".repeat(64),
       "b".repeat(64),
     );
@@ -257,7 +257,7 @@ describe("WSL runtime cache", () => {
 
   it("treats a runtime whose executable no longer runs as a cache miss", () => {
     const script = buildWslRuntimeInstallScript(
-      "/mnt/c/Program Files/T3 Code/wsl-runtime.tar.gz",
+      "/mnt/c/Program Files/Otter Code/wsl-runtime.tar.gz",
       "1.2.3-x64",
       "b".repeat(64),
     );
@@ -274,7 +274,7 @@ describe("WSL runtime cache", () => {
 
   it("re-hashes the executable against the digest the install recorded", () => {
     const script = buildWslRuntimeInstallScript(
-      "/mnt/c/Program Files/T3 Code/wsl-runtime.tar.gz",
+      "/mnt/c/Program Files/Otter Code/wsl-runtime.tar.gz",
       "1.2.3-x64",
       "b".repeat(64),
     );
@@ -301,7 +301,7 @@ describe("WSL runtime cache", () => {
 
   it("refuses to mark an archive whose executable does not run as ready", () => {
     const script = buildWslRuntimeInstallScript(
-      "/mnt/c/Program Files/T3 Code/wsl-runtime.tar.gz",
+      "/mnt/c/Program Files/Otter Code/wsl-runtime.tar.gz",
       "1.2.3-x64",
       "b".repeat(64),
     );
@@ -317,8 +317,8 @@ describe("WSL runtime cache", () => {
   });
 
   it("parses only absolute Linux runtime paths", () => {
-    expect(parseWslRuntimeRoot("runtimeRoot:/home/josh/.t3/wsl-runtime/1.2.3-x64\n")).toBe(
-      "/home/josh/.t3/wsl-runtime/1.2.3-x64",
+    expect(parseWslRuntimeRoot("runtimeRoot:/home/josh/.otter-code/wsl-runtime/1.2.3-x64\n")).toBe(
+      "/home/josh/.otter-code/wsl-runtime/1.2.3-x64",
     );
     expect(parseWslRuntimeRoot("runtimeRoot:relative/path\n")).toBeNull();
     expect(parseWslRuntimeRoot("noise\n")).toBeNull();
@@ -361,7 +361,9 @@ describe("WSL runtime cache", () => {
   it("invalidates a cache by dropping its ready marker, not the tree", () => {
     const script = buildWslRuntimeInvalidateScript("1.2.3/x64");
 
-    expect(script).toContain('rm -f "$HOME/.t3/wsl-runtime/1.2.3_x64/.t3code-wsl-runtime-ready"');
+    expect(script).toContain(
+      'rm -f "$HOME/.otter-code/wsl-runtime/1.2.3_x64/.t3code-wsl-runtime-ready"',
+    );
     expect(script).not.toContain("rm -rf");
   });
 });
@@ -409,9 +411,9 @@ describe.skipIf(posixShellRunner === null)("WSL runtime install script (executed
       archivePath,
       archiveSha,
       runtimeId,
-      runtimeParent: `${work}/home/.t3/wsl-runtime`,
-      runtimeRoot: `${work}/home/.t3/wsl-runtime/${runtimeId}`,
-      serverEntry: `${work}/home/.t3/wsl-runtime/${runtimeId}/t3`,
+      runtimeParent: `${work}/home/.otter-code/wsl-runtime`,
+      runtimeRoot: `${work}/home/.otter-code/wsl-runtime/${runtimeId}`,
+      serverEntry: `${work}/home/.otter-code/wsl-runtime/${runtimeId}/t3`,
       installScript,
       install: (archive?: string, sha?: string) => runShell(installScript(archive, sha)),
     };
@@ -679,7 +681,7 @@ describe.skipIf(posixShellRunner === null)("WSL runtime install script (executed
         "set -eu",
         "work=$(mktemp -d)",
         'home="$work/home"',
-        'runtime_parent="$home/.t3/wsl-runtime"',
+        'runtime_parent="$home/.otter-code/wsl-runtime"',
         'mkdir -p "$runtime_parent"',
         'make_ready() { mkdir -p "$runtime_parent/$1"; printf ready > "$runtime_parent/$1/.t3code-wsl-runtime-ready"; }',
         "make_ready sha256-current",

@@ -54,7 +54,7 @@ type LinkedDraftRequest = {
 };
 
 /**
- * Opens a `t3code://new?…` link. The link lands on the New Task picker with its query as route
+ * Opens a `ottercode://new?…` link. The link lands on the New Task picker with its query as route
  * params; this resolves it to a project, a thread, or a choice, then fills a draft. Nothing is
  * ever sent: the user reads the prompt and presses Send. Used by `NewTaskRouteScreen`.
  */

@@ -27,6 +27,7 @@ export type SettingsPath =
   | "/settings/integrations"
   | "/settings/scheduled-tasks"
   | "/settings/source-control"
+  | "/settings/code-intelligence"
   | "/settings/storage"
   | "/settings/connections"
   | "/settings/beta"
@@ -86,6 +87,7 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   "/settings/integrations": "Integrations",
   "/settings/scheduled-tasks": "Scheduled tasks",
   "/settings/source-control": "Source control",
+  "/settings/code-intelligence": "Code intelligence",
   "/settings/storage": "Storage",
   "/settings/connections": "Connections",
   "/settings/beta": "Beta",
@@ -841,6 +843,15 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["pull request merge squash rebase last selected"],
   },
   {
+    id: "code-intelligence",
+    title: "Code intelligence",
+    to: "/settings/code-intelligence",
+    scope: "environment-defaults",
+    searchTerms: [
+      "intellisense language server lsp completion hover definition references diagnostics typescript javascript json python pyright rust rust-analyzer protobuf buf path",
+    ],
+  },
+  {
     id: "source-control",
     title: "Source control",
     to: "/settings/source-control",
@@ -1087,6 +1098,7 @@ const SETTINGS_CATEGORY_SCOPES: Readonly<Record<SettingsPath, SettingsSearchScop
   "/settings/providers": null,
   "/settings/integrations": null,
   "/settings/source-control": "environment-defaults",
+  "/settings/code-intelligence": "environment-defaults",
   "/settings/storage": "project-defaults",
   "/settings/connections": "connections",
   "/settings/scheduled-tasks": null,

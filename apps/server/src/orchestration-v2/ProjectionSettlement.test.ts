@@ -388,6 +388,43 @@ it.effect("sql: lists only active threads with pull request links, oldest first"
   }).pipe(Effect.provide(layerSql)),
 );
 
+const linearIssueLink = (identifier: string) => ({
+  identifier,
+  issueId: null,
+  url: `https://linear.app/team/issue/${identifier}`,
+  source: "manual" as const,
+  linkedAt: DateTime.formatIso(old),
+  snapshot: null,
+});
+
+it.effect("sql: lists only active threads with Linear issue links, oldest first", () =>
+  Effect.gen(function* () {
+    const store = yield* ProjectionStore.ProjectionStoreV2;
+    yield* createThread("linear-none");
+    yield* createThread("linear-empty", { linearIssues: [] });
+    yield* createThread("linear-archived", {
+      archivedAt: old,
+      linearIssues: [linearIssueLink("ENG-1")],
+    });
+    const older = yield* createThread("linear-older", {
+      updatedAt: DateTime.subtract(now, { days: 12 }),
+      linearIssues: [linearIssueLink("ENG-2")],
+    });
+    const newer = yield* createThread("linear-newer", {
+      linearIssues: [linearIssueLink("ENG-3"), linearIssueLink("ENG-4")],
+    });
+
+    const threads = yield* store.getThreadsWithLinearIssues();
+    assert.deepEqual(
+      threads.map((thread) => [thread.id, thread.linearIssues?.length]),
+      [
+        [older, 1],
+        [newer, 2],
+      ],
+    );
+  }).pipe(Effect.provide(layerSql)),
+);
+
 it.effect("sql: an unsettled-only shell read skips settled threads", () =>
   Effect.gen(function* () {
     const store = yield* ProjectionStore.ProjectionStoreV2;

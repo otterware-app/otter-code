@@ -9,7 +9,7 @@ import type {
   ThreadPullRequestLink,
 } from "@t3tools/contracts";
 import { scopedThreadKey } from "@t3tools/client-runtime/environment";
-import { lazy, Suspense } from "react";
+import { type ComponentProps, lazy, Suspense } from "react";
 import SideChatPane from "./SideChatPane";
 import type { ComposerImageAttachment, DraftId } from "../../composerDraftStore";
 import type { ShortcutMatchContext } from "../../keybindings";
@@ -24,6 +24,8 @@ import { PullRequestDetailPanel } from "../pullRequest/PullRequestDetailPanel";
 import { PullRequestDetailGhost } from "../pullRequest/PullRequestGhosts";
 import { PullRequestsUnavailableState } from "../pullRequest/PullRequestsUnavailableState";
 import { ThreadPullRequestsPanel } from "../pullRequest/ThreadPullRequestsPanel";
+import { ThreadLinearIssuesPanel } from "../linear/ThreadLinearIssuesPanel";
+import { LinearIssueDetailPanel } from "../linear/LinearIssueDetailPanel";
 
 const PreviewPanel = lazy(() =>
   import("../preview/PreviewPanel").then((module) => ({ default: module.PreviewPanel })),
@@ -76,6 +78,7 @@ export function RightPanelSurfaceContent(props: {
   readonly onCloseSurface: (surface: RightPanelSurface) => void;
   readonly terminal: RightPanelTerminalProps;
   readonly pullRequest: RightPanelPullRequestProps;
+  readonly linearIssues: Pick<ComponentProps<typeof LinearIssueDetailPanel>, "onBack" | "onCite">;
   readonly files: RightPanelFileProps;
   readonly sideChatParentPanel: SideChatParentPanel;
 }) {
@@ -177,6 +180,17 @@ export function RightPanelSurfaceContent(props: {
           threadId={surface.threadId}
           parentPanel={props.sideChatParentPanel}
           onClose={() => onCloseSurface(surface)}
+        />
+      );
+    case "linear-issues":
+      return <ThreadLinearIssuesPanel threadRef={threadRef} />;
+    case "linear-issue":
+      return (
+        <LinearIssueDetailPanel
+          key={surface.id}
+          threadRef={threadRef}
+          identifier={surface.identifier}
+          {...props.linearIssues}
         />
       );
     case "device":

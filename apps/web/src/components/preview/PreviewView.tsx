@@ -51,6 +51,7 @@ import { subscribePreviewAction } from "./previewActionBus";
 import { openPreviewSession } from "./openPreviewSession";
 import { PreviewChromeRow } from "./PreviewChromeRow";
 import { PreviewEmptyState } from "./PreviewEmptyState";
+import { PreviewExtensionToolbar } from "./PreviewExtensionToolbar";
 import { PreviewMoreMenu, type PreviewMoreMenuActions } from "./PreviewMoreMenu";
 import {
   commitBrowserViewportChange,
@@ -939,6 +940,15 @@ export function PreviewView({
               </TooltipTrigger>
               <TooltipPopup side="top">{activeProfileName}</TooltipPopup>
             </Tooltip>
+          ) : null
+        }
+        extensionActions={
+          previewBridge && !serverOwnsRendering ? (
+            <PreviewExtensionToolbar
+              threadRef={threadRef}
+              webContentsId={desktopOverlay?.webContentsId ?? null}
+              visible={visible}
+            />
           ) : null
         }
         trailingActions={

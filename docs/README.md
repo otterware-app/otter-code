@@ -16,6 +16,7 @@
 - [Visual replies](./user/html-renders.md)
 - [Import browser sessions](./user/browser-import.md)
 - [Use T3 Code as your default browser](./user/default-browser.md)
+- [Browser extensions](./user/browser-extensions.md)
 - [Devices](./user/devices.md)
 - [Usage and limits](./user/usage.md)
 - [Product usage data](./user/telemetry.md)

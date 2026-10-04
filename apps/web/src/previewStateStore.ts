@@ -16,6 +16,8 @@ import { appAtomRegistry } from "./rpc/atomRegistry";
 export interface DesktopPreviewOverlay {
   hasWebContents: boolean;
   navStatus: PreviewSessionSnapshot["navStatus"];
+  /** The tab's guest, which its Chrome extensions act on. */
+  webContentsId?: number | null;
   canGoBack: boolean;
   canGoForward: boolean;
   loading: boolean;
@@ -401,6 +403,7 @@ function isPreviewStateEqual(
       next !== null &&
       previous.hasWebContents === next.hasWebContents &&
       sameDesktopNavStatus(previous.navStatus, next.navStatus) &&
+      previous.webContentsId === next.webContentsId &&
       previous.canGoBack === next.canGoBack &&
       previous.canGoForward === next.canGoForward &&
       previous.loading === next.loading &&

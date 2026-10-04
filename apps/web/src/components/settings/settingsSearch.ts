@@ -25,6 +25,7 @@ export type SettingsPath =
   | "/settings/snap-shot"
   | "/settings/providers"
   | "/settings/integrations"
+  | "/settings/extensions"
   | "/settings/scheduled-tasks"
   | "/settings/source-control"
   | "/settings/code-intelligence"
@@ -85,6 +86,7 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   "/settings/snap-shot": "SnapShots",
   "/settings/providers": "Providers",
   "/settings/integrations": "Integrations",
+  "/settings/extensions": "Browser extensions",
   "/settings/scheduled-tasks": "Scheduled tasks",
   "/settings/source-control": "Source control",
   "/settings/code-intelligence": "Code intelligence",
@@ -843,6 +845,13 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["pull request merge squash rebase last selected"],
   },
   {
+    id: "browser-extensions",
+    title: "Browser extensions",
+    to: "/settings/extensions",
+    desktopOnly: true,
+    searchTerms: ["chrome web store add-ons plugins 1password password manager pin toolbar"],
+  },
+  {
     id: "code-intelligence",
     title: "Code intelligence",
     to: "/settings/code-intelligence",
@@ -1097,6 +1106,7 @@ const SETTINGS_CATEGORY_SCOPES: Readonly<Record<SettingsPath, SettingsSearchScop
   "/settings/keybindings": null,
   "/settings/providers": null,
   "/settings/integrations": null,
+  "/settings/extensions": null,
   "/settings/source-control": "environment-defaults",
   "/settings/code-intelligence": "environment-defaults",
   "/settings/storage": "project-defaults",

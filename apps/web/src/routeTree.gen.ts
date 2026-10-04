@@ -23,6 +23,7 @@ import { Route as ChatPullRequestsRouteImport } from './routes/_chat.pull-reques
 import { Route as ChatNewRouteImport } from './routes/_chat.new'
 import { Route as ChatSettingsStorageRouteImport } from './routes/_chat.settings.storage'
 import { Route as ChatSettingsSourceControlRouteImport } from './routes/_chat.settings.source-control'
+import { Route as ChatSettingsExtensionsRouteImport } from './routes/_chat.settings.extensions'
 import { Route as ChatSettingsCodeIntelligenceRouteImport } from './routes/_chat.settings.code-intelligence'
 import { Route as ChatSettingsSnapShotRouteImport } from './routes/_chat.settings.snap-shot'
 import { Route as ChatSettingsScheduledTasksRouteImport } from './routes/_chat.settings.scheduled-tasks'
@@ -108,6 +109,12 @@ const ChatSettingsSourceControlRoute =
   ChatSettingsSourceControlRouteImport.update({
     id: '/source-control',
     path: '/source-control',
+    getParentRoute: () => ChatSettingsRoute,
+  } as any)
+const ChatSettingsExtensionsRoute =
+  ChatSettingsExtensionsRouteImport.update({
+    id: '/extensions',
+    path: '/extensions',
     getParentRoute: () => ChatSettingsRoute,
   } as any)
 const ChatSettingsCodeIntelligenceRoute =
@@ -224,6 +231,7 @@ export interface FileRoutesByFullPath {
   '/settings/scheduled-tasks': typeof ChatSettingsScheduledTasksRoute
   '/settings/snap-shot': typeof ChatSettingsSnapShotRoute
   '/settings/source-control': typeof ChatSettingsSourceControlRoute
+  '/settings/extensions': typeof ChatSettingsExtensionsRoute
   '/settings/code-intelligence': typeof ChatSettingsCodeIntelligenceRoute
   '/settings/storage': typeof ChatSettingsStorageRoute
 }
@@ -255,6 +263,7 @@ export interface FileRoutesByTo {
   '/settings/scheduled-tasks': typeof ChatSettingsScheduledTasksRoute
   '/settings/snap-shot': typeof ChatSettingsSnapShotRoute
   '/settings/source-control': typeof ChatSettingsSourceControlRoute
+  '/settings/extensions': typeof ChatSettingsExtensionsRoute
   '/settings/code-intelligence': typeof ChatSettingsCodeIntelligenceRoute
   '/settings/storage': typeof ChatSettingsStorageRoute
 }
@@ -288,6 +297,7 @@ export interface FileRoutesById {
   '/_chat/settings/scheduled-tasks': typeof ChatSettingsScheduledTasksRoute
   '/_chat/settings/snap-shot': typeof ChatSettingsSnapShotRoute
   '/_chat/settings/source-control': typeof ChatSettingsSourceControlRoute
+  '/_chat/settings/extensions': typeof ChatSettingsExtensionsRoute
   '/_chat/settings/code-intelligence': typeof ChatSettingsCodeIntelligenceRoute
   '/_chat/settings/storage': typeof ChatSettingsStorageRoute
 }
@@ -321,6 +331,7 @@ export interface FileRouteTypes {
     | '/settings/scheduled-tasks'
     | '/settings/snap-shot'
     | '/settings/source-control'
+    | '/settings/extensions'
     | '/settings/code-intelligence'
     | '/settings/storage'
   fileRoutesByTo: FileRoutesByTo
@@ -352,6 +363,7 @@ export interface FileRouteTypes {
     | '/settings/scheduled-tasks'
     | '/settings/snap-shot'
     | '/settings/source-control'
+    | '/settings/extensions'
     | '/settings/code-intelligence'
     | '/settings/storage'
   id:
@@ -384,6 +396,7 @@ export interface FileRouteTypes {
     | '/_chat/settings/scheduled-tasks'
     | '/_chat/settings/snap-shot'
     | '/_chat/settings/source-control'
+    | '/_chat/settings/extensions'
     | '/_chat/settings/code-intelligence'
     | '/_chat/settings/storage'
   fileRoutesById: FileRoutesById
@@ -496,6 +509,13 @@ declare module '@tanstack/react-router' {
       path: '/source-control'
       fullPath: '/settings/source-control'
       preLoaderRoute: typeof ChatSettingsSourceControlRouteImport
+      parentRoute: typeof ChatSettingsRoute
+    }
+    '/_chat/settings/extensions': {
+      id: '/_chat/settings/extensions'
+      path: '/extensions'
+      fullPath: '/settings/extensions'
+      preLoaderRoute: typeof ChatSettingsExtensionsRouteImport
       parentRoute: typeof ChatSettingsRoute
     }
     '/_chat/settings/code-intelligence': {
@@ -628,6 +648,7 @@ interface ChatSettingsRouteChildren {
   ChatSettingsScheduledTasksRoute: typeof ChatSettingsScheduledTasksRoute
   ChatSettingsSnapShotRoute: typeof ChatSettingsSnapShotRoute
   ChatSettingsSourceControlRoute: typeof ChatSettingsSourceControlRoute
+  ChatSettingsExtensionsRoute: typeof ChatSettingsExtensionsRoute
   ChatSettingsCodeIntelligenceRoute: typeof ChatSettingsCodeIntelligenceRoute
   ChatSettingsStorageRoute: typeof ChatSettingsStorageRoute
 }
@@ -647,6 +668,7 @@ const ChatSettingsRouteChildren: ChatSettingsRouteChildren = {
   ChatSettingsScheduledTasksRoute: ChatSettingsScheduledTasksRoute,
   ChatSettingsSnapShotRoute: ChatSettingsSnapShotRoute,
   ChatSettingsSourceControlRoute: ChatSettingsSourceControlRoute,
+  ChatSettingsExtensionsRoute: ChatSettingsExtensionsRoute,
   ChatSettingsCodeIntelligenceRoute: ChatSettingsCodeIntelligenceRoute,
   ChatSettingsStorageRoute: ChatSettingsStorageRoute,
 }

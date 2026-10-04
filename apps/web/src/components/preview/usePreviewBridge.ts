@@ -146,6 +146,7 @@ export function projectDesktopState(state: DesktopPreviewTabState): DesktopPrevi
   return {
     hasWebContents: state.webContentsId !== null,
     navStatus: projectDesktopNavStatus(state.navStatus),
+    webContentsId: state.webContentsId,
     canGoBack: state.canGoBack,
     canGoForward: state.canGoForward,
     loading: state.navStatus.kind === "Loading",

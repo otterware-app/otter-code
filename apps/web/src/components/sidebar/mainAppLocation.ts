@@ -1,4 +1,7 @@
+import type { ScopedThreadRef } from "@t3tools/contracts";
 import { useNavigate, type AnyRouter } from "@tanstack/react-router";
+
+import { resolveThreadRouteRef } from "~/threadRoutes";
 
 import { GUEST_PAGE_PATH } from "../../guestPage";
 
@@ -18,11 +21,15 @@ const SHELL_LESS_PATHS = new Set(["/pair", "/connect", "/connect-agent", GUEST_P
 
 let mainAppHref: string | null = null;
 let appModalReturnHref: string | null = null;
+let lastThreadRef: ScopedThreadRef | null = null;
 
 /** Remembers where Settings, Usage, and the utility pages lead back to. */
 export function startMainAppLocationTracking(router: AnyRouter): () => void {
   const record = () => {
     const { pathname, href } = router.state.location;
+    const params: Partial<Record<"environmentId" | "threadId", string>> =
+      router.state.matches.at(-1)?.params ?? {};
+    lastThreadRef = resolveThreadRouteRef(params) ?? lastThreadRef;
     if (isAppModalPage(pathname) || SHELL_LESS_PATHS.has(pathname)) return;
     appModalReturnHref = href;
     if (!isSidebarUtilityPage(pathname)) mainAppHref = href;
@@ -31,6 +38,13 @@ export function startMainAppLocationTracking(router: AnyRouter): () => void {
   return router.subscribe("onResolved", record);
 }
 
+/** The thread last open in the main app, for a utility page to open something beside. */
+export function lastMainAppThreadRef(): ScopedThreadRef | null {
+  return lastThreadRef;
+}
+
+// Leaves a utility page for the last main app URL, or the thread list when
+// the app was opened directly on a utility page.
 export function useNavigateToMainApp() {
   const navigate = useNavigate();
   return () => navigate({ href: mainAppHref ?? "/" });

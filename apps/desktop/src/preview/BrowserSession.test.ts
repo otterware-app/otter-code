@@ -17,6 +17,7 @@ const { fromPartition, sessions } = vi.hoisted(() => ({
       readonly setPermissionRequestHandler: ReturnType<typeof vi.fn>;
       readonly setPermissionCheckHandler: ReturnType<typeof vi.fn>;
       readonly setUserAgent: ReturnType<typeof vi.fn>;
+      readonly webRequest: { readonly onBeforeSendHeaders: ReturnType<typeof vi.fn> };
     }
   >(),
 }));
@@ -43,6 +44,7 @@ describe("BrowserSession", () => {
         setPermissionRequestHandler: vi.fn(),
         setPermissionCheckHandler: vi.fn(),
         setUserAgent: vi.fn(),
+        webRequest: { onBeforeSendHeaders: vi.fn() },
       };
       sessions.set(partition, browserSession);
       return browserSession;
@@ -125,6 +127,7 @@ describe("BrowserSession", () => {
           setUserAgent: vi.fn((next: string) => {
             userAgent = next;
           }),
+          webRequest: { onBeforeSendHeaders: vi.fn() },
         };
         sessions.set(partition, browserSession);
         return browserSession;
@@ -137,6 +140,33 @@ describe("BrowserSession", () => {
       const browserSession = sessions.get(partition);
       assert.isDefined(browserSession);
       assert.strictEqual(browserSession.getUserAgent(), nativeUserAgent);
+    }).pipe(Effect.provide(layer)),
+  );
+
+  it.effect("drops the Electron token only on requests to Google's sign-in", () =>
+    Effect.gen(function* () {
+      const browserSessions = yield* BrowserSession.BrowserSession;
+      const partition = yield* browserSessions.getPartition("scope-a");
+      yield* browserSessions.getSession("scope-a");
+
+      const browserSession = sessions.get(partition);
+      assert.isDefined(browserSession);
+      const [filter, listener] = browserSession.webRequest.onBeforeSendHeaders.mock.calls[0] ?? [];
+      assert.deepStrictEqual(filter, { urls: ["https://accounts.google.com/*"] });
+      assert.isFunction(listener);
+
+      let headers: Record<string, string> | undefined;
+      listener(
+        { requestHeaders: { Accept: "text/html", "User-Agent": "Mozilla/5.0 Electron/41.5.0" } },
+        (response: { requestHeaders: Record<string, string> }) => {
+          headers = response.requestHeaders;
+        },
+      );
+      assert.deepStrictEqual(headers, {
+        Accept: "text/html",
+        "User-Agent": "Mozilla/5.0 t3code/0.0.27",
+      });
+      assert.strictEqual(browserSession.setUserAgent.mock.calls.length, 0);
     }).pipe(Effect.provide(layer)),
   );
 

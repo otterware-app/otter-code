@@ -203,6 +203,21 @@ export const make = Effect.gen(function* BrowserSessionMake() {
           // the challenge every few seconds, so logins behind it never complete
           // (#5002). Re-setting the unchanged native string is harmless, so it
           // is the rewritten string itself that trips the check.
+          //
+          // Google's sign-in is the one exception. Given a User-Agent that names
+          // Electron, it serves a lite page (flowName=WebLiteSignIn) that never
+          // asks for passkeys, such as 1Password's, until you go looking for
+          // them. So only requests to accounts.google.com drop the Electron
+          // token: Google then serves Chrome's page, which offers passkeys as it
+          // loads, and every other site still sees the native string.
+          const googleUserAgent = browserSession.getUserAgent().replace(/ Electron\/\S+/, "");
+          browserSession.webRequest.onBeforeSendHeaders(
+            { urls: ["https://accounts.google.com/*"] },
+            (details, callback) =>
+              callback({
+                requestHeaders: { ...details.requestHeaders, "User-Agent": googleUserAgent },
+              }),
+          );
           browserSession.setPermissionRequestHandler((_webContents, permission, callback) => {
             callback(ALLOWED_PREVIEW_PERMISSIONS.has(permission));
           });

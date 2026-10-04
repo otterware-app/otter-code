@@ -26,6 +26,7 @@ import { Route as ChatSettingsWorktreesRouteImport } from './routes/_chat.settin
 import { Route as ChatSettingsThreadsRouteImport } from './routes/_chat.settings.threads'
 import { Route as ChatSettingsStorageRouteImport } from './routes/_chat.settings.storage'
 import { Route as ChatSettingsSourceControlRouteImport } from './routes/_chat.settings.source-control'
+import { Route as ChatSettingsExtensionsRouteImport } from './routes/_chat.settings.extensions'
 import { Route as ChatSettingsCodeIntelligenceRouteImport } from './routes/_chat.settings.code-intelligence'
 import { Route as ChatSettingsSnapShotRouteImport } from './routes/_chat.settings.snap-shot'
 import { Route as ChatSettingsSecretsRouteImport } from './routes/_chat.settings.secrets'
@@ -136,6 +137,12 @@ const ChatSettingsSourceControlRoute =
   ChatSettingsSourceControlRouteImport.update({
     id: '/source-control',
     path: '/source-control',
+    getParentRoute: () => ChatSettingsRoute,
+  } as any)
+const ChatSettingsExtensionsRoute =
+  ChatSettingsExtensionsRouteImport.update({
+    id: '/extensions',
+    path: '/extensions',
     getParentRoute: () => ChatSettingsRoute,
   } as any)
 const ChatSettingsCodeIntelligenceRoute =
@@ -306,6 +313,7 @@ export interface FileRoutesByFullPath {
   '/settings/secrets': typeof ChatSettingsSecretsRoute
   '/settings/snap-shot': typeof ChatSettingsSnapShotRoute
   '/settings/source-control': typeof ChatSettingsSourceControlRoute
+  '/settings/extensions': typeof ChatSettingsExtensionsRoute
   '/settings/code-intelligence': typeof ChatSettingsCodeIntelligenceRoute
   '/settings/storage': typeof ChatSettingsStorageRoute
   '/settings/threads': typeof ChatSettingsThreadsRoute
@@ -349,6 +357,7 @@ export interface FileRoutesByTo {
   '/settings/secrets': typeof ChatSettingsSecretsRoute
   '/settings/snap-shot': typeof ChatSettingsSnapShotRoute
   '/settings/source-control': typeof ChatSettingsSourceControlRoute
+  '/settings/extensions': typeof ChatSettingsExtensionsRoute
   '/settings/code-intelligence': typeof ChatSettingsCodeIntelligenceRoute
   '/settings/storage': typeof ChatSettingsStorageRoute
   '/settings/threads': typeof ChatSettingsThreadsRoute
@@ -394,6 +403,7 @@ export interface FileRoutesById {
   '/_chat/settings/secrets': typeof ChatSettingsSecretsRoute
   '/_chat/settings/snap-shot': typeof ChatSettingsSnapShotRoute
   '/_chat/settings/source-control': typeof ChatSettingsSourceControlRoute
+  '/_chat/settings/extensions': typeof ChatSettingsExtensionsRoute
   '/_chat/settings/code-intelligence': typeof ChatSettingsCodeIntelligenceRoute
   '/_chat/settings/storage': typeof ChatSettingsStorageRoute
   '/_chat/settings/threads': typeof ChatSettingsThreadsRoute
@@ -439,6 +449,7 @@ export interface FileRouteTypes {
     | '/settings/secrets'
     | '/settings/snap-shot'
     | '/settings/source-control'
+    | '/settings/extensions'
     | '/settings/code-intelligence'
     | '/settings/storage'
     | '/settings/threads'
@@ -482,6 +493,7 @@ export interface FileRouteTypes {
     | '/settings/secrets'
     | '/settings/snap-shot'
     | '/settings/source-control'
+    | '/settings/extensions'
     | '/settings/code-intelligence'
     | '/settings/storage'
     | '/settings/threads'
@@ -526,6 +538,7 @@ export interface FileRouteTypes {
     | '/_chat/settings/secrets'
     | '/_chat/settings/snap-shot'
     | '/_chat/settings/source-control'
+    | '/_chat/settings/extensions'
     | '/_chat/settings/code-intelligence'
     | '/_chat/settings/storage'
     | '/_chat/settings/threads'
@@ -663,6 +676,13 @@ declare module '@tanstack/react-router' {
       path: '/source-control'
       fullPath: '/settings/source-control'
       preLoaderRoute: typeof ChatSettingsSourceControlRouteImport
+      parentRoute: typeof ChatSettingsRoute
+    }
+    '/_chat/settings/extensions': {
+      id: '/_chat/settings/extensions'
+      path: '/extensions'
+      fullPath: '/settings/extensions'
+      preLoaderRoute: typeof ChatSettingsExtensionsRouteImport
       parentRoute: typeof ChatSettingsRoute
     }
     '/_chat/settings/code-intelligence': {
@@ -867,6 +887,7 @@ interface ChatSettingsRouteChildren {
   ChatSettingsSecretsRoute: typeof ChatSettingsSecretsRoute
   ChatSettingsSnapShotRoute: typeof ChatSettingsSnapShotRoute
   ChatSettingsSourceControlRoute: typeof ChatSettingsSourceControlRoute
+  ChatSettingsExtensionsRoute: typeof ChatSettingsExtensionsRoute
   ChatSettingsCodeIntelligenceRoute: typeof ChatSettingsCodeIntelligenceRoute
   ChatSettingsStorageRoute: typeof ChatSettingsStorageRoute
   ChatSettingsThreadsRoute: typeof ChatSettingsThreadsRoute
@@ -897,6 +918,7 @@ const ChatSettingsRouteChildren: ChatSettingsRouteChildren = {
   ChatSettingsSecretsRoute: ChatSettingsSecretsRoute,
   ChatSettingsSnapShotRoute: ChatSettingsSnapShotRoute,
   ChatSettingsSourceControlRoute: ChatSettingsSourceControlRoute,
+  ChatSettingsExtensionsRoute: ChatSettingsExtensionsRoute,
   ChatSettingsCodeIntelligenceRoute: ChatSettingsCodeIntelligenceRoute,
   ChatSettingsStorageRoute: ChatSettingsStorageRoute,
   ChatSettingsThreadsRoute: ChatSettingsThreadsRoute,

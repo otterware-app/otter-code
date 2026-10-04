@@ -28,6 +28,7 @@ export type SettingsPath =
   | "/settings/providers"
   | "/settings/threads"
   | "/settings/browser"
+  | "/settings/extensions"
   | "/settings/devices"
   | "/settings/scheduled-tasks"
   | "/settings/source-control"
@@ -104,6 +105,7 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   "/settings/providers": "Providers",
   "/settings/threads": "Threads",
   "/settings/browser": "Browser",
+  "/settings/extensions": "Browser extensions",
   "/settings/devices": "Devices",
   "/settings/scheduled-tasks": "Scheduled tasks",
   "/settings/source-control": "Source control",
@@ -142,6 +144,7 @@ export const SETTINGS_NAV_GROUPS: ReadonlyArray<{
       "/settings/providers",
       "/settings/threads",
       "/settings/browser",
+      "/settings/extensions",
       "/settings/devices",
       "/settings/scheduled-tasks",
     ],
@@ -1099,6 +1102,13 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["pull request merge squash rebase last selected"],
   },
   {
+    id: "browser-extensions",
+    title: "Browser extensions",
+    to: "/settings/extensions",
+    desktopOnly: true,
+    searchTerms: ["chrome web store add-ons plugins 1password password manager pin toolbar"],
+  },
+  {
     id: "code-intelligence",
     title: "Code intelligence",
     to: "/settings/code-intelligence",
@@ -1380,6 +1390,7 @@ const SETTINGS_CATEGORY_SCOPES: Readonly<Record<SettingsPath, SettingsSearchScop
   "/settings/providers": null,
   "/settings/threads": null,
   "/settings/browser": null,
+  "/settings/extensions": null,
   "/settings/devices": null,
   "/settings/source-control": "environment-defaults",
   "/settings/code-intelligence": "environment-defaults",

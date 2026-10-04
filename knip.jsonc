@@ -62,6 +62,7 @@
         "src/preload.ts!",
         "src/preview-pick-preload.ts!",
         "src/preview-pip-preload.ts!",
+        "src/preview-extensions-preload.ts!",
         "src/mac-permission-preload.ts!",
         "src/preview/Annotation.css!",
       ],

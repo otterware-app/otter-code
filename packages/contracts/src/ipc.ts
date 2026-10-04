@@ -18,6 +18,7 @@ import type {
   DesktopAppActivationRequest,
   DesktopAppActivationResponse,
 } from "./desktopAppActivation.ts";
+import type { DesktopPreviewExtensionsBridge } from "./previewExtensions.ts";
 
 export interface ContextMenuItem<T extends string = string> {
   id: T;
@@ -1225,6 +1226,8 @@ export interface DesktopBridge {
    * Electron desktop build; web builds have `preview === undefined`.
    */
   preview?: DesktopPreviewBridge;
+  /** Chrome extensions in the browser preview; absent on builds without them. */
+  previewExtensions?: DesktopPreviewExtensionsBridge;
 }
 
 /** Renderer callback invoked by Electron with a fresh user gesture before display-media capture. */

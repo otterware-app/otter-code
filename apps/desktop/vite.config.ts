@@ -133,6 +133,18 @@ export default defineConfig({
       entry: ["src/preview-pip-preload.ts"],
     },
     {
+      // Chrome extensions in the preview: their workers' and pages' preload,
+      // and electron-chrome-web-store's for the Web Store, which the library
+      // looks for beside main.cjs when there are no node_modules.
+      format: "cjs",
+      outDir: "dist-electron",
+      dts: false,
+      sourcemap: true,
+      outExtensions: () => ({ js: ".cjs" }),
+      entry: ["src/preview-extensions-preload.ts"],
+      copy: { from: "node_modules/electron-chrome-web-store/dist/chrome-web-store.preload.js" },
+    },
+    {
       // Sandboxed preloads must be self-contained, without shared runtime chunks.
       format: "cjs",
       outDir: "dist-electron",

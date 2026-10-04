@@ -28,6 +28,7 @@ import {
 import { PASSKEY_BRIDGE_ARGUMENT } from "../preview/GuestProtocol.ts";
 import * as PreviewManager from "../preview/Manager.ts";
 import * as PreviewPasskeys from "../preview/Passkeys.ts";
+import * as PreviewExtensions from "../preview/extensions/PreviewExtensions.ts";
 import * as DesktopAppSettings from "../settings/DesktopAppSettings.ts";
 import * as DesktopClientSettings from "../settings/DesktopClientSettings.ts";
 import * as ElectronApp from "../electron/ElectronApp.ts";
@@ -600,6 +601,10 @@ export const make = Effect.gen(function* () {
           });
           menuTemplate.push({ type: "separator" });
         }
+
+        // Chrome extensions' own items, for the preview's pages.
+        const extensionItems = PreviewExtensions.extensionMenuItems(contents, params);
+        if (extensionItems.length > 0) menuTemplate.push(...extensionItems, { type: "separator" });
 
         menuTemplate.push(
           { role: "cut", enabled: params.editFlags.canCut },

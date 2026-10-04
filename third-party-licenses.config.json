@@ -634,6 +634,14 @@
         "licenseId": "MIT",
         "copyrights": ["Copyright (c) Microsoft Corporation"]
       }
+    },
+    {
+      "name": "electron-chrome-web-store",
+      "version": "0.13.0",
+      "generatedNotice": {
+        "licenseId": "MIT",
+        "copyrights": ["Copyright (c) Samuel Maddock <sam@samuelmaddock.com>"]
+      }
     }
   ]
 }

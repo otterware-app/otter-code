@@ -24,6 +24,7 @@ import {
   PanelsTopLeftIcon,
   KeyboardIcon,
   PaletteIcon,
+  PuzzleIcon,
   SearchIcon,
   ServerIcon,
   Settings2Icon,
@@ -97,6 +98,7 @@ const SETTINGS_SECTION_ICONS: Readonly<
   "/settings/providers": BotIcon,
   "/settings/threads": MessagesSquareIcon,
   "/settings/browser": GlobeIcon,
+  "/settings/extensions": PuzzleIcon,
   "/settings/devices": SmartphoneIcon,
   "/settings/scheduled-tasks": CalendarClockIcon,
   "/settings/source-control": GitBranchIcon,
@@ -400,7 +402,14 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
                         </h3>
                       ) : null}
                       <SidebarMenu role="presentation">
-                        {group.paths.map((to) => {
+                        {group.paths
+                          // Browser extensions run in the desktop app's browser only.
+                          .filter(
+                            (to) =>
+                              to !== "/settings/extensions" ||
+                              window.desktopBridge?.previewExtensions,
+                          )
+                          .map((to) => {
                           const Icon = SETTINGS_SECTION_ICONS[to];
                           const isActive = activePath === to || activePath.startsWith(`${to}/`);
                           return (

@@ -174,6 +174,33 @@ describe("BrowserSession", () => {
     }).pipe(Effect.provide(layer)),
   );
 
+  it.effect("drops the Electron token only on requests to Google's sign-in", () =>
+    Effect.gen(function* () {
+      const browserSessions = yield* BrowserSession.BrowserSession;
+      const partition = yield* browserSessions.getPartition("scope-a");
+      yield* browserSessions.getSession("scope-a");
+
+      const browserSession = sessions.get(partition);
+      assert.isDefined(browserSession);
+      const [filter, listener] = browserSession.webRequest.onBeforeSendHeaders.mock.calls[0] ?? [];
+      assert.deepStrictEqual(filter, { urls: ["https://accounts.google.com/*"] });
+      assert.isFunction(listener);
+
+      let headers: Record<string, string> | undefined;
+      listener(
+        { requestHeaders: { Accept: "text/html", "User-Agent": "Mozilla/5.0 Electron/41.5.0" } },
+        (response: { requestHeaders: Record<string, string> }) => {
+          headers = response.requestHeaders;
+        },
+      );
+      assert.deepStrictEqual(headers, {
+        Accept: "text/html",
+        "User-Agent": "Mozilla/5.0 t3code/0.0.27",
+      });
+      assert.strictEqual(browserSession.setUserAgent.mock.calls.length, 0);
+    }).pipe(Effect.provide(layer)),
+  );
+
   it.effect("grants preview permissions through both the request and check handlers", () =>
     Effect.gen(function* () {
       const browserSessions = yield* BrowserSession.BrowserSession;

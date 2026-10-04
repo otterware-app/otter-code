@@ -315,6 +315,15 @@ export const make = Effect.gen(function* BrowserSessionMake() {
             );
           };
           // Rewriting Electron's native User-Agent makes Turnstile fail integrity checks with error 600010.
+          // Only Google sign-in drops the Electron token: otherwise it serves a lite page without passkeys.
+          const googleUserAgent = browserSession.getUserAgent().replace(/ Electron\/\S+/, "");
+          browserSession.webRequest.onBeforeSendHeaders(
+            { urls: ["https://accounts.google.com/*"] },
+            (details, callback) =>
+              callback({
+                requestHeaders: { ...details.requestHeaders, "User-Agent": googleUserAgent },
+              }),
+          );
           browserSession.setPermissionRequestHandler(
             (webContents, permission, callback, details) => {
               if (permission === "openExternal") {

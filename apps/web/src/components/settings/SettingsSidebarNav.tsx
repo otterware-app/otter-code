@@ -22,6 +22,7 @@ import {
   KeyboardIcon,
   Link2Icon,
   PaletteIcon,
+  PuzzleIcon,
   SearchIcon,
   Settings2Icon,
   XIcon,
@@ -85,6 +86,7 @@ const SETTINGS_SECTION_ICONS: Readonly<
   "/settings/snap-shot": SnapShotIcon,
   "/settings/providers": BotIcon,
   "/settings/integrations": BlocksIcon,
+  "/settings/extensions": PuzzleIcon,
   "/settings/scheduled-tasks": CalendarClockIcon,
   "/settings/source-control": GitBranchIcon,
   "/settings/code-intelligence": BracesIcon,
@@ -114,7 +116,10 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
   const currentSearch = useLocation({ select: (location) => location.search });
   const scopeSearch = useMemo(() => validateSettingsScopeSearch(currentSearch), [currentSearch]);
   const navItems = SETTINGS_NAV_ITEMS.filter(
-    (item) => item.to !== "/settings/projects" || isSettingsOverviewVisible(scopeSearch),
+    (item) =>
+      (item.to !== "/settings/projects" || isSettingsOverviewVisible(scopeSearch)) &&
+      // Browser extensions run in the desktop app's browser only.
+      (item.to !== "/settings/extensions" || window.desktopBridge?.previewExtensions),
   );
   const { isMobile, setOpenMobile, open, setOpen } = useSidebar();
   const searchInputRef = useRef<HTMLInputElement>(null);

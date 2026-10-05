@@ -14,5 +14,6 @@ Extensions are installed once for every thread, but each environment and browser
 own extension data, as it keeps its own site logins. Sign in to an extension once per environment.
 Incognito tabs run no extensions.
 
-Extensions that talk to a desktop app through native messaging can't reach it. 1Password, for
-example, works on its own, unlocked with your account password rather than the 1Password app.
+On Mac and Linux, extensions can connect to installed desktop apps. To connect 1Password on Mac,
+add Otter Code in **1Password → Settings → Browser → Add Browser**. The extension then shares the
+desktop app's unlock, including Touch ID. Each browser profile keeps its own extension connection.

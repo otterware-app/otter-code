@@ -319,6 +319,28 @@ const make = Effect.gen(function* () {
     return { accessToken: refreshed.access_token, expiresAt: next.accessTokenExpiresAt };
   });
 
+  /**
+   * Marks the workspace's agent uninstalled when Linear rejects its app token,
+   * so Settings asks for a reinstall instead of the agent going quiet.
+   */
+  const revokeIfRejected = Effect.fn("relay.linear.revoke_if_rejected")(function* (
+    organizationId: string,
+    token: string,
+  ) {
+    const active = yield* client.tokenIsActive(token);
+    yield* Effect.annotateCurrentSpan({ "relay.linear.app_token_active": String(active) });
+    if (active !== false) return;
+    const timestamp = yield* nowIso;
+    yield* db
+      .update(relayLinearInstallations)
+      .set({ revokedAt: timestamp, updatedAt: timestamp })
+      .where(eq(relayLinearInstallations.organizationId, organizationId))
+      .pipe(Effect.ignore);
+    yield* Effect.logWarning("linear rejected the app token; the agent needs reinstalling", {
+      organizationId,
+    });
+  });
+
   /** The workspace's app token, or null when the Otter agent isn't installed there. */
   const accessTokenFor = Effect.fn("relay.linear.access_token")(function* (organizationId: string) {
     const [row] = yield* db
@@ -344,6 +366,17 @@ const make = Effect.gen(function* () {
           ),
         )
         .pipe(Effect.mapError(persistence)),
+    ).pipe(
+      // A refused refresh leaves an expired token; check whether Linear still takes it.
+      Effect.tapError(() =>
+        Effect.gen(function* () {
+          const linear = yield* requireConfig;
+          const current = yield* promise(() =>
+            openSecret(Redacted.value(linear.tokenSealingKey), row.accessTokenSealed),
+          );
+          yield* revokeIfRejected(organizationId, current);
+        }).pipe(Effect.ignore),
+      ),
     );
     return token.accessToken;
   });
@@ -632,15 +665,7 @@ const make = Effect.gen(function* () {
     organizationId: string,
   ) {
     const token = yield* accessTokenFor(organizationId).pipe(Effect.orElseSucceed(() => null));
-    const active = token === null ? null : yield* client.tokenIsActive(token);
-    yield* Effect.annotateCurrentSpan({ "relay.linear.app_token_active": String(active) });
-    if (active !== false) return;
-    const timestamp = yield* nowIso;
-    yield* db
-      .update(relayLinearInstallations)
-      .set({ revokedAt: timestamp, updatedAt: timestamp })
-      .where(eq(relayLinearInstallations.organizationId, organizationId))
-      .pipe(Effect.ignore);
+    if (token !== null) yield* revokeIfRejected(organizationId, token);
   });
 
   const receiveWebhook: LinearIntegration["Service"]["receiveWebhook"] = Effect.fn(
@@ -704,8 +729,9 @@ const make = Effect.gen(function* () {
     return enqueued ? 200 : 503;
   });
 
+  /** Posts to a session; false when it didn't land, including without a usable app token. */
   const postActivity = (
-    token: string,
+    token: string | null,
     agentSessionId: string,
     content: Parameters<LinearClient["createActivity"]>[1]["content"],
     extra?: {
@@ -714,9 +740,14 @@ const make = Effect.gen(function* () {
       readonly signalMetadata?: Record<string, unknown>;
     },
   ) =>
-    client
-      .createActivity(token, { agentSessionId, content, ...extra })
-      .pipe(Effect.catch((error) => Effect.logWarning("linear activity failed", { error })));
+    token === null
+      ? Effect.succeed(false)
+      : client.createActivity(token, { agentSessionId, content, ...extra }).pipe(
+          Effect.as(true),
+          Effect.catch((error) =>
+            Effect.logWarning("linear activity failed", { error }).pipe(Effect.as(false)),
+          ),
+        );
 
   const recordSession = (
     agentSessionId: string,
@@ -734,7 +765,7 @@ const make = Effect.gen(function* () {
 
   const handleCreated = Effect.fn("relay.linear.session_created")(function* (
     event: LinearQueuedEvent,
-    token: string,
+    token: string | null,
     linear: RelayConfiguration.LinearConfiguration,
   ) {
     const sessionId = event.agentSession.id;
@@ -802,13 +833,18 @@ const make = Effect.gen(function* () {
     }
     yield* recordSession(sessionId, { userId: link.userId, environmentId: link.environmentId });
     // Without it the environment names the branch itself, so a failed lookup isn't fatal.
-    const branchName = yield* client
-      .issueBranchName(token, issue.id)
-      .pipe(
-        Effect.catch((error) =>
-          Effect.logWarning("linear issue branch name failed", { error }).pipe(Effect.as(null)),
-        ),
-      );
+    const branchName =
+      token === null
+        ? null
+        : yield* client
+            .issueBranchName(token, issue.id)
+            .pipe(
+              Effect.catch((error) =>
+                Effect.logWarning("linear issue branch name failed", { error }).pipe(
+                  Effect.as(null),
+                ),
+              ),
+            );
 
     const launched = yield* connector
       .linearSession({
@@ -850,6 +886,7 @@ const make = Effect.gen(function* () {
       });
     }
     yield* recordSession(sessionId, { status: "launched", threadId: result.threadId });
+    if (token === null) return;
     yield* client
       .setExternalUrls(token, sessionId, [
         {
@@ -871,7 +908,7 @@ const make = Effect.gen(function* () {
 
   const handlePrompted = Effect.fn("relay.linear.session_prompted")(function* (
     event: LinearQueuedEvent,
-    token: string,
+    token: string | null,
     linear: RelayConfiguration.LinearConfiguration,
   ) {
     const sessionId = event.agentSession.id;
@@ -1029,23 +1066,30 @@ const make = Effect.gen(function* () {
         "relay.linear.agent_session_id": event.agentSession.id,
         "relay.linear.action": event.action,
       });
-      const token = yield* accessTokenFor(event.organizationId);
+      // The thread still starts without a usable app token; only Linear stays unaware of it.
+      const token = yield* accessTokenFor(event.organizationId).pipe(
+        Effect.catch((error) =>
+          Effect.logWarning("linear app token unavailable", { error }).pipe(Effect.as(null)),
+        ),
+      );
       if (token === null) {
-        return yield* Effect.logWarning("linear event for a workspace without an installation", {
+        yield* Effect.logWarning("linear event without a usable app token", {
           organizationId: event.organizationId,
         });
       }
       if (event.action === "created") {
         // Linear marks a session unresponsive without an activity within 10s.
-        yield* postActivity(
+        const acknowledged = yield* postActivity(
           token,
           event.agentSession.id,
           { type: "thought", body: "Handing this to Otter Code…" },
           { ephemeral: true },
         );
-        return yield* handleCreated(event, token, linear);
+        if (!acknowledged && token !== null) yield* revokeIfRejected(event.organizationId, token);
+        yield* handleCreated(event, token, linear);
+        return;
       }
-      if (event.action === "prompted") return yield* handlePrompted(event, token, linear);
+      if (event.action === "prompted") yield* handlePrompted(event, token, linear);
     }).pipe(
       Effect.catchCause((cause) => Effect.logError("linear event processing failed", { cause })),
       Effect.withSpan("relay.linear.process_event"),

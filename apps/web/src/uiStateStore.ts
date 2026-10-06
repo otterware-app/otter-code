@@ -27,6 +27,7 @@ export interface PersistedUiState {
   projectOrderCwds?: string[];
   defaultAdvertisedEndpointKey?: string | null;
   sidebarProjectScopeKey?: string | null;
+  sidebarProjectSpaceId?: string | null;
   threadChangedFilesExpansionVersion?: number;
   threadChangedFilesExpandedById?: Record<string, Record<string, boolean>>;
   pullRequestMergeMethod?: string;
@@ -36,6 +37,9 @@ export interface UiProjectState {
   projectExpandedById: Record<string, boolean>;
   projectOrder: string[];
   sidebarProjectScopeKey: string | null;
+  // The rail's space: a project group id, `CHATS_SPACE_ID`, or null for all
+  // projects. The project scope above narrows within it.
+  sidebarProjectSpaceId: string | null;
 }
 
 export interface UiThreadState {
@@ -58,6 +62,7 @@ const initialState: UiState = {
   projectExpandedById: {},
   projectOrder: [],
   sidebarProjectScopeKey: null,
+  sidebarProjectSpaceId: null,
   threadLastVisitedAtById: {},
   threadChangedFilesExpandedById: {},
   defaultAdvertisedEndpointKey: null,
@@ -151,6 +156,7 @@ export function parsePersistedState(parsed: PersistedUiState): UiState {
         : {},
     defaultAdvertisedEndpointKey: sanitizeOptionalKey(parsed.defaultAdvertisedEndpointKey),
     sidebarProjectScopeKey: sanitizeOptionalKey(parsed.sidebarProjectScopeKey),
+    sidebarProjectSpaceId: sanitizeOptionalKey(parsed.sidebarProjectSpaceId),
     pullRequestMergeMethod: isPullRequestMergeMethod(parsed.pullRequestMergeMethod)
       ? parsed.pullRequestMergeMethod
       : initialState.pullRequestMergeMethod,
@@ -225,6 +231,7 @@ export function persistState(state: UiState): void {
         threadLastVisitedAtById: state.threadLastVisitedAtById,
         defaultAdvertisedEndpointKey: state.defaultAdvertisedEndpointKey,
         sidebarProjectScopeKey: state.sidebarProjectScopeKey,
+        sidebarProjectSpaceId: state.sidebarProjectSpaceId,
         threadChangedFilesExpansionVersion: THREAD_CHANGED_FILES_EXPANSION_VERSION,
         threadChangedFilesExpandedById: state.threadChangedFilesExpandedById,
         pullRequestMergeMethod: state.pullRequestMergeMethod,
@@ -334,6 +341,19 @@ function setSidebarProjectScopeKey(state: UiState, projectKey: string | null): U
   };
 }
 
+/** Choosing a space clears the project scope: it may name a project outside it. */
+export function setSidebarProjectSpaceId(state: UiState, spaceId: string | null): UiState {
+  const nextId = sanitizeOptionalKey(spaceId);
+  if (state.sidebarProjectSpaceId === nextId && state.sidebarProjectScopeKey === null) {
+    return state;
+  }
+  return {
+    ...state,
+    sidebarProjectSpaceId: nextId,
+    sidebarProjectScopeKey: null,
+  };
+}
+
 function setPullRequestMergeMethod(state: UiState, method: PullRequestMergeMethod): UiState {
   return state.pullRequestMergeMethod === method
     ? state
@@ -423,6 +443,7 @@ interface UiStateStore extends UiState {
   setThreadChangedFilesExpanded: (threadId: string, turnId: string, expanded: boolean) => void;
   setDefaultAdvertisedEndpointKey: (key: string | null) => void;
   setSidebarProjectScopeKey: (projectKey: string | null) => void;
+  setSidebarProjectSpaceId: (spaceId: string | null) => void;
   setPullRequestMergeMethod: (method: PullRequestMergeMethod) => void;
   setProjectExpanded: (projectIds: string | readonly string[], expanded: boolean) => void;
   reorderProjects: (
@@ -444,6 +465,7 @@ export const useUiStateStore = create<UiStateStore>((set) => ({
     set((state) => setDefaultAdvertisedEndpointKey(state, key)),
   setSidebarProjectScopeKey: (projectKey) =>
     set((state) => setSidebarProjectScopeKey(state, projectKey)),
+  setSidebarProjectSpaceId: (spaceId) => set((state) => setSidebarProjectSpaceId(state, spaceId)),
   setPullRequestMergeMethod: (method) => set((state) => setPullRequestMergeMethod(state, method)),
   setProjectExpanded: (projectIds, expanded) =>
     set((state) => setProjectExpanded(state, projectIds, expanded)),

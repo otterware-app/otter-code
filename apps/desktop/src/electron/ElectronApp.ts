@@ -51,8 +51,8 @@ export class ElectronApp extends Context.Service<
      */
     readonly systemLocale: Effect.Effect<string>;
     readonly whenReady: Effect.Effect<void, ElectronAppWhenReadyError>;
-    readonly requestSingleInstanceLock: Effect.Effect<boolean>;
     readonly quit: Effect.Effect<void>;
+    readonly requestSingleInstanceLock: Effect.Effect<boolean>;
     readonly exit: (code: number) => Effect.Effect<void>;
     readonly relaunch: (options: Electron.RelaunchOptions) => Effect.Effect<void>;
     readonly setPath: (

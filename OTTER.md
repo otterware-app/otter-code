@@ -24,8 +24,12 @@ different and how to keep the fork aligned with upstream.
   7. `chore(otter): changes before the <date> sync (#N)`, oldest first: everything committed to
      `main` between two syncs, squashed by that sync's PR. Keep each one as its own commit; never
      fold them into each other or into the features.
-- **Changing the fork:** commit directly to `main`. The next sync squashes those commits into one
-  new sync commit. Never merge upstream into Otter's `main`.
+- **Changing the fork:** land every change on `main` through a pull request, and merge it only
+  once CI is green. Never push to `main` directly. Agents run only targeted checks and leave the
+  full suite to CI (see `AGENTS.md`), so the PR is what keeps a missed test out of `main` and out
+  of the nightly release. Asking an agent to change the fork counts as asking it for that PR. The
+  next sync squashes the merged commits into one new sync commit; publishing a sync (below) is the
+  only direct write to `main`. Never merge upstream into Otter's `main`.
 
 ### Preparing a sync
 

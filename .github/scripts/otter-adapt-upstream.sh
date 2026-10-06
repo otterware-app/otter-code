@@ -24,6 +24,29 @@ perl -0pi -e '
   s/\n[ \t]*echo \x27release-assets\/\*\.exe\x27//g;
 ' .github/workflows/release.yml
 
+# Otter's nightly is also latest. Keep every hosted alias on the same build so
+# the legacy domains serve the redirect in apps/web/vercel.ts after the cutover.
+OTTER_WEB_ALIAS_BLOCK='
+          # Otter Code hosted aliases
+          if [[ "${GITHUB_REPOSITORY}" == "otterware-app/otter-code" ]]; then
+            for otter_domain in \
+              code.otterware.app latest.code.otterware.app nightly.code.otterware.app \
+              code.otterware.dev latest.code.otterware.dev nightly.code.otterware.dev; do
+              if [[ "$otter_domain" != "$channel_domain" ]]; then
+                vp dlx vercel@53.1.1 alias set "$DEPLOYMENT_URL" "$otter_domain" \
+                  --token "$VERCEL_TOKEN" \
+                  "${vercel_scope_args[@]}"
+              fi
+            done
+          fi
+' perl -0pi -e '
+  s/(          vercel_scope_args=\([^\n]*\)\n.*?)(?=\n  # Same split as the web app)/
+    my $block = $1;
+    $block =~ s{(          fi\n)(?=\s*\z)}{$1$ENV{OTTER_WEB_ALIAS_BLOCK}};
+    $block;
+  /se unless /# Otter Code hosted aliases/;
+' .github/workflows/release.yml
+
 # Point agents at the fork guide from AGENTS.md, which every agent reads first.
 perl -0pi -e '
   s/\A(# [^\n]*\n)/$1\n> **This is the Otter Code fork.** Read [OTTER.md](OTTER.md) first: it covers how the fork\n> stays in sync with upstream, its identities and infrastructure, releases, and moving machines.\n/

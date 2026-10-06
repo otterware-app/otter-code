@@ -38,7 +38,7 @@ export const SUITE_WEB_MODULES: ReadonlyArray<SuiteWebModule> = [
     path: "/home",
     rail: "start",
     order: 0,
-    serverModule: null,
+    serverModule: "home",
     searchTerms: ["home", "today", "inbox", "needs you"],
   },
   {

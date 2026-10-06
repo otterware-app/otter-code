@@ -12,6 +12,7 @@ import { mergeSuiteContracts, type SuiteRpcTag } from "./contract.ts";
 import { SuiteCoreContract } from "./core.ts";
 import { SUITE_DRIVE_METHODS, SuiteDriveContract } from "./drive.ts";
 import { SUITE_MAIL_METHODS, SuiteMailContract } from "./mail.ts";
+import { SuiteHomeContract } from "./home.ts";
 
 export * from "./calendar.ts";
 export * from "./contract.ts";
@@ -25,6 +26,7 @@ const SuiteContracts = mergeSuiteContracts(
   SuiteCalendarContract,
   SuiteDriveContract,
   SuiteMailContract,
+  SuiteHomeContract,
 );
 
 export const SuiteRpcGroup = SuiteContracts.group;

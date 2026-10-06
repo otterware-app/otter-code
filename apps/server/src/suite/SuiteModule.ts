@@ -17,7 +17,11 @@ import type * as Layer from "effect/Layer";
 
 import type { SuiteMigration } from "./SuiteMigrations.ts";
 
-/** Feeds Home's "needs you" list. Registered through a module's `homeContributor`. */
+/**
+ * Feeds Home. Registered through a module's `homeContributor`. Home calls it on
+ * every overview (clients poll while Home is open), so reads must be cheap:
+ * serve from the module's own tables or a short cache, never a network call.
+ */
 export interface SuiteHomeContributor {
   readonly module: SuiteHomeItemModule;
   /** Items that currently need the user, newest or most urgent first. Handles its own failures. */

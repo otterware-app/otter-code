@@ -60,6 +60,17 @@ agentInstructions, homeContributor })` ([`SuiteModule.ts`](apps/server/src/suite
 [`core/SuiteCoreModule.ts`](apps/server/src/suite/core/SuiteCoreModule.ts) is the reference
 module: `suite.capabilities` over RPC and as the `suite_capabilities` MCP tool.
 
+## Embedded assistant threads
+
+Module side chats use the upstream `ChatView` with two optional props: `compact` hides the
+thread header, terminal and right panels and limits window shortcuts to the embedded composer;
+`decorateOutgoingMessage` captures the current page at send time and adds a canonical context
+reference and record to the existing send path. Timeline, composer, provider selection, work
+logs, approvals, questions and draft promotion stay owned by Code. The timeline's unknown-kind
+fallback recognizes `suite-page` chips. This open context kind needs no main-database migration
+or orchestration event change and remains readable in plain Code. Keep these two seams when
+rebasing; side-chat lifecycle and Home UI live under `apps/web/src/suite/`.
+
 ## Upstream hooks
 
 These upstream lines are the whole integration; keep them when resolving rebase conflicts:

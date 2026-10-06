@@ -282,6 +282,7 @@ import { TimelineSystemDivider } from "./TimelineSystemDivider";
 import { SkillChipIcon, SkillInlineText } from "./SkillInlineText";
 import * as DateTime from "effect/DateTime";
 import { formatWorkspaceRelativePath } from "../../filePathDisplay";
+import { renderSuitePageContextChip } from "../../suite/sideChat/suitePageContextReference";
 import {
   buildReviewCommentRenderablePatch,
   formatReviewCommentFence,
@@ -4314,7 +4315,10 @@ const userMessageContextPresentationRegistry = createContextPresentationRegistry
         ),
     },
   ],
-  fallback: (_kind, _record, context) => <UnavailableUserMessageContextChip {...context} />,
+  fallback: (kind, _record, context) =>
+    renderSuitePageContextChip(kind, context.reference.label, context.copyMarkdown) ?? (
+      <UnavailableUserMessageContextChip {...context} />
+    ),
 });
 
 /** One inline context chip in a sent message, dispatched by the shared presentation registry. */

@@ -93,4 +93,21 @@ export const SUITE_MCP_TOOLS: Readonly<Record<string, T3McpToolDefinition>> = {
     ["Remove", "Removing", "Removed", "conversations from a Mail project"],
     null,
   ),
+  suite_home_overview: suiteTool(["Read", "Reading", "Read", "Home overview"], "project-list"),
+  suite_list_projects: suiteTool(
+    ["List", "Listing", "Listed", "cross-app projects"],
+    "project-list",
+  ),
+  suite_get_project_overview: suiteTool(
+    ["Read", "Reading", "Read", "cross-app project"],
+    "project-read",
+  ),
+  suite_create_project: suiteTool(
+    ["Create", "Creating", "Created", "cross-app project"],
+    "project-create",
+  ),
+  suite_update_project: suiteTool(
+    ["Update", "Updating", "Updated", "cross-app project"],
+    "project-update",
+  ),
 };

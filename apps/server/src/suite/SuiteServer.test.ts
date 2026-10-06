@@ -2,6 +2,7 @@ import { NodeHttpServer } from "@effect/platform-node";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { expect, it } from "@effect/vitest";
 import { ProviderInstanceId, ThreadId } from "@t3tools/contracts";
+import { SuiteProject, SuiteHomeOverview } from "@t3tools/contracts/suite";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
@@ -19,6 +20,7 @@ import * as McpSessionRegistry from "../mcp/McpSessionRegistry.ts";
 import * as PreviewAutomationBroker from "../mcp/PreviewAutomationBroker.ts";
 import * as Orchestrator from "../orchestration-v2/Orchestrator.ts";
 import * as ProjectionStore from "../orchestration-v2/ProjectionStore.ts";
+import * as ProjectStore from "../orchestration-v2/ProjectStore.ts";
 import * as ProviderAdapterRegistry from "../orchestration-v2/ProviderAdapterRegistry.ts";
 import * as ThreadManagementService from "../orchestration-v2/ThreadManagementService.ts";
 import * as PreviewBrowser from "../preview/PreviewBrowser.ts";
@@ -38,6 +40,7 @@ import * as SuiteServer from "./SuiteServer.ts";
 const layerStubServices = Layer.mergeAll(
   Layer.mock(Orchestrator.OrchestratorV2)({}),
   Layer.mock(ProjectionStore.ProjectionStoreV2)({}),
+  Layer.mock(ProjectStore.ProjectStoreV2)({}),
   Layer.mock(DeviceService.DeviceService)({}),
   Layer.mock(ThreadManagementService.ThreadManagementService)({}),
   Layer.mock(ProviderRegistry.ProviderRegistry)({}),
@@ -69,9 +72,37 @@ const CallResult = Schema.fromJsonString(
   }),
 );
 
+const HomeCallResult = Schema.fromJsonString(
+  Schema.Struct({
+    result: Schema.Struct({
+      isError: Schema.optional(Schema.Boolean),
+      structuredContent: Schema.Struct({ contributors: Schema.Array(Schema.Unknown) }),
+    }),
+  }),
+);
+
 const decodeJsonRpcResult = Schema.decodeUnknownEffect(JsonRpcResult);
+const decodeHomeResult = Schema.decodeUnknownEffect(HomeCallResult);
 const decodeToolNames = Schema.decodeUnknownEffect(ToolNames);
 const decodeCallResult = Schema.decodeUnknownEffect(CallResult);
+
+const decodeProject = Schema.decodeUnknownEffect(SuiteProject);
+const decodeOverview = Schema.decodeUnknownEffect(SuiteHomeOverview);
+const decodeProjectList = Schema.decodeUnknownEffect(
+  Schema.Struct({
+    projects: Schema.Array(Schema.Struct({ project: SuiteProject })),
+  }),
+);
+const decodeToolResult = Schema.decodeUnknownEffect(
+  Schema.fromJsonString(
+    Schema.Struct({
+      result: Schema.Struct({
+        isError: Schema.optional(Schema.Boolean),
+        structuredContent: Schema.Unknown,
+      }),
+    }),
+  ),
+);
 
 const firstJson = (body: string) => body.match(/\{.*\}/s)?.[0] ?? body;
 
@@ -141,6 +172,8 @@ it.effect("an agent in a thread lists and calls suite_capabilities over /mcp", (
           "drive_list_thread_documents",
         ]),
       );
+      expect(names).toContain("suite_home_overview");
+      expect(names).toContain("suite_create_project");
       // Merged beside the upstream toolkits, not instead of them.
       expect(names).toContain("delegate_task");
 
@@ -151,6 +184,54 @@ it.effect("an agent in a thread lists and calls suite_capabilities over /mcp", (
       const called = yield* decodeCallResult(firstJson(yield* call.text));
       expect(called.result.isError ?? false).toBe(false);
       expect(called.result.structuredContent.modules).toContain("core");
+      expect(called.result.structuredContent.modules).toContain("home");
+
+      // Home answers even when Code's projections cannot be read (stubbed here).
+      const home = yield* post(
+        `{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"suite_home_overview","arguments":{}}}`,
+        sessionId,
+      );
+      const homeResult = yield* decodeHomeResult(firstJson(yield* home.text));
+      expect(homeResult.result.isError ?? false).toBe(false);
+      expect(homeResult.result.structuredContent.contributors).toEqual([
+        { module: "code", ok: false, itemCount: 0 },
+      ]);
+
+      const callTool = (name: string, args: unknown) =>
+        Effect.gen(function* () {
+          const response = yield* post(
+            JSON.stringify({
+              jsonrpc: "2.0",
+              id: 5,
+              method: "tools/call",
+              params: { name, arguments: args },
+            }),
+            sessionId,
+          );
+          return yield* decodeToolResult(firstJson(yield* response.text));
+        });
+      const created = yield* callTool("suite_create_project", {
+        name: "Acme",
+        rules: { mail: { domains: ["acme.com"] } },
+      });
+      expect(created.result.isError ?? false).toBe(false);
+      const project = yield* decodeProject(created.result.structuredContent);
+      expect(project.rules.mail.domains).toEqual(["acme.com"]);
+      const updated = yield* callTool("suite_update_project", {
+        id: project.id,
+        name: "Acme rollout",
+      });
+      const renamed = yield* decodeProject(updated.result.structuredContent);
+      expect(renamed.name).toBe("Acme rollout");
+      expect(renamed.rules).toEqual(project.rules);
+      const projectOverview = yield* callTool("suite_get_project_overview", {
+        projectId: project.id,
+      });
+      const scoped = yield* decodeOverview(projectOverview.result.structuredContent);
+      expect(scoped.projects[0]?.project.id).toBe(project.id);
+      const projectList = yield* callTool("suite_list_projects", {});
+      const listedProjects = yield* decodeProjectList(projectList.result.structuredContent);
+      expect(listedProjects.projects.map((entry) => entry.project.name)).toEqual(["Acme rollout"]);
 
       // Module migrations ran in suite.sqlite, beside (not inside) the main database.
       const config = yield* ServerConfig.ServerConfig;
@@ -166,6 +247,8 @@ it.effect("an agent in a thread lists and calls suite_capabilities over /mcp", (
       expect(applied.map((row) => `${row.module}#${row.id}`)).toEqual(
         expect.arrayContaining(["core#1", "drive#1"]),
       );
+      expect(applied.map((row) => `${row.module}#${row.id}`)).toContain("core#1");
+      expect(applied.map((row) => `${row.module}#${row.id}`)).toContain("home#1");
       expect(suiteAgentInstructions()).toContain("suite_capabilities");
     }),
   ).pipe(

@@ -1,43 +1,55 @@
 /**
- * The right-hand slot every module page reserves for the side chat: a compact
- * Code thread that sees what the page publishes through `useSuitePageContext`.
- * This is the placeholder; the side chat itself replaces its body.
+ * The right-hand side chat on module pages: a compact Code thread that sees
+ * what the page publishes through `useSuitePageContext` (see
+ * `sideChat/SuiteSideChat.tsx`). Open state and width persist; ⌘J / Ctrl+J
+ * toggles it while a module page is shown.
  */
 import * as Schema from "effect/Schema";
-import { MessagesSquareIcon, PanelRightCloseIcon } from "lucide-react";
+import { useEffect } from "react";
 
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import { useResizableWidth } from "../hooks/useResizableWidth";
 import { RightPanelResizeHandle } from "../components/preview/RightPanelResizeHandle";
-import { Button } from "../components/ui/button";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "../components/ui/empty";
-import { Tooltip, TooltipPopup, TooltipTrigger } from "../components/ui/tooltip";
-import { useCurrentSuitePageContext } from "./suitePageContext";
+import { isMacPlatform } from "../lib/utils";
+import { SuiteSideChat } from "./sideChat/SuiteSideChat";
 
 const SIDE_CHAT_OPEN_KEY = "otterware:suite-side-chat:open:v1";
 const SIDE_CHAT_WIDTH_KEY = "otterware:suite-side-chat:width:v1";
+
+const isMac = typeof navigator !== "undefined" && isMacPlatform(navigator.platform);
+export const SIDE_CHAT_SHORTCUT_LABEL = isMac ? "⌘J" : "Ctrl+J";
 
 /** Shared by the slot and the page header's toggle. */
 export function useSuiteSideChatOpen() {
   return useLocalStorage(SIDE_CHAT_OPEN_KEY, true, Schema.Boolean);
 }
 
-export function SuiteSideChatSlot() {
+/** ⌘J / Ctrl+J toggles the side chat. Module pages do not mount Code's terminal shortcut. */
+export function useSuiteSideChatShortcut(enabled: boolean) {
+  const [open, setOpen] = useSuiteSideChatOpen();
+  useEffect(() => {
+    if (!enabled) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.altKey || event.shiftKey) return;
+      if (event.key.toLowerCase() !== "j") return;
+      if (!(isMac ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey)) return;
+      event.preventDefault();
+      setOpen(!open);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [enabled, open, setOpen]);
+}
+
+export function SuiteSideChatSlot({ moduleId }: { readonly moduleId: string }) {
   const [open, setOpen] = useSuiteSideChatOpen();
   const { width, handlers } = useResizableWidth({
     storageKey: SIDE_CHAT_WIDTH_KEY,
-    defaultWidth: 360,
-    minWidth: 280,
-    maxWidth: 640,
+    defaultWidth: 380,
+    minWidth: 300,
+    maxWidth: 720,
     edge: "left",
   });
-  const pageContext = useCurrentSuitePageContext();
   if (!open) return null;
 
   return (
@@ -48,38 +60,11 @@ export function SuiteSideChatSlot() {
       style={{ width }}
     >
       <RightPanelResizeHandle handlers={handlers} />
-      <div className="flex h-(--workspace-topbar-height) shrink-0 items-center gap-2 border-b border-border px-3">
-        <MessagesSquareIcon className="size-4 text-muted-foreground" />
-        <span className="min-w-0 flex-1 truncate text-sm font-medium">Side chat</span>
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="icon-xs"
-                aria-label="Hide side chat"
-                onClick={() => setOpen(false)}
-              />
-            }
-          >
-            <PanelRightCloseIcon />
-          </TooltipTrigger>
-          <TooltipPopup side="bottom">Hide side chat</TooltipPopup>
-        </Tooltip>
-      </div>
-      <Empty className="flex-1">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <MessagesSquareIcon />
-          </EmptyMedia>
-          <EmptyTitle>Ask about this page</EmptyTitle>
-          <EmptyDescription>
-            {pageContext
-              ? `A chat here will see “${pageContext.title}”.`
-              : "A chat here will see what you are looking at."}
-          </EmptyDescription>
-        </EmptyHeader>
-      </Empty>
+      <SuiteSideChat
+        moduleId={moduleId}
+        onHide={() => setOpen(false)}
+        hideShortcutLabel={SIDE_CHAT_SHORTCUT_LABEL}
+      />
     </aside>
   );
 }

@@ -7,7 +7,7 @@ import {
 } from "@t3tools/contracts";
 import * as Schema from "effect/Schema";
 
-import { buildCodeHomeSnapshot, parseCodeItemId } from "./codeHomeItems.ts";
+import { buildCodeHomeSnapshot, codeItemId, parseCodeItemId } from "./codeHomeItems.ts";
 
 const NOW = Date.parse("2026-10-06T12:00:00.000Z");
 const hoursAgo = (hours: number) => new Date(NOW - hours * 3_600_000).toISOString();
@@ -66,6 +66,20 @@ const snapshotOf = (threads: ReadonlyArray<ThreadShell>, details = new Map()) =>
   buildCodeHomeSnapshot({ threads, projects, requestDetails: details, nowMs: NOW });
 
 describe("buildCodeHomeSnapshot", () => {
+  it("round-trips namespaced thread and request ids for actions", () => {
+    const threadId = "thread:mcp:scope:request:0";
+    const requestId = "approval:provider:1";
+    expect(parseCodeItemId(codeItemId.request(threadId, requestId))).toEqual({
+      kind: "request",
+      threadId,
+      requestId,
+    });
+    expect(parseCodeItemId(codeItemId.finished(threadId))).toEqual({ kind: "finished", threadId });
+    expect(parseCodeItemId(codeItemId.failed(threadId))).toEqual({ kind: "failed", threadId });
+    expect(parseCodeItemId("request:%broken:req")).toBeNull();
+    expect(parseCodeItemId("request:thread:")).toBeNull();
+  });
+
   it("asks the user about a pending approval, with its command and an Approve action", () => {
     const waiting = shell("t-approve", {
       status: "waiting",

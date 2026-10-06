@@ -127,6 +127,10 @@ export function SuiteSideChat({
   const publishedContext = useCurrentSuitePageContext();
   const ensureAssistant = useEnsureAssistantProject();
   const [starting, setStarting] = useState(false);
+  const shellState = useEnvironmentQuery(
+    environmentId === null ? null : environmentShell.stateAtom(environmentId),
+  );
+  const ready = shellState.data?.snapshot._tag === "Some";
   const moduleLabel = SUITE_WEB_MODULES.find((module) => module.id === moduleId)?.label ?? moduleId;
   const pageContext = useMemo(
     () =>
@@ -166,7 +170,7 @@ export function SuiteSideChat({
   );
 
   const startNewChat = useCallback(async () => {
-    if (environmentId === null || starting) return;
+    if (environmentId === null || !ready || starting) return;
     setStarting(true);
     try {
       const project = await ensureAssistant(environmentId);
@@ -177,7 +181,7 @@ export function SuiteSideChat({
     } finally {
       setStarting(false);
     }
-  }, [ensureAssistant, environmentId, moduleId, setTarget, starting]);
+  }, [ensureAssistant, environmentId, moduleId, ready, setTarget, starting]);
 
   // Capture the current page on every send, including unchanged context on later messages.
   const decorateOutgoingMessage = useCallback(
@@ -243,7 +247,11 @@ export function SuiteSideChat({
             )}
           </MenuPopup>
         </Menu>
-        <HeaderButton label="New chat" onClick={() => void startNewChat()} disabled={starting}>
+        <HeaderButton
+          label="New chat"
+          onClick={() => void startNewChat()}
+          disabled={starting || !ready}
+        >
           <SquarePenIcon />
         </HeaderButton>
         <HeaderButton
@@ -273,7 +281,7 @@ export function SuiteSideChat({
           />
         </label>
       ) : null}
-      {environmentId === null ? (
+      {environmentId === null || !ready ? (
         <SideChatEmpty
           title="Connecting…"
           description="The side chat needs a connected environment."
@@ -283,7 +291,7 @@ export function SuiteSideChat({
           title="Ask about this page"
           description={
             pageContext
-              ? `A chat here sees “${suitePageContextLabel(pageContext)}” and can use your ${moduleLabel}, Calendar, Drive and Code tools.`
+              ? `A chat here sees “${suitePageContextLabel(pageContext)}” and can use your connected Otterware tools.`
               : "A chat here sees what you are looking at and can use the Otterware tools."
           }
           action={
@@ -296,8 +304,22 @@ export function SuiteSideChat({
       ) : (
         <SideChatThread
           target={activeTarget}
-          onPromoted={setTarget}
-          onMissing={() => setTarget(null)}
+          onPromoted={(promoted) =>
+            setTarget((current) =>
+              current?.threadId === promoted.threadId &&
+              current.environmentId === promoted.environmentId
+                ? promoted
+                : current,
+            )
+          }
+          onMissing={() =>
+            setTarget((current) =>
+              current?.threadId === activeTarget.threadId &&
+              current.environmentId === activeTarget.environmentId
+                ? null
+                : current,
+            )
+          }
           decorateOutgoingMessage={decorateOutgoingMessage}
         />
       )}

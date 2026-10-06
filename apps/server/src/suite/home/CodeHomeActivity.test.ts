@@ -8,6 +8,7 @@ import * as Orchestrator from "../../orchestration-v2/Orchestrator.ts";
 import * as ProjectStore from "../../orchestration-v2/ProjectStore.ts";
 import * as ThreadManagementService from "../../orchestration-v2/ThreadManagementService.ts";
 import * as CodeHomeActivity from "./CodeHomeActivity.ts";
+import { codeItemId } from "./codeHomeItems.ts";
 
 it.effect("Code actions use existing commands and invalidate the overview cache", () => {
   let reads = 0;
@@ -45,15 +46,20 @@ it.effect("Code actions use existing commands and invalidate the overview cache"
     yield* activity.snapshot;
     yield* activity.snapshot;
     assert.strictEqual(reads, 1);
-    yield* activity.contributor.performAction!("request:thread-1:request-1", "approve");
+    yield* activity.contributor.performAction!(
+      codeItemId.request("thread:mcp:1", "request:1"),
+      "approve",
+    );
     yield* activity.snapshot;
     assert.strictEqual(reads, 2);
-    yield* activity.contributor.performAction!("finished:thread-1", "mark-seen");
+    yield* activity.contributor.performAction!(codeItemId.finished("thread:mcp:1"), "mark-seen");
     const [approval, visit] = commands as Array<Record<string, unknown>>;
     assert.strictEqual(approval?.type, "runtime-request.respond");
-    assert.strictEqual(approval?.requestId, "request-1");
+    assert.strictEqual(approval?.threadId, "thread:mcp:1");
+    assert.strictEqual(approval?.requestId, "request:1");
     assert.strictEqual(approval?.decision, "accept");
     assert.strictEqual(visit?.type, "thread.visit");
+    assert.strictEqual(visit?.threadId, "thread:mcp:1");
     assert.strictEqual(visit?.visitedAt, DateTime.formatIso(updatedAt));
     const rejected = yield* activity.contributor.performAction!(
       "finished:thread-1",

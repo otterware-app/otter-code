@@ -30,6 +30,7 @@ import {
 import { useProjects } from "../../state/entities";
 import { useAgentEntries } from "./AgentsCard";
 import { type ProjectDialogSeed, ProjectDialog, ViewDialog } from "./HomeDialogs";
+import { refreshHomeOverviews } from "./homeRpc";
 import {
   HOME_MODULES,
   SuiteProjectMonogram,
@@ -75,7 +76,7 @@ function ModuleCounts({ counts }: { readonly counts: SuiteHomeModuleCounts }) {
 export function HomeSidebar() {
   const navigate = useNavigate();
   const pathname = useLocation({ select: (location) => location.pathname });
-  const { environmentId, overview, refresh } = useHomeOverview();
+  const { environmentId, overview } = useHomeOverview();
   const agents = useAgentEntries(environmentId, useMinuteClock());
   const [projectsOpen, setProjectsOpen] = useState(true);
   const [viewsOpen, setViewsOpen] = useState(true);
@@ -236,7 +237,6 @@ export function HomeSidebar() {
         <HomeDialogHost
           environmentId={environmentId}
           projects={projects.map((entry) => entry.project)}
-          onChanged={refresh}
         />
       ) : null}
     </>
@@ -270,11 +270,9 @@ function NavRow(props: {
 function HomeDialogHost({
   environmentId,
   projects,
-  onChanged,
 }: {
   readonly environmentId: EnvironmentId;
   readonly projects: Parameters<typeof ViewDialog>[0]["projects"];
-  readonly onChanged: () => void;
 }) {
   const navigate = useNavigate();
   const dialogs = useHomeDialogs();
@@ -289,7 +287,7 @@ function HomeDialogHost({
         onSaved={(project) => {
           const created = dialogs.project?.project === null;
           dialogs.openProject(null);
-          onChanged();
+          refreshHomeOverviews();
           if (project === null) void navigate({ to: "/home" });
           else if (created) {
             void navigate({ to: "/home/projects/$projectId", params: { projectId: project.id } });
@@ -306,7 +304,7 @@ function HomeDialogHost({
         onSaved={(view) => {
           const created = dialogs.view === null;
           dialogs.openView(undefined);
-          onChanged();
+          refreshHomeOverviews();
           if (view === null) void navigate({ to: "/home" });
           else if (created)
             void navigate({ to: "/home/views/$viewId", params: { viewId: view.id } });

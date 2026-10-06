@@ -34,11 +34,12 @@ export interface CodeHomeSnapshot {
 
 /** Item ids encode what an action needs, so `performAction` can act without a lookup table. */
 export const codeItemId = {
-  request: (threadId: string, requestId: string) => `request:${threadId}:${requestId}`,
-  finished: (threadId: string) => `finished:${threadId}`,
-  failed: (threadId: string) => `failed:${threadId}`,
+  request: (threadId: string, requestId: string) =>
+    `request:${encodeURIComponent(threadId)}:${encodeURIComponent(requestId)}`,
+  finished: (threadId: string) => `finished:${encodeURIComponent(threadId)}`,
+  failed: (threadId: string) => `failed:${encodeURIComponent(threadId)}`,
   pullRequest: (threadId: string, repository: string, number: number) =>
-    `pr:${threadId}:${repository}#${number}`,
+    `pr:${encodeURIComponent(threadId)}:${repository}#${number}`,
 };
 
 export function parseCodeItemId(
@@ -49,10 +50,16 @@ export function parseCodeItemId(
   | null {
   const [kind, threadId, ...rest] = itemId.split(":");
   if (threadId === undefined || threadId.length === 0) return null;
-  if (kind === "request" && rest.length > 0) {
-    return { kind, threadId, requestId: rest.join(":") };
+  try {
+    const decodedThreadId = decodeURIComponent(threadId);
+    if (kind === "request" && rest.join(":").length > 0) {
+      return { kind, threadId: decodedThreadId, requestId: decodeURIComponent(rest.join(":")) };
+    }
+    if (kind === "finished" || kind === "failed" || kind === "pr")
+      return { kind, threadId: decodedThreadId };
+  } catch {
+    return null;
   }
-  if (kind === "finished" || kind === "failed" || kind === "pr") return { kind, threadId };
   return null;
 }
 

@@ -11,12 +11,23 @@ import {
 import { SUITE_HOME_METHODS } from "@t3tools/contracts/suite";
 import { Atom } from "effect/reactivity";
 
+import { appAtomRegistry } from "../../rpc/atomRegistry";
 import { connectionAtomRuntime } from "../../connection/runtime";
 import { environmentThreadShells } from "../../state/threads";
 
+const homeDefinitionRevisionAtom = Atom.make(0);
+
+/** Refresh every active Home scope after changing project rules or a saved filter. */
+export function refreshHomeOverviews() {
+  appAtomRegistry.set(
+    homeDefinitionRevisionAtom,
+    appAtomRegistry.get(homeDefinitionRevisionAtom) + 1,
+  );
+}
+
 /** Changes when a thread starts or stops waiting on the user, or a run finishes or is seen. */
 const threadAttentionSignalAtom = Atom.make((get) => {
-  let signature = "";
+  let signature = `${get(homeDefinitionRevisionAtom)}:`;
   for (const thread of get(environmentThreadShells.threadShellsAtom)) {
     if (thread.hasPendingApprovals || thread.hasPendingUserInput) signature += `w${thread.id};`;
     if (thread.latestRun?.completedAt) {

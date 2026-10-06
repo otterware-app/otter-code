@@ -161,7 +161,9 @@ function RootRouteView() {
     };
   }, [pathname]);
 
-  if (pathname === "/pair" || pathname === "/connect") {
+  // Account callbacks must finish before onboarding or workspace navigation
+  // can replace their route, including in a browser with no saved computers.
+  if (pathname === "/pair" || pathname === "/connect" || pathname.startsWith("/account/")) {
     return (
       <>
         <DocumentTitleSync />

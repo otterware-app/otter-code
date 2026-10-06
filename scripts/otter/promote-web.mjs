@@ -57,9 +57,25 @@ for (const name of domains) {
     domain = await request(`${path}/verify`, { method: "POST" });
     if (!domain.verified) throw new Error(`Domain ownership verification required: ${name}`);
   }
-  await request(`/v2/deployments/${deployment.id}/aliases`, {
-    method: "POST",
-    body: JSON.stringify({ alias: name }),
-  });
-  console.log(`Promoted ${name}`);
+}
+for (const name of domains) {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      await request(`/v2/deployments/${deployment.id}/aliases`, {
+        method: "POST",
+        body: JSON.stringify({ alias: name }),
+      });
+      console.log(`Promoted ${name}`);
+      break;
+    } catch (error) {
+      if (
+        !(error instanceof Error) ||
+        !error.message.includes("missing a SSL certificate") ||
+        attempt >= 11
+      )
+        throw error;
+      console.log(`Waiting for Vercel to issue the certificate for ${name}`);
+      await new Promise((resolve) => setTimeout(resolve, 10_000));
+    }
+  }
 }

@@ -17,6 +17,13 @@ import { resolveLinuxDesktopEntryName } from "./DesktopEarlyElectronStartup.ts";
 import { resolveDesktopBaseDir, resolveDesktopStateDir } from "./DesktopStatePaths.ts";
 import { isNightlyDesktopVersion } from "../updates/updateChannels.ts";
 import type { OtlpProtocol } from "@t3tools/shared/observability";
+import {
+  OTTERWARE_APP_ID,
+  OTTERWARE_DEV_APP_ID,
+  OTTERWARE_DEV_SLUG,
+  OTTERWARE_PRODUCT_NAME,
+  OTTERWARE_SLUG,
+} from "@t3tools/shared/otterware";
 
 export interface MakeDesktopEnvironmentInput {
   readonly dirname: string;
@@ -93,7 +100,7 @@ export class DesktopEnvironment extends Context.Service<
   }
 >()("@t3tools/desktop/app/DesktopEnvironment") {}
 
-const APP_BASE_NAME = "Otter Code";
+const APP_BASE_NAME = OTTERWARE_PRODUCT_NAME;
 
 function resolveDesktopAppStageLabel(input: {
   readonly isDevelopment: boolean;
@@ -114,7 +121,7 @@ export function resolveDesktopAppBranding(input: {
   return {
     baseName: APP_BASE_NAME,
     stageLabel,
-    // Otter Code ships one product name per channel; only dev builds carry a suffix.
+    // Otterware ships one product name; only dev builds carry a suffix.
     displayName: input.isDevelopment ? `${APP_BASE_NAME} (Dev)` : APP_BASE_NAME,
   };
 }
@@ -237,10 +244,10 @@ const make = Effect.fn("desktop.environment.make")(function* (
     branding,
     displayName,
     appUserModelId: Option.getOrElse(config.appUserModelIdOverride, () =>
-      isDevelopment ? "dev.otterware.code.dev" : "dev.otterware.code",
+      isDevelopment ? OTTERWARE_DEV_APP_ID : OTTERWARE_APP_ID,
     ),
     linuxDesktopEntryName: resolveLinuxDesktopEntryName(isDevelopment),
-    linuxWmClass: isDevelopment ? "otter-code-dev" : "otter-code",
+    linuxWmClass: isDevelopment ? OTTERWARE_DEV_SLUG : OTTERWARE_SLUG,
     linuxApplicationsDir,
     appImagePath: config.appImagePath,
     defaultDesktopSettings: DesktopAppSettings.resolveDefaultDesktopSettings(input.appVersion),

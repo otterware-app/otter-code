@@ -1,4 +1,10 @@
 import { fromLenientJson } from "@t3tools/shared/schemaJson";
+import {
+  OTTERWARE_APP_ID,
+  OTTERWARE_DEV_APP_ID,
+  OTTERWARE_DEV_SLUG,
+  OTTERWARE_SLUG,
+} from "@t3tools/shared/otterware";
 import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 
@@ -32,7 +38,7 @@ export interface EarlyLinuxElectronOptions {
 }
 
 export const resolveLinuxDesktopEntryName = (isDevelopment: boolean): string =>
-  isDevelopment ? "dev.otterware.code.dev.desktop" : "dev.otterware.code.desktop";
+  `${isDevelopment ? OTTERWARE_DEV_APP_ID : OTTERWARE_APP_ID}.desktop`;
 
 const trimNonEmpty = (value: string | undefined): string | null => {
   const trimmed = value?.trim();
@@ -88,7 +94,7 @@ export function resolveEarlyLinuxElectronOptions(
   const isDevelopment = isDevelopmentEnvironment(input.env);
   return {
     isDevelopment,
-    linuxWmClass: isDevelopment ? "otter-code-dev" : "otter-code",
+    linuxWmClass: isDevelopment ? OTTERWARE_DEV_SLUG : OTTERWARE_SLUG,
     linuxDesktopEntryName: resolveLinuxDesktopEntryName(isDevelopment),
     passwordStore: resolveLinuxPasswordStoreSwitch({
       preference,

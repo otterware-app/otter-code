@@ -391,6 +391,10 @@
       "types": "./src/codexAuthCallback.ts",
       "import": "./src/codexAuthCallback.ts"
     },
+    "./otterware": {
+      "types": "./src/otterware.ts",
+      "import": "./src/otterware.ts"
+    },
     "./codexAuthHandoff": {
       "types": "./src/codexAuthHandoff.ts",
       "import": "./src/codexAuthHandoff.ts"

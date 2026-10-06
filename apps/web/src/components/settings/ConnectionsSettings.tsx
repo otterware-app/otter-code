@@ -175,6 +175,7 @@ import {
   usePrimaryEnvironment,
   useRelayEnvironmentDiscovery,
 } from "~/state/environments";
+import { isOtterwareVersion } from "@t3tools/shared/otterware";
 import { APP_VERSION } from "~/branding";
 import { requestConfirmDialog } from "~/confirmDialog";
 import { useAtomCommand } from "../../state/use-atom-command";
@@ -1651,6 +1652,7 @@ function SavedBackendListRow({
     >
       {unsupported &&
       environment.entry.serverUpdateRequired === true &&
+      !isOtterwareVersion(APP_VERSION) &&
       serverUpdateState.status !== "running" ? (
         <OutdatedServerUpdateAction
           environmentId={environmentId}

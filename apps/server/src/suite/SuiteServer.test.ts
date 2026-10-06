@@ -9,6 +9,7 @@ import * as Path from "effect/Path";
 import * as Schema from "effect/Schema";
 import { HttpBody, HttpClient, HttpRouter } from "effect/http";
 
+import * as ServerSecretStore from "../auth/ServerSecretStore.ts";
 import * as ServerConfig from "../config.ts";
 import * as DeviceService from "../device/DeviceService.ts";
 import * as ServerEnvironment from "../environment/ServerEnvironment.ts";
@@ -88,6 +89,7 @@ it.effect("an agent in a thread lists and calls suite_capabilities over /mcp", (
           }),
         ),
         Layer.provideMerge(SuiteServer.layer),
+        Layer.provide(ServerSecretStore.layer),
         Layer.provide(PreviewAutomationBroker.layer),
         Layer.provide(PreviewBrowser.layer),
         Layer.provide(layerStubServices),

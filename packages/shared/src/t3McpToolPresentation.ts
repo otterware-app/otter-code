@@ -63,7 +63,9 @@ export type T3McpToolSummaryAction =
   | "browser"
   | "device"
   | "html-preview"
-  | "html-render";
+  | "html-render"
+  | "calendar-read"
+  | "calendar-change";
 
 export interface T3McpToolDefinition {
   readonly displayName: string;

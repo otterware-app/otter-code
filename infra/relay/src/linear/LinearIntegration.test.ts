@@ -16,6 +16,7 @@ import * as EnvironmentLinks from "../environments/EnvironmentLinks.ts";
 import {
   relayLinearAgentSessions,
   relayLinearInstallations,
+  relayLinearUserLinks,
   relayLinearUserTokens,
 } from "../persistence/schema.ts";
 import { LinearEventQueueSender, LinearIntegration, layer } from "./LinearIntegration.ts";
@@ -62,12 +63,14 @@ async function signWebhook(body: string): Promise<string> {
 }
 
 /**
- * An installed workspace whose app token Linear answers with `appTokenStatus`,
- * and one delegated session running thread `thread-1` on `env-1`.
+ * An installed workspace whose app token Linear answers with `appTokenStatus`
+ * (expired and due a refresh with `expiredAppToken`), Ada linked to `env-1`,
+ * and one delegated session running thread `thread-1` there.
  */
 const makeHarness = (
   appTokenStatus: number,
   promptOutcome: RelayLinearAgentPromptOutcome = "delivered",
+  { expiredAppToken = false }: { readonly expiredAppToken?: boolean } = {},
 ) =>
   Effect.gen(function* () {
     const installation = {
@@ -75,8 +78,10 @@ const makeHarness = (
       organizationName: "Acme",
       appUserId: "app-user",
       accessTokenSealed: yield* Effect.promise(() => sealSecret(SEALING_KEY, "app-token")),
-      refreshTokenSealed: null,
-      accessTokenExpiresAt: null,
+      refreshTokenSealed: expiredAppToken
+        ? yield* Effect.promise(() => sealSecret(SEALING_KEY, "refresh-token"))
+        : null,
+      accessTokenExpiresAt: expiredAppToken ? "2026-09-24T10:00:00.000Z" : null,
       installedByUserId: "user_1",
       revokedAt: null,
     };
@@ -89,6 +94,14 @@ const makeHarness = (
       accessTokenSealed: yield* Effect.promise(() => sealSecret(SEALING_KEY, "user-token")),
       refreshTokenSealed: null,
       accessTokenExpiresAt: null,
+    };
+    const userLink = {
+      organizationId: "org-1",
+      linearUserId: "linear-ada",
+      linearUserName: "Ada",
+      organizationName: "Acme",
+      userId: "user_1",
+      environmentId: "env-1",
     };
     const session = {
       agentSessionId: "session-1",
@@ -103,6 +116,7 @@ const makeHarness = (
     const prompts: Array<unknown> = [];
     const queued: Array<unknown> = [];
     const issueChanges: Array<unknown> = [];
+    const launches: Array<unknown> = [];
     const fakeDb = {
       select: () => ({
         from: (table: unknown) => ({
@@ -114,7 +128,9 @@ const makeHarness = (
                   ? [session]
                   : table === relayLinearUserTokens
                     ? [userToken]
-                    : [];
+                    : table === relayLinearUserLinks
+                      ? [userLink]
+                      : [];
             return {
               limit: () => Effect.succeed(rows),
               orderBy: () => ({ limit: () => Effect.succeed(rows) }),
@@ -122,12 +138,18 @@ const makeHarness = (
           },
         }),
       }),
+      insert: () => ({
+        values: (values: { readonly agentSessionId: string }) => ({
+          onConflictDoNothing: () => ({
+            returning: () => Effect.succeed([{ agentSessionId: values.agentSessionId }]),
+          }),
+        }),
+      }),
       update: (table: unknown) => ({
         set: (values: unknown) => ({
           where: () =>
             Effect.sync(() => {
-              expect(table).toBe(relayLinearInstallations);
-              revocations.push(values);
+              if (table === relayLinearInstallations) revocations.push(values);
             }),
         }),
       }),
@@ -196,6 +218,15 @@ const makeHarness = (
                   ),
               }),
               Layer.mock(EnvironmentConnector.EnvironmentConnector)({
+                linearSession: (input) =>
+                  Effect.sync(() => {
+                    launches.push(input);
+                    return {
+                      outcome: "launched" as const,
+                      threadId: "thread-2",
+                      environmentLabel: "Mac",
+                    };
+                  }),
                 linearPrompt: (input) =>
                   Effect.sync(() => {
                     prompts.push(input);
@@ -237,9 +268,27 @@ const makeHarness = (
         const signature = yield* Effect.promise(() => signWebhook(rawBody));
         return yield* integration.receiveWebhook({ rawBody, signature });
       });
+    const deliverCreated = integration.processEvent({
+      action: "created",
+      organizationId: "org-1",
+      promptContext: "Fix login",
+      agentSession: {
+        id: "session-2",
+        creatorId: "linear-ada",
+        issue: {
+          id: "issue-1",
+          identifier: "ENG-1",
+          title: "Fix login",
+          url: "https://linear.app/acme/issue/ENG-1",
+          team: { key: "ENG" },
+        },
+      },
+    });
     return {
       integration,
       deliverWebhook,
+      deliverCreated,
+      launches,
       queued,
       issueChanges,
       deliverRevoked,
@@ -276,6 +325,38 @@ describe("LinearIntegration OAuthApp revoked", () => {
       const { deliverRevoked, revocations } = yield* makeHarness(503);
       expect(yield* deliverRevoked).toBe(200);
       expect(revocations).toEqual([]);
+    }),
+  );
+});
+
+describe("LinearIntegration delegated sessions", () => {
+  it.effect("starts the thread and reports it in Linear", () =>
+    Effect.gen(function* () {
+      const { deliverCreated, launches, linearRequests, revocations } = yield* makeHarness(200);
+      yield* deliverCreated;
+      expect(launches).toMatchObject([{ environmentId: "env-1", agentSessionId: "session-2" }]);
+      expect(linearRequests.some((body) => body.includes("Started a thread on Mac"))).toBe(true);
+      expect(revocations).toEqual([]);
+    }),
+  );
+
+  it.effect("starts the thread when Linear rejects the app token, and asks for a reinstall", () =>
+    Effect.gen(function* () {
+      const { deliverCreated, launches, revocations } = yield* makeHarness(401);
+      yield* deliverCreated;
+      expect(launches).toHaveLength(1);
+      expect(revocations).toMatchObject([{ revokedAt: expect.any(String) }]);
+    }),
+  );
+
+  it.effect("starts the thread when Linear refuses to refresh the app token", () =>
+    Effect.gen(function* () {
+      const { deliverCreated, launches, revocations } = yield* makeHarness(401, "delivered", {
+        expiredAppToken: true,
+      });
+      yield* deliverCreated;
+      expect(launches).toHaveLength(1);
+      expect(revocations).toMatchObject([{ revokedAt: expect.any(String) }]);
     }),
   );
 });

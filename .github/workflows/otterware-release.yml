@@ -15,6 +15,12 @@ name: Otterware Release
 #   and vars.APPLE_TEAM_ID sign and notarize the macOS app; without them it is signed ad hoc.
 
 on:
+  # A manual run needs this file on the default branch. Until Otterware lands
+  # there, start a build by pushing a tag from the branch:
+  #   git tag otterware-build-<anything> && git push origin otterware-build-<anything>
+  push:
+    tags:
+      - "otterware-build-*"
   workflow_dispatch:
     inputs:
       mac:
@@ -183,7 +189,7 @@ jobs:
   desktop_mac_arm64:
     name: Desktop macOS arm64
     needs: [preflight, build_bundle]
-    if: ${{ inputs.mac }}
+    if: ${{ github.event_name == 'push' || inputs.mac }}
     uses: ./.github/workflows/release-desktop.yml
     secrets: inherit
     with:

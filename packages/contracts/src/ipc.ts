@@ -1147,6 +1147,12 @@ export interface DesktopBridge {
   getLocalEnvironmentBearerToken: () => Promise<string>;
   getClientSettings: () => Promise<ClientSettings | null>;
   setClientSettings: (settings: ClientSettings) => Promise<void>;
+  getAccountSession?: () => Promise<string | null>;
+  setAccountSession?: (session: string | null) => Promise<void>;
+  authorizeAccount?: (request: {
+    readonly state: string;
+    readonly challenge: string;
+  }) => Promise<{ readonly code: string; readonly redirectUri: string }>;
   getConnectionCatalog?: () => Promise<string | null>;
   setConnectionCatalog?: (catalog: string) => Promise<boolean>;
   clearConnectionCatalog?: () => Promise<void>;

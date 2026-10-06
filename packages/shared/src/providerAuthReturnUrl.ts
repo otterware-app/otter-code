@@ -8,7 +8,7 @@ export function providerAuthReturnUrl(value: string | undefined): string | undef
     const desktop = ["ottercode:", "ottercode-dev:"].includes(url.protocol) && url.host === "app";
     const web =
       ["http:", "https:"].includes(url.protocol) &&
-      (isLoopbackHost(url.hostname) || url.origin === "https://code.otterware.dev");
+      (isLoopbackHost(url.hostname) || url.origin === "https://code.otterware.app");
     if (
       url.username ||
       url.password ||

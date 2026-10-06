@@ -44,7 +44,7 @@ describe("Otter Connect environment row", () => {
     expect(markup).not.toContain("Confirm deregistration of Studio Mac");
   });
 
-  it("expands Clerk-style confirmation content beneath the environment row", () => {
+  it("expands Account confirmation content beneath the environment row", () => {
     const markup = renderRow({ confirmationOpen: true });
 
     expect(markup).toContain("Deregister server");

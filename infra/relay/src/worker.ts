@@ -1,3 +1,6 @@
+import * as AccountLifecycle from "./auth/AccountLifecycle.ts";
+import { OTTER_ACCOUNTS_URL } from "@t3tools/shared/otterAccounts";
+import * as OtterAccounts from "./auth/OtterAccounts.ts";
 import * as Alchemy from "alchemy";
 import * as Axiom from "alchemy/Axiom";
 import * as Cloudflare from "alchemy/Cloudflare";
@@ -200,9 +203,9 @@ export const layer = Api.make(
     const axiomIngestToken = yield* observability.workerIngestToken.token;
     const axiomTracesEndpoint = yield* observability.traces.otelTracesEndpoint;
 
-    const clerkSecretKey = yield* Config.Redacted("CLERK_SECRET_KEY");
-    const clerkPublishableKey = yield* Config.String("CLERK_PUBLISHABLE_KEY");
-    const clerkJwtAudience = yield* Config.String("CLERK_JWT_AUDIENCE");
+    const accountsUrl = yield* Config.String("OTTER_ACCOUNTS_URL").pipe(
+      Config.withDefault(OTTER_ACCOUNTS_URL),
+    );
 
     const cloudMintPrivateKey = yield* cloudMintKeyPair.privateKey;
     const cloudMintPublicKey = yield* cloudMintKeyPair.publicKey;
@@ -255,9 +258,7 @@ export const layer = Api.make(
         ...(fcmServiceAccount ? { fcmServiceAccount } : {}),
         apns: apnsCredentials,
         apnsDeliveryJobSigningSecret: yield* apnsDeliveryJobSigningSecret,
-        clerkSecretKey,
-        clerkPublishableKey,
-        clerkJwtAudience,
+        accountsUrl,
         cloudMintPrivateKey: yield* cloudMintPrivateKey,
         cloudMintPublicKey: yield* cloudMintPublicKey,
         managedEndpointBaseDomain: yield* managedEndpointZoneName,
@@ -313,7 +314,7 @@ export const layer = Api.make(
     });
 
     const layerRuntime = Layer.empty.pipe(
-      Layer.provideMerge(MobileRegistrations.layer),
+      Layer.provideMerge(Layer.merge(MobileRegistrations.layer, AccountLifecycle.layer)),
       Layer.provideMerge(AgentActivityPublisher.layer),
       Layer.provideMerge(EnvironmentConnector.layer),
       Layer.provideMerge(EnvironmentLinker.layer),
@@ -368,7 +369,7 @@ export const layer = Api.make(
       ),
       Layer.provideMerge(LiveActivities.layer),
       Layer.provideMerge(DeliveryAttempts.layer),
-      Layer.provideMerge(RelayTokens.layer),
+      Layer.provideMerge(Layer.merge(RelayTokens.layer, OtterAccounts.layer)),
       Layer.provideMerge(
         RelayDb.RelayTransactions.layer.pipe(
           Layer.provideMerge(Layer.succeed(RelayDb.RelayDb, db)),
@@ -533,6 +534,7 @@ export const layer = Api.make(
         ),
         HttpApiScalar.layer(RelayApi, { path: "/docs" }),
         RelayHttpApi.layerDocsRedirectRoute,
+        AccountLifecycle.routes.pipe(Layer.provide(layerRuntime)),
         linearRoutes.pipe(Layer.provide(layerLinearRuntime)),
       ).pipe(
         Layer.provide([Etag.layerWeak, layerHttpPlatformNotSupported, RelayHttpApi.layerCors]),

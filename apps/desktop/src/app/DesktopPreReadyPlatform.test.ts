@@ -158,8 +158,8 @@ describe("DesktopPreReadyPlatform", () => {
     "acquires a synchronous pre-ready layer before an asynchronous Clerk-shaped layer",
     () =>
       Effect.gen(function* () {
-        class ClerkShaped extends Context.Service<ClerkShaped, { readonly ready: true }>()(
-          "@t3tools/desktop/app/DesktopPreReadyPlatform.test/ClerkShaped",
+        class ProtocolSetup extends Context.Service<ProtocolSetup, { readonly ready: true }>()(
+          "@t3tools/desktop/app/DesktopPreReadyPlatform.test/ProtocolSetup",
         ) {}
 
         const events: Array<string> = [];
@@ -171,34 +171,34 @@ describe("DesktopPreReadyPlatform", () => {
           Layer.provide(Layer.succeed(HostProcessPlatform, "darwin")),
         );
 
-        const layerClerkShaped = Layer.effect(
-          ClerkShaped,
+        const layerProtocolSetup = Layer.effect(
+          ProtocolSetup,
           Effect.promise(() => Promise.resolve()).pipe(
             Effect.map(() => {
-              events.push("clerk");
+              events.push("account");
               return { ready: true as const };
             }),
           ),
         );
 
-        const layerRuntime = layerClerkShaped.pipe(
-          Layer.flatMap((clerkContext) => Layer.succeedContext(clerkContext)),
+        const layerRuntime = layerProtocolSetup.pipe(
+          Layer.flatMap((protocolContext) => Layer.succeedContext(protocolContext)),
           Layer.provideMerge(layerPreReady),
         );
 
         const result = yield* Effect.all({
-          clerk: ClerkShaped,
+          account: ProtocolSetup,
           preReady: DesktopPreReadyPlatform.DesktopPreReadyElectronOptions,
         }).pipe(Effect.provide(layerRuntime));
 
         assert.deepEqual(result, {
-          clerk: { ready: true },
+          account: { ready: true },
           preReady: {
             linux: null,
             linuxPasswordStoreCommandLine: null,
           },
         });
-        assert.deepEqual(events, ["pre-ready", "clerk"]);
+        assert.deepEqual(events, ["pre-ready", "account"]);
         assert.equal(registerSchemesMock.mock.calls.length, 1);
         assert.equal(appendSwitchMock.mock.calls.length, 0);
         assert.equal(setDesktopNameMock.mock.calls.length, 0);

@@ -1,4 +1,5 @@
-import { createClerkClient, verifyToken } from "@clerk/backend";
+import { unlinkEnvironmentRecord } from "../environments/EnvironmentUnlink.ts";
+import * as OtterAccounts from "../auth/OtterAccounts.ts";
 import { sql as drizzleSql } from "drizzle-orm";
 import * as Crypto from "effect/Crypto";
 import * as Context from "effect/Context";
@@ -66,7 +67,6 @@ import * as DpopProofs from "../auth/DpopProofs.ts";
 import * as RelayTokens from "../auth/RelayTokens.ts";
 import * as EnvironmentCredentials from "../environments/EnvironmentCredentials.ts";
 import * as EnvironmentLinks from "../environments/EnvironmentLinks.ts";
-import * as HookForwarder from "../hooks/HookForwarder.ts";
 import * as HeldHooks from "../hooks/HeldHooks.ts";
 import * as HookInbox from "../hooks/HookInbox.ts";
 import * as LiveActivities from "../agentActivity/LiveActivities.ts";
@@ -303,34 +303,34 @@ export const withoutCapturedParentSpan = <A, E, R>(
 export const layerClientAuth = Layer.effect(
   RelayClientAuth,
   Effect.gen(function* () {
-    const config = yield* RelayConfiguration.RelayConfiguration;
+    const accounts = yield* OtterAccounts.OtterAccounts;
     return {
       clientBearer: Effect.fn("relay.auth.client.bearer")(function* (httpEffect, { credential }) {
         const token = readHttpAuthorizationCredential(credential);
-        const verified = yield* verifyRelayClientBearerToken(config, token).pipe(
+        const verified = yield* accounts.verify(token).pipe(
           Effect.tapError((error) =>
             Effect.annotateCurrentSpan(
-              "relay.auth.clerk_verification_failure",
-              clerkVerificationFailureReason(error.cause),
+              "relay.auth.account_verification_failure",
+              "invalid_account_token",
             ),
           ),
           Effect.catch(() => relayAuthInvalidError("invalid_bearer")),
         );
-        if (!verified.sub) {
+        if (!verified.id) {
           yield* Effect.annotateCurrentSpan({
-            "relay.auth.clerk_verification_failure": "missing_subject",
+            "relay.auth.account_verification_failure": "missing_subject",
           });
           return yield* relayAuthInvalidError("invalid_bearer");
         }
         yield* Effect.annotateCurrentSpan({
-          "relay.auth.mode": verified.mode,
-          "relay.auth.subject": verified.sub,
+          "relay.auth.mode": "otter_accounts",
+          "relay.auth.subject": verified.id,
         });
 
         return yield* httpEffect.pipe(
-          withSpanAttributes({ "user.id": verified.sub }),
+          withSpanAttributes({ "user.id": verified.id }),
           Effect.provideService(RelayClientPrincipal, {
-            userId: verified.sub,
+            userId: verified.id,
             token,
           }),
         );
@@ -469,98 +469,6 @@ export const layerHealthApi = HttpApiBuilder.group(
       ),
     );
   }),
-);
-
-export const revokeEnvironmentLinkRecord = Effect.fn(
-  "relay.api.client.revokeEnvironmentLinkRecord",
-)(function* (input: {
-  readonly userId: string;
-  readonly environmentId: string;
-  readonly environmentPublicKey: string;
-}) {
-  const transactions = yield* RelayDb.RelayTransactions;
-  const links = yield* EnvironmentLinks.EnvironmentLinks;
-  const credentials = yield* EnvironmentCredentials.EnvironmentCredentials;
-  return yield* transactions.withTransaction(
-    Effect.gen(function* () {
-      const revoked = yield* links.revokeForUser({
-        userId: input.userId,
-        environmentId: input.environmentId,
-      });
-      if (revoked) {
-        yield* credentials.revokeForEnvironmentPublicKey({
-          environmentId: input.environmentId,
-          environmentPublicKey: input.environmentPublicKey,
-        });
-      }
-      return revoked;
-    }),
-  );
-});
-
-export const unlinkEnvironmentRecord = Effect.fn("relay.api.client.unlinkEnvironmentRecord")(
-  function* (input: {
-    readonly userId: string;
-    readonly environmentId: string;
-    /** The stage's tunnel-name namespace, to find this link's held webhook requests. */
-    readonly managedEndpointNamespace?: string | undefined;
-  }) {
-    const links = yield* EnvironmentLinks.EnvironmentLinks;
-    const managedEndpointProvider = yield* ManagedEndpointProvider.ManagedEndpointProvider;
-    const deprovisionTarget = yield* managedEndpointProvider.prepareDeprovision({
-      userId: input.userId,
-      environmentId: input.environmentId,
-    });
-    const link = yield* links.getForUser({
-      userId: input.userId,
-      environmentId: input.environmentId,
-    });
-    const unlinked =
-      link === null
-        ? false
-        : yield* revokeEnvironmentLinkRecord({
-            userId: input.userId,
-            environmentId: link.environmentId,
-            environmentPublicKey: link.environmentPublicKey,
-          });
-    // External teardown cannot share the SQL transaction. Run it only after
-    // revocation commits so a database failure leaves a fully usable active
-    // link. Still run teardown when the link is already revoked, allowing a
-    // retry to finish cleanup after an earlier Cloudflare failure.
-    const deprovisioned = yield* managedEndpointProvider.deprovision({
-      userId: input.userId,
-      environmentId: input.environmentId,
-      target: deprovisionTarget,
-    });
-    // Requests held for this link's endpoint go with it. Best effort: the link
-    // is already gone, and its inbox drops anything left after its TTL.
-    const endpointKey =
-      deprovisionTarget && input.managedEndpointNamespace
-        ? HeldHooks.endpointKeyForTunnelName(
-            input.managedEndpointNamespace,
-            deprovisionTarget.tunnelName,
-          )
-        : null;
-    if (endpointKey !== null) {
-      const inbox = yield* HookInbox.HookInbox;
-      yield* inbox.clear({ endpointKey }).pipe(
-        Effect.catch((error) =>
-          Effect.logWarning("Could not clear held webhook requests", {
-            environmentId: input.environmentId,
-            errorTag: error._tag,
-          }),
-        ),
-      );
-    }
-    if (!deprovisioned) {
-      const key = { userId: input.userId, environmentId: input.environmentId };
-      const retryTarget = yield* managedEndpointProvider.prepareDeprovision(key);
-      if (retryTarget !== null && (yield* links.getForUser(key)) === null) {
-        yield* managedEndpointProvider.deprovision({ ...key, target: retryTarget });
-      }
-    }
-    return unlinked;
-  },
 );
 
 type EnvironmentTunnelRecoveryProofInput = {
@@ -995,6 +903,7 @@ export const layerTokenApi = HttpApiBuilder.group(
     const crypto = yield* Crypto.Crypto;
     const dpopProofs = yield* DpopProofs.DpopProofReplay;
     const relayTokens = yield* RelayTokens.RelayTokens;
+    const accounts = yield* OtterAccounts.OtterAccounts;
     return handlers.handle(
       "exchangeDpopAccessToken",
       Effect.fn("relay.api.token.exchangeDpopAccessToken")(function* (args) {
@@ -1005,7 +914,7 @@ export const layerTokenApi = HttpApiBuilder.group(
           scope: args.payload.scope,
         });
         yield* Effect.annotateCurrentSpan({
-          "relay.auth.mode": "clerk_bearer_token_exchange",
+          "relay.auth.mode": "otter_account_token_exchange",
           "relay.oauth.client_id": args.payload.client_id,
           "relay.oauth.scopes": args.payload.scope,
         });
@@ -1013,12 +922,9 @@ export const layerTokenApi = HttpApiBuilder.group(
           return yield* new HttpApiError.Unauthorized({});
         }
 
-        const verified = yield* verifyClerkBearerToken(config, args.payload.subject_token).pipe(
-          Effect.catch(() => relayAuthInvalidError("invalid_bearer")),
-        );
-        if (!verified.sub || !hasExpectedClerkAudience(verified.aud, config.clerkJwtAudience)) {
-          return yield* relayAuthInvalidError("invalid_bearer");
-        }
+        const verified = yield* accounts
+          .verify(args.payload.subject_token)
+          .pipe(Effect.catch(() => relayAuthInvalidError("invalid_bearer")));
         const proofKeyThumbprint = yield* requireDpopProof().pipe(
           Effect.provideService(DpopProofs.DpopProofReplay, dpopProofs),
         );
@@ -1030,7 +936,7 @@ export const layerTokenApi = HttpApiBuilder.group(
         return {
           access_token: yield* relayTokens
             .issueDpopAccessToken({
-              userId: verified.sub,
+              userId: verified.id,
               proofKeyThumbprint,
               jti,
               issuedAtEpochSeconds: Math.floor(now.epochMilliseconds / 1_000),
@@ -1404,17 +1310,6 @@ export const layerServerApi = HttpApiBuilder.group(
   }),
 );
 
-class ClerkTokenVerificationFailed extends Schema.TaggedError<ClerkTokenVerificationFailed>()(
-  "ClerkTokenVerificationFailed",
-  {
-    cause: Schema.Defect(),
-  },
-) {
-  override get message(): string {
-    return "Clerk token verification failed";
-  }
-}
-
 const isHttpUnauthorized = Schema.is(HttpApiError.Unauthorized);
 const isDpopProofRejected = Schema.is(DpopProofs.DpopProofRejected);
 
@@ -1600,99 +1495,6 @@ function resolveConnectClientKeyThumbprint(payload: RelayEnvironmentConnectReque
   return requestedThumbprint;
 }
 
-function safeAuthFailureReason(value: string): string {
-  return /^[a-z0-9._-]+$/i.test(value) ? value : "unknown";
-}
-
-function clerkVerificationFailureReason(cause: unknown): string {
-  if (
-    cause instanceof Error &&
-    (cause.message.startsWith("Invalid JWT audience claim ") ||
-      cause.message.startsWith("Invalid JWT audience claim array "))
-  ) {
-    return "audience_mismatch";
-  }
-  if (typeof cause === "object" && cause !== null && "reason" in cause) {
-    const reason = (cause as { readonly reason?: unknown }).reason;
-    if (typeof reason === "string" && reason.length > 0) {
-      return safeAuthFailureReason(reason);
-    }
-  }
-  if (cause instanceof Error && cause.name) {
-    return safeAuthFailureReason(cause.name);
-  }
-  return "unknown";
-}
-
-function hasExpectedClerkAudience(audience: unknown, expectedAudience: string): boolean {
-  return typeof audience === "string"
-    ? audience === expectedAudience
-    : Array.isArray(audience) &&
-        audience.some((entry) => typeof entry === "string" && entry === expectedAudience);
-}
-
-function verifyClerkBearerToken(
-  config: RelayConfiguration.RelayConfiguration["Service"],
-  token: string,
-) {
-  return Effect.tryPromise({
-    try: () =>
-      verifyToken(token, {
-        secretKey: Redacted.value(config.clerkSecretKey),
-        audience: config.clerkJwtAudience,
-      }),
-    catch: (cause) => new ClerkTokenVerificationFailed({ cause }),
-  }).pipe(
-    Effect.withSpan("verify_clerk_bearer_token", {
-      attributes: { "relay.auth.token_length": token.length },
-    }),
-  );
-}
-
-function verifyClerkOAuthBearerToken(
-  config: RelayConfiguration.RelayConfiguration["Service"],
-  token: string,
-) {
-  return Effect.tryPromise({
-    try: async () => {
-      const client = createClerkClient({
-        secretKey: Redacted.value(config.clerkSecretKey),
-        publishableKey: config.clerkPublishableKey,
-      });
-      const state = await client.authenticateRequest(
-        new Request(config.relayIssuer, {
-          headers: { authorization: `Bearer ${token}` },
-        }),
-        { acceptsToken: "oauth_token" },
-      );
-      const auth = state.toAuth();
-      if (!state.isAuthenticated || !auth.userId) {
-        throw new Error("Clerk OAuth token is not authenticated.");
-      }
-      return { sub: auth.userId };
-    },
-    catch: (cause) => new ClerkTokenVerificationFailed({ cause }),
-  });
-}
-
-export function verifyRelayClientBearerToken(
-  config: RelayConfiguration.RelayConfiguration["Service"],
-  token: string,
-) {
-  return verifyClerkBearerToken(config, token).pipe(
-    Effect.flatMap((verified) =>
-      verified.sub && hasExpectedClerkAudience(verified.aud, config.clerkJwtAudience)
-        ? Effect.succeed({ sub: verified.sub, mode: "clerk_session_bearer" as const })
-        : Effect.fail(new ClerkTokenVerificationFailed({ cause: "missing_relay_audience" })),
-    ),
-    Effect.catch(() =>
-      verifyClerkOAuthBearerToken(config, token).pipe(
-        Effect.map((verified) => ({ ...verified, mode: "clerk_oauth_bearer" as const })),
-      ),
-    ),
-  );
-}
-
 const requireDpopPrincipalScope = Effect.fn("relay.api.require_dpop_principal_scope")(function* (
   scope: RelayDpopAccessTokenScope,
 ) {
@@ -1755,3 +1557,8 @@ const relayAuthInvalidError = Effect.fnUntraced(function* (reason: RelayAuthInva
   });
   return yield* new RelayAuthInvalidError({ code: "auth_invalid", reason, traceId });
 });
+
+export {
+  revokeEnvironmentLinkRecord,
+  unlinkEnvironmentRecord,
+} from "../environments/EnvironmentUnlink.ts";

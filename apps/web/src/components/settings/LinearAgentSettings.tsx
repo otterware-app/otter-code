@@ -384,7 +384,7 @@ function LinkedWorkspace({
       machineSettings.linear.teamProjects.length > 0);
   const needsSignIn = link.signedIn === false;
   const problem = !link.agentInstalled
-    ? "The Otter agent isn't installed in this workspace yet; a Linear admin has to install it."
+    ? "The Otter agent isn't installed in this workspace or lost its access; a Linear admin has to install it again."
     : needsSignIn
       ? "Sign in again so your machines read issues and pull request reviews as you."
       : machineSettings === null

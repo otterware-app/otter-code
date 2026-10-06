@@ -1,21 +1,18 @@
 // @effect-diagnostics globalConsole:off -- Runs in extensions' own pages and workers, without Effect.
 // @effect-diagnostics globalRandom:off -- Chrome makes up ids for menus and notifications; so does this.
 /**
- * Preload for the browser preview's extensions (preview/extensions/
- * PreviewExtensions.ts): their service workers and their own pages (popups,
- * options). It gives them what Chrome has and Electron doesn't:
- * `chrome.action` (the toolbar button), the rest of `chrome.tabs`,
- * `chrome.windows`, and friends, each answered by the main process. Web pages
- * in the preview get nothing from it, except the Chrome Web Store (below).
+ * Preload for preview extensions' workers and pages: the Chrome APIs Electron lacks
+ * (`chrome.action`, `chrome.tabs`, `chrome.windows`), answered by PreviewExtensions.ts.
+ * Web pages get nothing from it except the Chrome Web Store (below).
  */
 
 import { contextBridge, ipcRenderer } from "electron";
 
-// The preview's pages run without context isolation (its element picker reads
-// the page's globals), and there contextBridge refuses to work. The Web
-// Store's own preload (electron-chrome-web-store), which runs after this one,
-// uses it to add its install button's API: on the Web Store, an API it
-// exposes goes on the page's window, which this world is.
+import { installNativeMessaging } from "./preview-native-messaging-preload.ts";
+
+// Preview pages run without context isolation (the element picker reads page globals), where
+// contextBridge refuses to work. The Web Store preload that runs next needs it for its
+// install button, so on the Web Store its API goes on the page's window.
 if (
   !process.contextIsolated &&
   typeof location !== "undefined" &&
@@ -43,6 +40,25 @@ function ownExtensionId(): string | null {
 const extensionId = ownExtensionId();
 
 if (extensionId) {
+  const nativeListeners = new Map<string, (kind: string, payload: unknown) => void>();
+  ipcRenderer.on("crx:nativeEvent", (_event, id: string, kind: string, payload: unknown) => {
+    nativeListeners.get(id)?.(kind, payload);
+  });
+  contextBridge.executeInMainWorld({
+    func: installNativeMessaging,
+    args: [
+      {
+        call: (method: string, args: unknown[]) =>
+          ipcRenderer.invoke("crx:nativeCall", extensionId, method, args),
+        listen: (id: string, listener: (kind: string, payload: unknown) => void) => {
+          nativeListeners.set(id, listener);
+        },
+        forget: (id: string) => {
+          nativeListeners.delete(id);
+        },
+      },
+    ],
+  });
   const listeners = new Map<string, Set<(...args: unknown[]) => void>>();
   ipcRenderer.on("crx:event", (_event, name: string, args: unknown[]) => {
     for (const listener of listeners.get(name) ?? []) listener(...args);

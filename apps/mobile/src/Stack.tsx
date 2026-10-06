@@ -341,15 +341,16 @@ const SETTINGS_SCREENS = {
     linking: "settings/usage",
     options: settingsPage("Usage"),
   }),
+  // Otter Accounts renders a plain settings page, unlike Clerk's headerless native auth view.
   SettingsAuth: createNativeStackScreen({
     screen: SettingsAuthRouteScreen,
     linking: "settings/auth",
-    options: { headerShown: false, presentation: "modal" },
+    options: { ...SETTINGS_PAGE_OPTIONS, title: "Otter account" },
   }),
   SettingsWaitlist: createNativeStackScreen({
     screen: SettingsAuthRouteScreen,
     linking: "settings/waitlist",
-    options: { headerShown: false, presentation: "modal" },
+    options: { ...SETTINGS_PAGE_OPTIONS, title: "Otter account" },
   }),
 };
 

@@ -1,7 +1,9 @@
-import { useClerk } from "@clerk/react";
+import { useAuth } from "../accounts/AccountProvider";
 import {
   createCloudAccountService,
+  createOtterAccountSource,
   ManagedRelay,
+  type OtterAccountSource,
   setManagedRelaySession,
 } from "@t3tools/client-runtime/relay";
 import {
@@ -10,12 +12,11 @@ import {
   settleAsyncResult,
 } from "@t3tools/client-runtime/state/runtime";
 import * as Effect from "effect/Effect";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { environmentCatalog } from "../connection/catalog";
 import { runtime } from "../lib/runtime";
 import { appAtomRegistry } from "../rpc/atomRegistry";
-import { resolveRelayClerkTokenOptions } from "./publicConfig";
 
 export function deactivateManagedRelayAuthentication(): void {
   setManagedRelaySession(appAtomRegistry, null);
@@ -23,22 +24,15 @@ export function deactivateManagedRelayAuthentication(): void {
 
 export function activateManagedRelayAuthentication(
   accountId: string,
-  readClerkToken: () => Promise<string | null>,
+  readAccountToken: () => Promise<string | null>,
 ): void {
   setManagedRelaySession(appAtomRegistry, {
     accountId,
-    readClerkToken,
+    readAccountToken,
   });
 }
 
-type ClerkInstance = ReturnType<typeof useClerk>;
-
-function clerkTokenReader(clerk: ClerkInstance): () => Promise<string | null> {
-  return async () =>
-    clerk.session ? await clerk.session.getToken(resolveRelayClerkTokenOptions()) : null;
-}
-
-const managedRelayAccountService = createCloudAccountService<ClerkInstance>({
+const managedRelayAccountService = createCloudAccountService<OtterAccountSource>({
   deactivate: deactivateManagedRelayAuthentication,
   detach: deactivateManagedRelayAuthentication,
   cleanUp: async () => {
@@ -58,14 +52,20 @@ const managedRelayAccountService = createCloudAccountService<ClerkInstance>({
     }
   },
   activate: ({ source, accountId }) =>
-    activateManagedRelayAuthentication(accountId, clerkTokenReader(source)),
+    activateManagedRelayAuthentication(accountId, source.getToken),
 });
 
 export function ManagedRelayAuthProvider({ children }: { readonly children: ReactNode }) {
-  // ClerkProvider creates the Clerk instance and owns its lifetime, so the
-  // account service observes it for as long as this provider is mounted.
-  const clerk = useClerk();
-  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- attaches the Clerk instance to the managed relay account service for the provider's lifetime
-  useEffect(() => managedRelayAccountService.attach(clerk), [clerk]);
+  const { getToken, isLoaded, isSignedIn, userId } = useAuth();
+  const [source] = useState(createOtterAccountSource);
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- attaches the account source to the managed relay service for the provider's lifetime
+  useEffect(() => managedRelayAccountService.attach(source), [source]);
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- pushes the Otter session into the account source the relay service reads
+  useEffect(() => {
+    source.update({
+      accountId: !isLoaded ? undefined : isSignedIn && userId ? userId : null,
+      getToken,
+    });
+  }, [source, getToken, isLoaded, isSignedIn, userId]);
   return children;
 }

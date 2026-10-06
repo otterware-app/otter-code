@@ -37,6 +37,7 @@ const layerElectronApp = Layer.succeed(ElectronApp.ElectronApp, {
   name: Effect.succeed("Otter Code"),
   systemLocale: Effect.succeed("en-US"),
   preferredSystemLanguages: Effect.succeed(["en-US"]),
+  requestSingleInstanceLock: Effect.succeed(true),
   whenReady: Effect.void,
   quit: Effect.void,
   exit: () => Effect.void,

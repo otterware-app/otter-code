@@ -272,6 +272,8 @@ export function AppSidebarLayout({ children }: { children: ReactNode }) {
   // with the rail inside it.
   const frame = useAppFrame();
   const railWidth = frame ? SPACE_RAIL_WIDTH : 0;
+  // Full-width pages: the rail is their way out, so phones (rail in the sheet) keep the sidebar.
+  const sidebarHidden = frame !== null && (pathname === "/usage" || pathname === "/pull-requests");
   const [sidebarWidth, setSidebarWidth] = useState(readInitialThreadSidebarWidth);
   // Subscribed rather than read once: the clamp must track live window size,
   // and a clamped drag ends with an unchanged width, which skips the re-render
@@ -377,6 +379,8 @@ export function AppSidebarLayout({ children }: { children: ReactNode }) {
         data-app-frame={frame ?? undefined}
         data-panel-animations={routePanelAnimationsActive ? "true" : "false"}
         defaultOpen
+        // Stays mounted but slid away; "hidden" keeps headers from clearing a toggle.
+        {...(sidebarHidden ? { open: false, "data-sidebar-state": "hidden" } : {})}
         style={sidebarProviderStyle}
       >
         <ProjectProjectionRetention />
@@ -407,7 +411,7 @@ export function AppSidebarLayout({ children }: { children: ReactNode }) {
           {children}
           {frame ? <AppFramePanelEdge /> : null}
         </div>
-        <SidebarControl />
+        {sidebarHidden ? null : <SidebarControl />}
         <NavigationHistoryShortcuts />
         <MainAppLocationTracker />
       </SidebarProvider>

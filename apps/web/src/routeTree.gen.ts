@@ -32,6 +32,7 @@ import { Route as SettingsKeybindingsRouteImport } from './routes/settings.keybi
 import { Route as SettingsIntegrationsRouteImport } from './routes/settings.integrations'
 import { Route as SettingsGeneralRouteImport } from './routes/settings.general'
 import { Route as SettingsExtensionsRouteImport } from './routes/settings.extensions'
+import { Route as SettingsDriveRouteImport } from './routes/settings.drive'
 import { Route as SettingsDiagnosticsRouteImport } from './routes/settings.diagnostics'
 import { Route as SettingsConnectionsRouteImport } from './routes/settings.connections'
 import { Route as SettingsCodeIntelligenceRouteImport } from './routes/settings.code-intelligence'
@@ -160,6 +161,11 @@ const SettingsExtensionsRoute = SettingsExtensionsRouteImport.update({
   path: '/extensions',
   getParentRoute: () => SettingsRoute,
 } as any)
+const SettingsDriveRoute = SettingsDriveRouteImport.update({
+  id: '/drive',
+  path: '/drive',
+  getParentRoute: () => SettingsRoute,
+} as any)
 const SettingsDiagnosticsRoute = SettingsDiagnosticsRouteImport.update({
   id: '/diagnostics',
   path: '/diagnostics',
@@ -244,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/settings/code-intelligence': typeof SettingsCodeIntelligenceRoute
   '/settings/connections': typeof SettingsConnectionsRoute
   '/settings/diagnostics': typeof SettingsDiagnosticsRoute
+  '/settings/drive': typeof SettingsDriveRoute
   '/settings/extensions': typeof SettingsExtensionsRoute
   '/settings/general': typeof SettingsGeneralRoute
   '/settings/integrations': typeof SettingsIntegrationsRoute
@@ -279,6 +286,7 @@ export interface FileRoutesByTo {
   '/settings/code-intelligence': typeof SettingsCodeIntelligenceRoute
   '/settings/connections': typeof SettingsConnectionsRoute
   '/settings/diagnostics': typeof SettingsDiagnosticsRoute
+  '/settings/drive': typeof SettingsDriveRoute
   '/settings/extensions': typeof SettingsExtensionsRoute
   '/settings/general': typeof SettingsGeneralRoute
   '/settings/integrations': typeof SettingsIntegrationsRoute
@@ -317,6 +325,7 @@ export interface FileRoutesById {
   '/settings/code-intelligence': typeof SettingsCodeIntelligenceRoute
   '/settings/connections': typeof SettingsConnectionsRoute
   '/settings/diagnostics': typeof SettingsDiagnosticsRoute
+  '/settings/drive': typeof SettingsDriveRoute
   '/settings/extensions': typeof SettingsExtensionsRoute
   '/settings/general': typeof SettingsGeneralRoute
   '/settings/integrations': typeof SettingsIntegrationsRoute
@@ -356,6 +365,7 @@ export interface FileRouteTypes {
     | '/settings/code-intelligence'
     | '/settings/connections'
     | '/settings/diagnostics'
+    | '/settings/drive'
     | '/settings/extensions'
     | '/settings/general'
     | '/settings/integrations'
@@ -391,6 +401,7 @@ export interface FileRouteTypes {
     | '/settings/code-intelligence'
     | '/settings/connections'
     | '/settings/diagnostics'
+    | '/settings/drive'
     | '/settings/extensions'
     | '/settings/general'
     | '/settings/integrations'
@@ -428,6 +439,7 @@ export interface FileRouteTypes {
     | '/settings/code-intelligence'
     | '/settings/connections'
     | '/settings/diagnostics'
+    | '/settings/drive'
     | '/settings/extensions'
     | '/settings/general'
     | '/settings/integrations'
@@ -624,6 +636,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsExtensionsRouteImport
       parentRoute: typeof SettingsRoute
     }
+    '/settings/drive': {
+      id: '/settings/drive'
+      path: '/drive'
+      fullPath: '/settings/drive'
+      preLoaderRoute: typeof SettingsDriveRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/settings/diagnostics': {
       id: '/settings/diagnostics'
       path: '/diagnostics'
@@ -734,6 +753,7 @@ interface SettingsRouteChildren {
   SettingsCodeIntelligenceRoute: typeof SettingsCodeIntelligenceRoute
   SettingsConnectionsRoute: typeof SettingsConnectionsRoute
   SettingsDiagnosticsRoute: typeof SettingsDiagnosticsRoute
+  SettingsDriveRoute: typeof SettingsDriveRoute
   SettingsExtensionsRoute: typeof SettingsExtensionsRoute
   SettingsGeneralRoute: typeof SettingsGeneralRoute
   SettingsIntegrationsRoute: typeof SettingsIntegrationsRoute
@@ -755,6 +775,7 @@ const SettingsRouteChildren: SettingsRouteChildren = {
   SettingsCodeIntelligenceRoute: SettingsCodeIntelligenceRoute,
   SettingsConnectionsRoute: SettingsConnectionsRoute,
   SettingsDiagnosticsRoute: SettingsDiagnosticsRoute,
+  SettingsDriveRoute: SettingsDriveRoute,
   SettingsExtensionsRoute: SettingsExtensionsRoute,
   SettingsGeneralRoute: SettingsGeneralRoute,
   SettingsIntegrationsRoute: SettingsIntegrationsRoute,

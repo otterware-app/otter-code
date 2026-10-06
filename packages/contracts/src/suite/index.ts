@@ -10,15 +10,18 @@ import {
 } from "./calendar.ts";
 import { mergeSuiteContracts, type SuiteRpcTag } from "./contract.ts";
 import { SuiteCoreContract } from "./core.ts";
+import { SUITE_DRIVE_METHODS, SuiteDriveContract } from "./drive.ts";
 
 export * from "./calendar.ts";
 export * from "./contract.ts";
 export * from "./core.ts";
+export * from "./drive.ts";
 export * from "./home.ts";
 
 const SuiteContracts = mergeSuiteContracts(
   SuiteCoreContract,
   SuiteCalendarContract,
+  SuiteDriveContract,
   // SuiteMailContract,
 );
 
@@ -33,5 +36,8 @@ export const SUITE_RPC_TAGS = Object.keys(SUITE_RPC_REQUIRED_SCOPES) as Readonly
  * `EnvironmentSubscriptionRpcTag` and `EnvironmentStreamCommandRpcTag`). A module with streams
  * adds its tags here.
  */
-export type SuiteSubscriptionRpcTag = SuiteCalendarSubscriptionRpcTag;
+export type SuiteSubscriptionRpcTag =
+  | SuiteCalendarSubscriptionRpcTag
+  | typeof SUITE_DRIVE_METHODS.subscribeStatus
+  | typeof SUITE_DRIVE_METHODS.subscribeThreadLinks;
 export type SuiteStreamCommandRpcTag = SuiteCalendarStreamCommandRpcTag;

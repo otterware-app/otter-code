@@ -1,21 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { DrivePage } from "../suite/drive/DrivePage";
 import { requireSuiteRouteAuth } from "../suite/routeGuards";
-import { SuiteModuleLayout } from "../suite/SuiteModuleLayout";
-import { SuiteModulePlaceholder } from "../suite/SuiteModulePlaceholder";
+
+/** `?url=` opens a Drive document (Home items, thread links). */
+function validateDriveSearch(search: Record<string, unknown>): { url?: string } {
+  return typeof search.url === "string" && search.url.length > 0 ? { url: search.url } : {};
+}
 
 function DriveRoute() {
-  return (
-    <SuiteModuleLayout moduleId="drive">
-      <SuiteModulePlaceholder
-        moduleId="drive"
-        description="Your files and documents, ready to hand to an agent."
-      />
-    </SuiteModuleLayout>
-  );
+  const { url } = Route.useSearch();
+  return <DrivePage requestedUrl={url ?? null} />;
 }
 
 export const Route = createFileRoute("/drive")({
+  validateSearch: validateDriveSearch,
   beforeLoad: requireSuiteRouteAuth,
   component: DriveRoute,
 });

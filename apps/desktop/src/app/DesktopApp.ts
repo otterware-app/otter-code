@@ -1,3 +1,4 @@
+import { installDriveView } from "../suite/drive/DriveView.ts";
 import * as Cause from "effect/Cause";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
@@ -181,6 +182,7 @@ const bootstrap = Effect.gen(function* () {
       : { assetDirectory: environment.clientAssetsDir }),
   });
   yield* installDesktopIpcHandlers();
+  yield* installDriveView;
   yield* logBootstrapInfo("bootstrap ipc handlers registered");
   // Before any window: the preload merges these items before the app reads storage.
   yield* (yield* DesktopLegacyLocalStorage.DesktopLegacyLocalStorage).load(

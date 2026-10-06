@@ -22,6 +22,7 @@ import {
   FileDiff,
   Files,
   Globe2,
+  HardDrive,
   ListTodo,
   Plus,
   TerminalSquare,
@@ -125,6 +126,8 @@ interface RightPanelTabsProps {
   onAddPullRequest: () => void;
   onAddPullRequests: () => void;
   onAddLinearIssues: () => void;
+  /** Otterware: the thread's linked Drive documents (`suite/drive`). */
+  onAddDriveDocuments?: () => void;
   onAddDevice: () => void;
   browserAvailable: boolean;
   terminalAvailable: boolean;
@@ -133,6 +136,7 @@ interface RightPanelTabsProps {
   pullRequestAvailable: boolean;
   pullRequestsAvailable: boolean;
   linearIssuesAvailable: boolean;
+  driveDocumentsAvailable?: boolean;
   deviceAvailable: boolean;
   pullRequestStatusSeeds?: Readonly<Record<string, PullRequestTabStatusSeed>>;
   children: ReactNode;
@@ -162,6 +166,7 @@ const SURFACE_DISABLED_REASONS = {
   pullRequest: "This thread's branch has no pull request yet.",
   pullRequests: "No linked pull requests are available for this thread.",
   linearIssues: "Linear issues are only available for server threads.",
+  driveDocuments: "Drive documents need an Otterware server with Drive.",
   device: "Devices are only available from a thread.",
 } as const;
 
@@ -186,6 +191,7 @@ const SURFACE_UNAVAILABLE_HINTS = {
   pullRequest: "No pull request on this branch yet.",
   pullRequests: "No linked pull requests available.",
   linearIssues: "Available for server threads.",
+  driveDocuments: "Available on an Otterware server.",
   device: "Available from a thread.",
 } as const;
 
@@ -326,6 +332,8 @@ function RightPanelEmptyState(props: {
   onAddPullRequest: () => void;
   onAddPullRequests: () => void;
   onAddLinearIssues: () => void;
+  /** Otterware: the thread's linked Drive documents (`suite/drive`). */
+  onAddDriveDocuments?: () => void;
   onAddDevice: () => void;
   browserAvailable: boolean;
   terminalAvailable: boolean;
@@ -334,6 +342,7 @@ function RightPanelEmptyState(props: {
   pullRequestAvailable: boolean;
   pullRequestsAvailable: boolean;
   linearIssuesAvailable: boolean;
+  driveDocumentsAvailable?: boolean;
   deviceAvailable: boolean;
 }) {
   // -1 means no highlight: it only appears on hover or arrow use.
@@ -395,6 +404,14 @@ function RightPanelEmptyState(props: {
       available: props.linearIssuesAvailable,
       disabledReason: SURFACE_UNAVAILABLE_HINTS.linearIssues,
       onClick: props.onAddLinearIssues,
+    },
+    {
+      label: "Drive documents",
+      icon: HardDrive,
+      shortcut: "O",
+      available: props.driveDocumentsAvailable === true,
+      disabledReason: SURFACE_UNAVAILABLE_HINTS.driveDocuments,
+      onClick: () => props.onAddDriveDocuments?.(),
     },
     {
       label: "Device",
@@ -616,6 +633,10 @@ function surfaceTitle(
       return "Linear issues";
     case "linear-issue":
       return surface.identifier;
+    case "drive-documents":
+      return "Drive documents";
+    case "drive-document":
+      return surface.title ?? "Drive document";
     case "device":
       return surface.title ?? surface.target?.name ?? "Device";
     case "preview": {
@@ -703,6 +724,9 @@ function SurfaceIcon({
       return <ListTodo className="size-3 shrink-0" />;
     case "linear-issue":
       return <CircleDot className="size-3 shrink-0" />;
+    case "drive-documents":
+    case "drive-document":
+      return <HardDrive className="size-3 shrink-0" />;
     case "device":
       return surface.target?.platform === "ios" ? (
         <AppleIcon className="size-3 shrink-0" />
@@ -912,6 +936,14 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
       available: props.linearIssuesAvailable,
       disabledReason: SURFACE_DISABLED_REASONS.linearIssues,
       onClick: props.onAddLinearIssues,
+    },
+    {
+      label: "Drive documents",
+      icon: HardDrive,
+      shortcut: "O",
+      available: props.driveDocumentsAvailable === true,
+      disabledReason: SURFACE_DISABLED_REASONS.driveDocuments,
+      onClick: () => props.onAddDriveDocuments?.(),
     },
     {
       label: "Device",
@@ -1403,6 +1435,9 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             onAddPullRequest={props.onAddPullRequest}
             onAddPullRequests={props.onAddPullRequests}
             onAddLinearIssues={props.onAddLinearIssues}
+            {...(props.onAddDriveDocuments
+              ? { onAddDriveDocuments: props.onAddDriveDocuments }
+              : {})}
             onAddDevice={props.onAddDevice}
             browserAvailable={props.browserAvailable}
             terminalAvailable={props.terminalAvailable}
@@ -1411,6 +1446,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
             pullRequestAvailable={props.pullRequestAvailable}
             pullRequestsAvailable={props.pullRequestsAvailable}
             linearIssuesAvailable={props.linearIssuesAvailable}
+            driveDocumentsAvailable={props.driveDocumentsAvailable === true}
             deviceAvailable={props.deviceAvailable}
           />
         ) : (

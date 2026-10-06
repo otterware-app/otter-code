@@ -93,6 +93,7 @@ it.effect("an agent in a thread lists and calls suite_capabilities over /mcp", (
         Layer.provide(PreviewAutomationBroker.layer),
         Layer.provide(PreviewBrowser.layer),
         Layer.provide(layerStubServices),
+        Layer.provide(ServerSecretStore.layer),
         Layer.build,
       );
 
@@ -126,6 +127,20 @@ it.effect("an agent in a thread lists and calls suite_capabilities over /mcp", (
       const listed = yield* decodeJsonRpcResult(firstJson(yield* list.text));
       const names = (yield* decodeToolNames(listed.result.tools)).map((tool) => tool.name);
       expect(names).toContain("suite_capabilities");
+      // Module toolkits join through the registry, e.g. Drive's.
+      expect(names).toEqual(
+        expect.arrayContaining([
+          "drive_list_folders",
+          "drive_list_documents",
+          "drive_get_document",
+          "drive_read_document",
+          "drive_create_document",
+          "drive_update_document",
+          "drive_link_document_to_thread",
+          "drive_unlink_document_from_thread",
+          "drive_list_thread_documents",
+        ]),
+      );
       // Merged beside the upstream toolkits, not instead of them.
       expect(names).toContain("delegate_task");
 
@@ -148,7 +163,9 @@ it.effect("an agent in a thread lists and calls suite_capabilities over /mcp", (
       const applied = yield* sql<{ readonly module: string; readonly id: number }>`
         SELECT module, id FROM suite_migrations
       `;
-      expect(applied.map((row) => `${row.module}#${row.id}`)).toContain("core#1");
+      expect(applied.map((row) => `${row.module}#${row.id}`)).toEqual(
+        expect.arrayContaining(["core#1", "drive#1"]),
+      );
       expect(suiteAgentInstructions()).toContain("suite_capabilities");
     }),
   ).pipe(

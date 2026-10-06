@@ -65,7 +65,9 @@ export type T3McpToolSummaryAction =
   | "html-preview"
   | "html-render"
   | "calendar-read"
-  | "calendar-change";
+  | "calendar-change"
+  // Otterware module tools (suite/mcpToolPresentation.ts).
+  | "drive";
 
 export interface T3McpToolDefinition {
   readonly displayName: string;

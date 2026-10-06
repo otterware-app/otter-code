@@ -28,6 +28,8 @@ export type SettingsPath =
   | "/settings/code-intelligence"
   | "/settings/storage"
   | "/settings/connections"
+  // Otterware modules (suite/<module>/).
+  | "/settings/drive"
   | "/settings/archived";
 
 /**
@@ -107,6 +109,7 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   "/settings/code-intelligence": "Code Intelligence",
   "/settings/storage": "Storage",
   "/settings/connections": "Connections",
+  "/settings/drive": "Drive",
   "/settings/archived": "Archive",
 };
 
@@ -961,6 +964,12 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["pull request trusted environments shared credentials permissions read actions"],
   },
   {
+    id: "drive-connection",
+    title: "Otter Drive",
+    to: "/settings/drive",
+    searchTerms: ["drive otter drive documents files connect sign in device code otterware"],
+  },
+  {
     id: "archive",
     title: "Archived threads",
     to: "/settings/archived",
@@ -990,6 +999,7 @@ const SETTINGS_CATEGORY_SCOPES: Readonly<Record<SettingsPath, SettingsSearchScop
   "/settings/code-intelligence": "environment-defaults",
   "/settings/storage": "project-defaults",
   "/settings/connections": "connections",
+  "/settings/drive": null,
   "/settings/scheduled-tasks": null,
   "/settings/archived": "project-defaults",
 };

@@ -224,6 +224,7 @@ import { PullRequestGlyph } from "~/components/pullRequest/pullRequestIcons";
 import { readPullRequestListPreferences } from "~/components/pullRequest/pullRequestListPreferences";
 import { suiteCommandPaletteItems } from "~/suite/commandPaletteItems";
 import { useSuiteCommandPaletteGroups } from "~/suite/commandPaletteGroups";
+import { useDriveCommandPaletteItems } from "~/suite/drive/driveCommandPaletteItems";
 
 const EMPTY_BROWSE_ENTRIES: FilesystemBrowseResult["entries"] = [];
 
@@ -1890,6 +1891,9 @@ function OpenCommandPaletteDialog(props: {
     pushPaletteView,
   ]);
 
+  const driveActionItems = useDriveCommandPaletteItems(
+    activeThread ? scopeThreadRef(activeThread.environmentId, activeThread.id) : null,
+  );
   const actionItems: Array<CommandPaletteActionItem | CommandPaletteSubmenuItem> = [];
 
   if (projects.length > 0) {
@@ -2058,6 +2062,7 @@ function OpenCommandPaletteDialog(props: {
       },
     });
   }
+  actionItems.push(...driveActionItems);
 
   actionItems.push({
     kind: "action",

@@ -8,6 +8,8 @@ import type {
 } from "@t3tools/contracts";
 import { contextBridge, ipcRenderer, webFrame, webUtils } from "electron";
 
+import { createDriveBridge } from "./suite/drive/preload.ts";
+
 import * as IpcChannels from "./ipc/channels.ts";
 import { mergeLegacyLocalStorage } from "./legacyLocalStorageMerge.ts";
 import * as PreviewExtensionChannels from "./preview/extensions/channels.ts";
@@ -74,6 +76,7 @@ function unwrapEnsureSshEnvironmentResult(result: unknown) {
 }
 
 contextBridge.exposeInMainWorld("desktopBridge", {
+  drive: createDriveBridge(ipcRenderer),
   getAppBranding: () => {
     const result = ipcRenderer.sendSync(IpcChannels.GET_APP_BRANDING_CHANNEL);
     if (typeof result !== "object" || result === null) {

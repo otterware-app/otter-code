@@ -413,6 +413,9 @@ export function summarizeT3ToolCalls(
     case "calendar-change":
       label = phrase("Changed", "change", quantity(selected.length, "calendar event"));
       break;
+    case "drive":
+      label = phrase("Used", "use", `Otter Drive ${times}`);
+      break;
   }
   return { label, failedCount };
 }

@@ -19,6 +19,7 @@ import { Route as DriveRouteImport } from './routes/drive'
 import { Route as ConnectRouteImport } from './routes/connect'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as ChatRouteImport } from './routes/_chat'
+import { Route as HomeIndexRouteImport } from './routes/home.index'
 import { Route as ChatIndexRouteImport } from './routes/_chat.index'
 import { Route as SettingsStorageRouteImport } from './routes/settings.storage'
 import { Route as SettingsSourceControlRouteImport } from './routes/settings.source-control'
@@ -38,9 +39,13 @@ import { Route as SettingsCodeIntelligenceRouteImport } from './routes/settings.
 import { Route as SettingsArchivedRouteImport } from './routes/settings.archived'
 import { Route as SettingsAppearanceRouteImport } from './routes/settings.appearance'
 import { Route as ProjectsProjectKeyRouteImport } from './routes/projects.$projectKey'
+import { Route as HomeNeedsYouRouteImport } from './routes/home.needs-you'
+import { Route as HomeAgentsRouteImport } from './routes/home.agents'
 import { Route as AccountSignOutRouteImport } from './routes/account.sign-out'
 import { Route as AccountCallbackRouteImport } from './routes/account.callback'
 import { Route as ChatPullRequestsRouteImport } from './routes/_chat.pull-requests'
+import { Route as HomeViewsViewIdRouteImport } from './routes/home.views.$viewId'
+import { Route as HomeProjectsProjectIdRouteImport } from './routes/home.projects.$projectId'
 import { Route as ChatDraftDraftIdRouteImport } from './routes/_chat.draft.$draftId'
 import { Route as ChatEnvironmentIdThreadIdRouteImport } from './routes/_chat.$environmentId.$threadId'
 
@@ -92,6 +97,11 @@ const CalendarRoute = CalendarRouteImport.update({
 const ChatRoute = ChatRouteImport.update({
   id: '/_chat',
   getParentRoute: () => rootRouteImport,
+} as any)
+const HomeIndexRoute = HomeIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => HomeRoute,
 } as any)
 const ChatIndexRoute = ChatIndexRouteImport.update({
   id: '/',
@@ -190,6 +200,16 @@ const ProjectsProjectKeyRoute = ProjectsProjectKeyRouteImport.update({
   path: '/projects/$projectKey',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HomeNeedsYouRoute = HomeNeedsYouRouteImport.update({
+  id: '/needs-you',
+  path: '/needs-you',
+  getParentRoute: () => HomeRoute,
+} as any)
+const HomeAgentsRoute = HomeAgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => HomeRoute,
+} as any)
 const AccountSignOutRoute = AccountSignOutRouteImport.update({
   id: '/account/sign-out',
   path: '/account/sign-out',
@@ -204,6 +224,16 @@ const ChatPullRequestsRoute = ChatPullRequestsRouteImport.update({
   id: '/pull-requests',
   path: '/pull-requests',
   getParentRoute: () => ChatRoute,
+} as any)
+const HomeViewsViewIdRoute = HomeViewsViewIdRouteImport.update({
+  id: '/views/$viewId',
+  path: '/views/$viewId',
+  getParentRoute: () => HomeRoute,
+} as any)
+const HomeProjectsProjectIdRoute = HomeProjectsProjectIdRouteImport.update({
+  id: '/projects/$projectId',
+  path: '/projects/$projectId',
+  getParentRoute: () => HomeRoute,
 } as any)
 const ChatDraftDraftIdRoute = ChatDraftDraftIdRouteImport.update({
   id: '/draft/$draftId',
@@ -222,7 +252,7 @@ export interface FileRoutesByFullPath {
   '/calendar': typeof CalendarRoute
   '/connect': typeof ConnectRoute
   '/drive': typeof DriveRoute
-  '/home': typeof HomeRoute
+  '/home': typeof HomeRouteWithChildren
   '/mail': typeof MailRoute
   '/pair': typeof PairRoute
   '/settings': typeof SettingsRouteWithChildren
@@ -231,6 +261,8 @@ export interface FileRoutesByFullPath {
   '/pull-requests': typeof ChatPullRequestsRoute
   '/account/callback': typeof AccountCallbackRoute
   '/account/sign-out': typeof AccountSignOutRoute
+  '/home/agents': typeof HomeAgentsRoute
+  '/home/needs-you': typeof HomeNeedsYouRoute
   '/projects/$projectKey': typeof ProjectsProjectKeyRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/archived': typeof SettingsArchivedRoute
@@ -249,14 +281,16 @@ export interface FileRoutesByFullPath {
   '/settings/snap-shot': typeof SettingsSnapShotRoute
   '/settings/source-control': typeof SettingsSourceControlRoute
   '/settings/storage': typeof SettingsStorageRoute
+  '/home/': typeof HomeIndexRoute
   '/$environmentId/$threadId': typeof ChatEnvironmentIdThreadIdRoute
   '/draft/$draftId': typeof ChatDraftDraftIdRoute
+  '/home/projects/$projectId': typeof HomeProjectsProjectIdRoute
+  '/home/views/$viewId': typeof HomeViewsViewIdRoute
 }
 export interface FileRoutesByTo {
   '/calendar': typeof CalendarRoute
   '/connect': typeof ConnectRoute
   '/drive': typeof DriveRoute
-  '/home': typeof HomeRoute
   '/mail': typeof MailRoute
   '/pair': typeof PairRoute
   '/settings': typeof SettingsRouteWithChildren
@@ -265,6 +299,8 @@ export interface FileRoutesByTo {
   '/pull-requests': typeof ChatPullRequestsRoute
   '/account/callback': typeof AccountCallbackRoute
   '/account/sign-out': typeof AccountSignOutRoute
+  '/home/agents': typeof HomeAgentsRoute
+  '/home/needs-you': typeof HomeNeedsYouRoute
   '/projects/$projectKey': typeof ProjectsProjectKeyRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/archived': typeof SettingsArchivedRoute
@@ -284,8 +320,11 @@ export interface FileRoutesByTo {
   '/settings/source-control': typeof SettingsSourceControlRoute
   '/settings/storage': typeof SettingsStorageRoute
   '/': typeof ChatIndexRoute
+  '/home': typeof HomeIndexRoute
   '/$environmentId/$threadId': typeof ChatEnvironmentIdThreadIdRoute
   '/draft/$draftId': typeof ChatDraftDraftIdRoute
+  '/home/projects/$projectId': typeof HomeProjectsProjectIdRoute
+  '/home/views/$viewId': typeof HomeViewsViewIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -293,7 +332,7 @@ export interface FileRoutesById {
   '/calendar': typeof CalendarRoute
   '/connect': typeof ConnectRoute
   '/drive': typeof DriveRoute
-  '/home': typeof HomeRoute
+  '/home': typeof HomeRouteWithChildren
   '/mail': typeof MailRoute
   '/pair': typeof PairRoute
   '/settings': typeof SettingsRouteWithChildren
@@ -302,6 +341,8 @@ export interface FileRoutesById {
   '/_chat/pull-requests': typeof ChatPullRequestsRoute
   '/account/callback': typeof AccountCallbackRoute
   '/account/sign-out': typeof AccountSignOutRoute
+  '/home/agents': typeof HomeAgentsRoute
+  '/home/needs-you': typeof HomeNeedsYouRoute
   '/projects/$projectKey': typeof ProjectsProjectKeyRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/archived': typeof SettingsArchivedRoute
@@ -321,8 +362,11 @@ export interface FileRoutesById {
   '/settings/source-control': typeof SettingsSourceControlRoute
   '/settings/storage': typeof SettingsStorageRoute
   '/_chat/': typeof ChatIndexRoute
+  '/home/': typeof HomeIndexRoute
   '/_chat/$environmentId/$threadId': typeof ChatEnvironmentIdThreadIdRoute
   '/_chat/draft/$draftId': typeof ChatDraftDraftIdRoute
+  '/home/projects/$projectId': typeof HomeProjectsProjectIdRoute
+  '/home/views/$viewId': typeof HomeViewsViewIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -340,6 +384,8 @@ export interface FileRouteTypes {
     | '/pull-requests'
     | '/account/callback'
     | '/account/sign-out'
+    | '/home/agents'
+    | '/home/needs-you'
     | '/projects/$projectKey'
     | '/settings/appearance'
     | '/settings/archived'
@@ -358,14 +404,16 @@ export interface FileRouteTypes {
     | '/settings/snap-shot'
     | '/settings/source-control'
     | '/settings/storage'
+    | '/home/'
     | '/$environmentId/$threadId'
     | '/draft/$draftId'
+    | '/home/projects/$projectId'
+    | '/home/views/$viewId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/calendar'
     | '/connect'
     | '/drive'
-    | '/home'
     | '/mail'
     | '/pair'
     | '/settings'
@@ -374,6 +422,8 @@ export interface FileRouteTypes {
     | '/pull-requests'
     | '/account/callback'
     | '/account/sign-out'
+    | '/home/agents'
+    | '/home/needs-you'
     | '/projects/$projectKey'
     | '/settings/appearance'
     | '/settings/archived'
@@ -393,8 +443,11 @@ export interface FileRouteTypes {
     | '/settings/source-control'
     | '/settings/storage'
     | '/'
+    | '/home'
     | '/$environmentId/$threadId'
     | '/draft/$draftId'
+    | '/home/projects/$projectId'
+    | '/home/views/$viewId'
   id:
     | '__root__'
     | '/_chat'
@@ -410,6 +463,8 @@ export interface FileRouteTypes {
     | '/_chat/pull-requests'
     | '/account/callback'
     | '/account/sign-out'
+    | '/home/agents'
+    | '/home/needs-you'
     | '/projects/$projectKey'
     | '/settings/appearance'
     | '/settings/archived'
@@ -429,8 +484,11 @@ export interface FileRouteTypes {
     | '/settings/source-control'
     | '/settings/storage'
     | '/_chat/'
+    | '/home/'
     | '/_chat/$environmentId/$threadId'
     | '/_chat/draft/$draftId'
+    | '/home/projects/$projectId'
+    | '/home/views/$viewId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -438,7 +496,7 @@ export interface RootRouteChildren {
   CalendarRoute: typeof CalendarRoute
   ConnectRoute: typeof ConnectRoute
   DriveRoute: typeof DriveRoute
-  HomeRoute: typeof HomeRoute
+  HomeRoute: typeof HomeRouteWithChildren
   MailRoute: typeof MailRoute
   PairRoute: typeof PairRoute
   SettingsRoute: typeof SettingsRouteWithChildren
@@ -520,6 +578,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/home/': {
+      id: '/home/'
+      path: '/'
+      fullPath: '/home/'
+      preLoaderRoute: typeof HomeIndexRouteImport
+      parentRoute: typeof HomeRoute
     }
     '/_chat/': {
       id: '/_chat/'
@@ -654,6 +719,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsProjectKeyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/home/needs-you': {
+      id: '/home/needs-you'
+      path: '/needs-you'
+      fullPath: '/home/needs-you'
+      preLoaderRoute: typeof HomeNeedsYouRouteImport
+      parentRoute: typeof HomeRoute
+    }
+    '/home/agents': {
+      id: '/home/agents'
+      path: '/agents'
+      fullPath: '/home/agents'
+      preLoaderRoute: typeof HomeAgentsRouteImport
+      parentRoute: typeof HomeRoute
+    }
     '/account/sign-out': {
       id: '/account/sign-out'
       path: '/account/sign-out'
@@ -674,6 +753,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/pull-requests'
       preLoaderRoute: typeof ChatPullRequestsRouteImport
       parentRoute: typeof ChatRoute
+    }
+    '/home/views/$viewId': {
+      id: '/home/views/$viewId'
+      path: '/views/$viewId'
+      fullPath: '/home/views/$viewId'
+      preLoaderRoute: typeof HomeViewsViewIdRouteImport
+      parentRoute: typeof HomeRoute
+    }
+    '/home/projects/$projectId': {
+      id: '/home/projects/$projectId'
+      path: '/projects/$projectId'
+      fullPath: '/home/projects/$projectId'
+      preLoaderRoute: typeof HomeProjectsProjectIdRouteImport
+      parentRoute: typeof HomeRoute
     }
     '/_chat/draft/$draftId': {
       id: '/_chat/draft/$draftId'
@@ -707,6 +800,24 @@ const ChatRouteChildren: ChatRouteChildren = {
 }
 
 const ChatRouteWithChildren = ChatRoute._addFileChildren(ChatRouteChildren)
+
+interface HomeRouteChildren {
+  HomeAgentsRoute: typeof HomeAgentsRoute
+  HomeNeedsYouRoute: typeof HomeNeedsYouRoute
+  HomeIndexRoute: typeof HomeIndexRoute
+  HomeProjectsProjectIdRoute: typeof HomeProjectsProjectIdRoute
+  HomeViewsViewIdRoute: typeof HomeViewsViewIdRoute
+}
+
+const HomeRouteChildren: HomeRouteChildren = {
+  HomeAgentsRoute: HomeAgentsRoute,
+  HomeNeedsYouRoute: HomeNeedsYouRoute,
+  HomeIndexRoute: HomeIndexRoute,
+  HomeProjectsProjectIdRoute: HomeProjectsProjectIdRoute,
+  HomeViewsViewIdRoute: HomeViewsViewIdRoute,
+}
+
+const HomeRouteWithChildren = HomeRoute._addFileChildren(HomeRouteChildren)
 
 interface SettingsRouteChildren {
   SettingsAppearanceRoute: typeof SettingsAppearanceRoute
@@ -757,7 +868,7 @@ const rootRouteChildren: RootRouteChildren = {
   CalendarRoute: CalendarRoute,
   ConnectRoute: ConnectRoute,
   DriveRoute: DriveRoute,
-  HomeRoute: HomeRoute,
+  HomeRoute: HomeRouteWithChildren,
   MailRoute: MailRoute,
   PairRoute: PairRoute,
   SettingsRoute: SettingsRouteWithChildren,

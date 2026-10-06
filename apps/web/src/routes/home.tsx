@@ -1,21 +1,18 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
+import { HomeSidebar } from "../suite/home/HomeSidebar";
 import { requireSuiteRouteAuth } from "../suite/routeGuards";
 import { SuiteModuleLayout } from "../suite/SuiteModuleLayout";
-import { SuiteModulePlaceholder } from "../suite/SuiteModulePlaceholder";
 
-function HomeRoute() {
+function HomeLayout() {
   return (
-    <SuiteModuleLayout moduleId="home">
-      <SuiteModulePlaceholder
-        moduleId="home"
-        description="Your day across Code, Mail, Calendar and Drive: what needs you, and what’s next."
-      />
+    <SuiteModuleLayout moduleId="home" sidebar={<HomeSidebar />} sideChat={false}>
+      <Outlet />
     </SuiteModuleLayout>
   );
 }
 
 export const Route = createFileRoute("/home")({
   beforeLoad: requireSuiteRouteAuth,
-  component: HomeRoute,
+  component: HomeLayout,
 });

@@ -13,16 +13,27 @@ import { Tooltip, TooltipPopup, TooltipTrigger } from "../components/ui/tooltip"
 import { WorkspacePageHeader } from "../components/WorkspacePageHeader";
 import { SUITE_WEB_MODULES } from "./modules";
 import { SuiteModuleUnavailable } from "./SuiteModuleUnavailable";
-import { SuiteSideChatSlot, useSuiteSideChatOpen } from "./SuiteSideChatSlot";
+import {
+  SIDE_CHAT_SHORTCUT_LABEL,
+  SuiteSideChatSlot,
+  useSuiteSideChatOpen,
+  useSuiteSideChatShortcut,
+} from "./SuiteSideChatSlot";
 import { suiteHasModule, useSuiteCapabilities } from "./useSuiteCapabilities";
 
 export function SuiteModuleLayout({
   moduleId,
   sidebar,
   headerActions,
+  sideChat = true,
+  title,
   children,
 }: {
   readonly moduleId: string;
+  /** Home has its own composer and right column, so it leaves the side chat out. */
+  readonly sideChat?: boolean;
+  /** Replaces the module label in the page header. */
+  readonly title?: ReactNode;
   /** The module's own navigation (folders, calendars, ...), left of the content. */
   readonly sidebar?: ReactNode;
   readonly headerActions?: ReactNode;
@@ -32,6 +43,7 @@ export function SuiteModuleLayout({
   const capabilities = useSuiteCapabilities();
   const [sideChatOpen, setSideChatOpen] = useSuiteSideChatOpen();
   const available = module !== undefined && suiteHasModule(capabilities, module.serverModule);
+  useSuiteSideChatShortcut(sideChat);
   const label = module?.label ?? moduleId;
 
   return (
@@ -48,9 +60,9 @@ export function SuiteModuleLayout({
         ) : null}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-background text-foreground">
           <WorkspacePageHeader electron={isElectron}>
-            <h1 className="min-w-0 flex-1 truncate text-sm font-medium">{label}</h1>
+            <h1 className="min-w-0 flex-1 truncate text-sm font-medium">{title ?? label}</h1>
             {headerActions}
-            {sideChatOpen ? null : (
+            {sideChatOpen || !sideChat ? null : (
               <Tooltip>
                 <TooltipTrigger
                   render={
@@ -64,7 +76,9 @@ export function SuiteModuleLayout({
                 >
                   <PanelRightOpenIcon />
                 </TooltipTrigger>
-                <TooltipPopup side="bottom">Show side chat</TooltipPopup>
+                <TooltipPopup side="bottom">
+                  Show side chat ({SIDE_CHAT_SHORTCUT_LABEL})
+                </TooltipPopup>
               </Tooltip>
             )}
           </WorkspacePageHeader>
@@ -79,7 +93,7 @@ export function SuiteModuleLayout({
             )}
           </div>
         </div>
-        <SuiteSideChatSlot />
+        {sideChat ? <SuiteSideChatSlot moduleId={moduleId} /> : null}
       </div>
     </SidebarInset>
   );

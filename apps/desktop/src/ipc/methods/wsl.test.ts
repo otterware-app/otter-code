@@ -66,7 +66,9 @@ const layerUnusedLifecycleRuntime = Layer.mergeAll(
   ),
   Layer.succeed(
     ElectronApp.ElectronApp,
-    ElectronApp.ElectronApp.of({} as ElectronApp.ElectronApp["Service"]),
+    ElectronApp.ElectronApp.of({
+      requestSingleInstanceLock: Effect.succeed(true),
+    } as ElectronApp.ElectronApp["Service"]),
   ),
   Layer.succeed(
     ElectronTheme.ElectronTheme,

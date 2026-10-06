@@ -17,6 +17,7 @@ import { OrchestratorMcpFailure, PreviewAutomationError } from "@t3tools/contrac
 
 import packageJson from "../../package.json" with { type: "json" };
 import * as ServerConfig from "../config.ts";
+import * as SuiteServer from "../suite/SuiteServer.ts";
 import * as DeviceService from "../device/DeviceService.ts";
 import * as HtmlRender from "../htmlRender/HtmlRender.ts";
 import * as McpInvocationContext from "./McpInvocationContext.ts";
@@ -781,4 +782,5 @@ export const layer = Layer.mergeAll(
   layerLinearIssuesToolkitRegistration,
   layerDeviceToolkit,
   layerHtmlToolkit,
+  SuiteServer.layerMcpToolkits,
 ).pipe(Layer.provideMerge(layerMcpTransport));

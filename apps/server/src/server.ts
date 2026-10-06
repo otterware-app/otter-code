@@ -173,6 +173,8 @@ import * as NetService from "@t3tools/shared/Net";
 import * as RelayClient from "@t3tools/shared/relayClient";
 import { disableTailscaleServe, ensureTailscaleServe } from "@t3tools/tailscale";
 import * as ServerActivation from "./serverActivation.ts";
+import * as StateDirGuard from "./suite/StateDirGuard.ts";
+import * as SuiteServer from "./suite/SuiteServer.ts";
 
 // MCP handoff thread IDs include escaped provenance and can exceed find-my-way's
 // 100-character default for one path segment.
@@ -641,7 +643,8 @@ const layerRuntimeCoreDependencies = layerRuntimeCoreDependenciesBase.pipe(
   ),
 );
 
-const layerRuntimeDependencies = layerRuntimeCoreDependencies.pipe(
+const layerRuntimeDependencies = SuiteServer.layer.pipe(
+  Layer.provideMerge(layerRuntimeCoreDependencies),
   // Misc.
   Layer.provideMerge(layerBackground),
   Layer.provideMerge(layerResourceDiagnostics),
@@ -719,6 +722,7 @@ const layerMakeServer = Layer.unwrap(
     const layerLauncher = ServiceLauncherClient.layer;
 
     yield* fixPath();
+    yield* StateDirGuard.ensureSoleWriter(config);
 
     const layerHttpListening = Layer.effectDiscard(
       Effect.gen(function* () {

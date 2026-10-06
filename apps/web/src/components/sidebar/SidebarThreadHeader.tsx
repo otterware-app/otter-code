@@ -1,4 +1,9 @@
-import { FolderPlusIcon, SearchIcon, SquarePenIcon, XIcon } from "lucide-react";
+/**
+ * The sidebar header: one row holding search and new thread. The space it
+ * searches (All projects, or one) is named in the row above it
+ * (`SidebarChromeHeader`), which the space rail and its picker choose.
+ */
+import { SearchIcon, SquarePenIcon, XIcon } from "lucide-react";
 import {
   type ComponentProps,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -13,10 +18,7 @@ import { SidebarInput, SidebarMenuButton } from "../ui/sidebar";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 
 export interface SidebarThreadHeaderProps {
-  searchFieldRef?: RefObject<HTMLDivElement | null>;
-  hasProjects: boolean;
-  projectScope: ReactNode;
-  onNewProject: () => void;
+  /** Receives the click so Shift+click can skip the project picker. */
   onNewThread: (event: ReactMouseEvent) => void;
   newThreadDisabled: boolean;
   newThreadShortcutLabel: string | null | undefined;
@@ -33,10 +35,6 @@ export interface SidebarThreadHeaderProps {
 }
 
 export function SidebarThreadHeader({
-  searchFieldRef,
-  hasProjects,
-  projectScope,
-  onNewProject,
   onNewThread,
   newThreadDisabled,
   newThreadShortcutLabel,
@@ -61,7 +59,6 @@ export function SidebarThreadHeader({
   return (
     <div className="flex items-center gap-1">
       <div
-        ref={searchFieldRef}
         className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-sidebar-muted-foreground hover:bg-sidebar-row-hover hover:text-sidebar-foreground focus-within:bg-sidebar-row-hover focus-within:text-sidebar-foreground focus-within:ring-1 focus-within:ring-inset focus-within:ring-ring/70"
       >
         <SearchIcon className="size-4 shrink-0 text-(--sidebar-icon-color)" />
@@ -101,15 +98,10 @@ export function SidebarThreadHeader({
           </Button>
         ) : null}
       </div>
+      {/* Unfilled like the search field beside it: the button carries its own
+          hover state, and a background well reads far louder on themed
+          palettes than on the base light and dark ones. */}
       <div className="flex shrink-0 items-center">
-        {hasProjects ? (
-          <>
-            {projectScope}
-            <SidebarHeaderIconButton label="Add project" onClick={onNewProject}>
-              <FolderPlusIcon />
-            </SidebarHeaderIconButton>
-          </>
-        ) : null}
         <SidebarHeaderIconButton
           label="New thread"
           tooltip={
@@ -135,7 +127,12 @@ export function SidebarThreadHeader({
   );
 }
 
-export function SidebarHeaderIconButton({
+/**
+ * Icon button with a tooltip, sized for the header's segmented pair. Spreads
+ * unknown props through so it can serve as a popup trigger's render target,
+ * which injects its own handlers, ref and aria state.
+ */
+function SidebarHeaderIconButton({
   label,
   tooltip = label,
   className,

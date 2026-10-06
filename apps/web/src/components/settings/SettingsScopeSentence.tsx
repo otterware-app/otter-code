@@ -52,6 +52,8 @@ export const SETTINGS_DEVICE_ONLY_PATHS: ReadonlySet<string> = new Set([
   // Network access and authorized clients belong to the environment serving this app.
   "/settings/access",
   "/settings/about",
+  // Saved on every environment alike, so no scope applies either.
+  "/settings/project-groups",
 ]);
 
 interface SettingsScopeMenuProps {

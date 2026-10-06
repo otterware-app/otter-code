@@ -4,7 +4,7 @@ import type { ToolCallDiffTarget } from "../../diffPanelStore";
 import { AudioPreviewUnmountContext } from "../files/AudioPreview";
 import { ThreadFindTimelineContext } from "./ThreadFindProvider";
 import { MarkdownFindContext } from "./markdownFindContext";
-import { useChatCanvas } from "./ChatCanvasContext";
+import { useChatCanvasActions } from "./ChatCanvasContext";
 import { WorkLogBlock } from "./WorkLog";
 import { TimelinePendingApprovalRow } from "./TimelinePendingApprovalRow";
 import type { WorktreeSetupSnapshot } from "@t3tools/contracts";
@@ -30,7 +30,6 @@ const EMPTY_PENDING_APPROVALS: ReadonlyArray<PendingApproval> = [];
 const EMPTY_RESPONDING_REQUEST_IDS: TimelineRowSharedState["respondingRequestIds"] = [];
 
 const NOOP_OPEN_ATTACHMENT = (_attachment: ChatFileAttachment) => {};
-
 import { resolveChatListAnchoredEndSpace } from "@t3tools/shared/chatList";
 import { observeVisibleAnimation } from "../../lib/visibleAnimation";
 import {
@@ -151,7 +150,6 @@ function timelineListStateFor(identity: string): {
     },
   };
 }
-
 const TIMELINE_LIST_HEADER = <div className="h-3 sm:h-4" />;
 const TIMELINE_LIST_FADE_HEADER = (
   <div className="h-[var(--workspace-titlebar-scroll-fade-height)]" />
@@ -186,7 +184,7 @@ function TimelineListFooter({
   );
 }
 
-const EMPTY_TIMELINE_SKILLS: ReadonlyArray<ServerProviderSkill> = [];
+const EMPTY_TIMELINE_SKILLS: ReadonlyArray<Pick<ServerProviderSkill, "name" | "displayName">> = [];
 const TIMELINE_MAINTAIN_SCROLL_AT_END = {
   animated: false,
   on: {
@@ -210,7 +208,6 @@ export interface MessagesTimelineHistoryControls {
   readonly error: string | null;
   readonly onLoadEarlier: (throughEntryId?: string) => void;
 }
-
 interface MessagesTimelineProps {
   pendingApprovals?: ReadonlyArray<PendingApproval>;
   heldApprovalRequestIds?: ReadonlySet<string> | undefined;
@@ -238,7 +235,6 @@ interface MessagesTimelineProps {
   /** Which request is waiting, so a second one of the same kind is announced too. */
   awaitingRequestId?: string | null;
   footer?: ReactNode;
-
   listRef: React.RefObject<LegendListRef | null>;
   timelineEntries: ReadonlyArray<TimelineEntry>;
   latestRun: TimelineLatestRun | null;
@@ -314,7 +310,6 @@ interface MessagesTimelineProps {
   activeFindMatch?: ThreadFindMatch | null;
   findNavigationId?: number;
 }
-
 export function MessagesTimeline(props: MessagesTimelineProps) {
   const find = useContext(ThreadFindTimelineContext);
   const findOpen = find?.findOpen ?? props.findOpen;
@@ -326,7 +321,6 @@ export function MessagesTimeline(props: MessagesTimelineProps) {
     />
   );
 }
-
 const ConversationTimeline = memo(function ConversationTimeline({
   pendingApprovals = EMPTY_PENDING_APPROVALS,
   heldApprovalRequestIds,
@@ -476,7 +470,6 @@ const ConversationTimeline = memo(function ConversationTimeline({
     const element = listRef.current?.getScrollableNode();
     if (element) element.scrollTop = element.scrollHeight;
   };
-
   const scheduleDisclosureSettle = () => {
     if (disclosureSettleFrameRef.current !== null) {
       cancelAnimationFrame(disclosureSettleFrameRef.current);
@@ -503,13 +496,11 @@ const ConversationTimeline = memo(function ConversationTimeline({
     setDisclosureToggleSettling(true);
     scheduleDisclosureSettle();
   };
-
   const shouldRestoreVisibleContentPosition = (row: MessagesTimelineRow) => {
     if (disclosurePinsEndRef.current) return false;
     const disclosureAnchorKey = disclosureAnchorKeyRef.current;
     return disclosureAnchorKey === null || row.id === disclosureAnchorKey;
   };
-
   const onToggleTurnFold = (runId: RunId) => {
     suspendEndScrollMaintenanceForDisclosure(`turn-fold:${runId}`);
     setExpandedRunIds((existing) => {
@@ -652,7 +643,6 @@ const ConversationTimeline = memo(function ConversationTimeline({
     !activeFindRunId || paintedExpandedRunIds.has(activeFindRunId)
       ? paintedExpandedRunIds
       : new Set(paintedExpandedRunIds).add(activeFindRunId);
-
   const activeFindAttemptId = activeFindMatch
     ? timelineEntries.find((entry) => entry.id === activeFindMatch.entryId)?.attempt?.id
     : undefined;
@@ -1130,9 +1120,7 @@ const ConversationTimeline = memo(function ConversationTimeline({
       {parentThreadLink !== null ? listHeaderLeadingContent : null}
     </>
   );
-
-  const canvas = useChatCanvas();
-  const registerTimeline = canvas?.registerTimeline;
+  const registerTimeline = useChatCanvasActions()?.registerTimeline;
   // Stable so the list attaches once per mount, not on every render.
   const setTimelineList = useStableCallback((list: LegendListRef | null) => {
     listRef.current = list;
@@ -1299,7 +1287,6 @@ const ConversationTimeline = memo(function ConversationTimeline({
       </>
     );
   }
-
   return (
     <>
       {activityAnnouncer}
@@ -1385,7 +1372,6 @@ const ConversationTimeline = memo(function ConversationTimeline({
     </>
   );
 });
-
 function TimelineHistoryControl(props: MessagesTimelineHistoryControls) {
   if (!props.hasMoreHistory && props.error === null) {
     return null;
@@ -1444,7 +1430,6 @@ const TimelineRowContent = memo(function TimelineRowContent({ row }: { row: Time
   const isExpandedToolGroupHeader =
     (row.kind === "work-toggle" || row.kind === "work-live" || row.kind === "thinking") &&
     row.expanded === true;
-
   return (
     <div
       className={cn(
@@ -1517,11 +1502,15 @@ const TimelineRowContent = memo(function TimelineRowContent({ row }: { row: Time
     </div>
   );
 });
-
 function WorktreeSetupTimelineRow({
   row,
 }: {
-  row: Extract<TimelineRow, { kind: "worktree-setup" }>;
+  row: Extract<
+    TimelineRow,
+    {
+      kind: "worktree-setup";
+    }
+  >;
 }) {
   const ctx = use(TimelineRowCtx);
   const terminalId = row.snapshot.setupScript?.terminalId ?? null;
@@ -1539,11 +1528,15 @@ function WorktreeSetupTimelineRow({
     />
   );
 }
-
 function ContextCompactionTimelineRow({
   row,
 }: {
-  row: Extract<TimelineRow, { kind: "context-compaction" }>;
+  row: Extract<
+    TimelineRow,
+    {
+      kind: "context-compaction";
+    }
+  >;
 }) {
   const label =
     row.title && row.label.startsWith("Context compacted")
@@ -1680,8 +1673,16 @@ function TurnFoldTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "turn-
     </div>
   );
 }
-
-function AttemptFoldTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "attempt-fold" }> }) {
+function AttemptFoldTimelineRow({
+  row,
+}: {
+  row: Extract<
+    TimelineRow,
+    {
+      kind: "attempt-fold";
+    }
+  >;
+}) {
   const ctx = use(TimelineRowCtx);
   const { loading, error, toggle } = useDeferredWorkLoading(row, () =>
     ctx.onToggleAttemptFold(row.attemptId),

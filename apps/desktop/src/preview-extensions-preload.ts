@@ -11,6 +11,8 @@
 
 import { contextBridge, ipcRenderer } from "electron";
 
+import { installNativeMessaging } from "./preview-native-messaging-preload.ts";
+
 // The preview's pages run without context isolation (its element picker reads
 // the page's globals), and there contextBridge refuses to work. The Web
 // Store's own preload (electron-chrome-web-store), which runs after this one,
@@ -43,6 +45,25 @@ function ownExtensionId(): string | null {
 const extensionId = ownExtensionId();
 
 if (extensionId) {
+  const nativeListeners = new Map<string, (kind: string, payload: unknown) => void>();
+  ipcRenderer.on("crx:nativeEvent", (_event, id: string, kind: string, payload: unknown) => {
+    nativeListeners.get(id)?.(kind, payload);
+  });
+  contextBridge.executeInMainWorld({
+    func: installNativeMessaging,
+    args: [
+      {
+        call: (method: string, args: unknown[]) =>
+          ipcRenderer.invoke("crx:nativeCall", extensionId, method, args),
+        listen: (id: string, listener: (kind: string, payload: unknown) => void) => {
+          nativeListeners.set(id, listener);
+        },
+        forget: (id: string) => {
+          nativeListeners.delete(id);
+        },
+      },
+    ],
+  });
   const listeners = new Map<string, Set<(...args: unknown[]) => void>>();
   ipcRenderer.on("crx:event", (_event, name: string, args: unknown[]) => {
     for (const listener of listeners.get(name) ?? []) listener(...args);

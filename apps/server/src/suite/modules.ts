@@ -6,10 +6,11 @@
 import { CalendarModule } from "./calendar/CalendarModule.ts";
 import { SuiteCoreModule } from "./core/SuiteCoreModule.ts";
 import { DriveModule } from "./drive/DriveModule.ts";
+import { MailModule } from "./mail/MailModule.ts";
 
 export const SUITE_SERVER_MODULES = [
   SuiteCoreModule,
   CalendarModule,
   DriveModule,
-  // MailModule,
+  MailModule,
 ] as const;

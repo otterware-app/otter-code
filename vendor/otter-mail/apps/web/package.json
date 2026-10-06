@@ -1,0 +1,30 @@
+{
+  "name": "@otter-mail/web",
+  "version": "0.12.6",
+  "private": true,
+  "description": "Vendored from Otter Mail by scripts/otterware/sync-otter-mail.ts. Do not edit.",
+  "type": "module",
+  "dependencies": {
+    "@base-ui/react": "^1.8.0",
+    "@fontsource-variable/inter": "^5.2.8",
+    "@otter-mail/contracts": "workspace:*",
+    "@otter-mail/core": "workspace:*",
+    "@otter-mail/shared": "workspace:*",
+    "@radix-ui/colors": "^3.0.0",
+    "@shadcn/react": "^0.2.0",
+    "@tanstack/react-query": "^5.87.4",
+    "@tanstack/react-router": "^1.131.36",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
+    "culori": "^4.0.2",
+    "lucide-react": "^0.542.0",
+    "radix-ui": "^1.4.3",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "react-markdown": "^9.1.0",
+    "remark-gfm": "^4.0.1",
+    "tailwind-merge": "^3.3.1",
+    "zustand": "^5.0.15"
+  }
+}

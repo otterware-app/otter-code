@@ -1,0 +1,21 @@
+{
+  "name": "@otter-mail/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Vendored from Otter Mail by scripts/otterware/sync-otter-mail.ts. Do not edit.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./relay": "./src/relay.ts",
+    "./agent-tokens": "./src/agent-tokens.ts",
+    "./demo": "./src/demo.ts",
+    "./mail": "./src/mail.ts",
+    "./projects": "./src/projects.ts",
+    "./project-tools": "./src/project-tools.ts",
+    "./todoist": "./src/todoist.ts",
+    "./openrouter": "./src/openrouter.ts"
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
+  }
+}

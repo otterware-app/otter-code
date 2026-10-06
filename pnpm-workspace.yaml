@@ -6,6 +6,9 @@ packages:
   - scripts
   # Otter Drive contracts, vendored verbatim (scripts/otterware/sync-otter-drive.ts).
   - vendor/otter-drive/packages/*
+  # Otter Mail, vendored for Otterware (scripts/otterware/sync-otter-mail.ts).
+  - vendor/otter-mail/packages/*
+  - vendor/otter-mail/apps/web
 
 # Successor to onlyBuiltDependencies/ignoredBuiltDependencies (pnpm 11).
 # true = allowed to run build scripts; false mirrors the pnpm 10 behavior

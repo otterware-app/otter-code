@@ -1,6 +1,6 @@
 import { RefreshIcon } from "~/components/ui/refresh-icon";
 import { scopeProjectRef } from "@t3tools/client-runtime/environment";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { LinkIcon, PlusIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -21,6 +21,7 @@ import {
 import { useEnvironments } from "../state/environments";
 import { APP_DISPLAY_NAME } from "~/branding";
 import { hasCloudPublicConfig } from "~/cloud/publicConfig";
+import { consumeSuiteLanding } from "~/suite/modules";
 
 function ChatIndexRouteView() {
   const { authGateState } = Route.useRouteContext();
@@ -111,6 +112,9 @@ function DraftStartError({ onRetry }: { readonly onRetry: () => void }) {
 }
 
 export const Route = createFileRoute("/_chat/")({
+  beforeLoad: () => {
+    if (consumeSuiteLanding()) throw redirect({ to: "/home", replace: true });
+  },
   component: ChatIndexRouteView,
 });
 

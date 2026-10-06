@@ -23,6 +23,8 @@ import { readPullRequestListPreferences } from "../pullRequest/pullRequestListPr
 import { useSidebar } from "../ui/sidebar";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { isSidebarUtilityPage, useNavigateToMainApp } from "./mainAppLocation";
+import { isSuiteModulePath } from "../../suite/modules";
+import { SuiteRailButtons } from "../../suite/SuiteRail";
 import { SidebarUpdatePill } from "./SidebarUpdatePill";
 
 /** A rail button: a square that lights up on hover, and stays lit where you are. */
@@ -30,15 +32,16 @@ const RAIL_BUTTON =
   "relative flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-sidebar-muted-foreground outline-hidden ring-ring hover:bg-sidebar-row-hover hover:text-sidebar-foreground focus-visible:ring-2 [-webkit-app-region:no-drag]";
 const RAIL_BUTTON_SELECTED = "bg-sidebar-row-selected text-sidebar-foreground";
 
-type RailPlace = "settings" | "usage" | "pull-requests" | "threads";
+type RailPlace = "settings" | "usage" | "pull-requests" | "threads" | "suite";
 
 function railPlace(pathname: string): RailPlace {
   if (pathname === "/usage") return "usage";
   if (pathname === "/pull-requests") return "pull-requests";
+  if (isSuiteModulePath(pathname)) return "suite";
   return isSidebarUtilityPage(pathname) ? "settings" : "threads";
 }
 
-function RailButton({
+export function RailButton({
   label,
   selected = false,
   onClick,
@@ -115,6 +118,7 @@ export const SpaceRail = memo(function SpaceRail({ className }: { className?: st
         className="drag-region hidden h-(--workspace-topbar-height) w-full shrink-0 in-data-[app-frame=window]:block"
       />
       <div className="flex min-h-0 w-full flex-1 flex-col items-center gap-1 overflow-y-auto pt-(--space-rail-top) [scrollbar-width:none]">
+        <SuiteRailButtons rail="start" />
         {legacySidebarEnabled ? null : (
           <>
             <RailButton
@@ -165,6 +169,8 @@ export const SpaceRail = memo(function SpaceRail({ className }: { className?: st
             </RailButton>
           </>
         ) : null}
+        <RailDivider />
+        <SuiteRailButtons rail="end" />
       </div>
       <div className="flex shrink-0 flex-col items-center gap-1 pt-1">
         <SidebarUpdatePill />

@@ -39,6 +39,7 @@ import { SettingsSidebarNav } from "./settings/SettingsSidebarNav";
 import { SidebarChromeHeader, SidebarSpaceTitle } from "./sidebar/SidebarChrome";
 import { MainAppLocationTracker } from "./sidebar/mainAppLocation";
 import { SpaceRail } from "./sidebar/SpaceRail";
+import { isSuiteModulePath } from "../suite/modules";
 import { useAppFrame } from "./sidebar/appFrame";
 import { useSidebarStageBackdropVariant } from "./SidebarStageBackdrop";
 import { useProjects } from "../state/entities";
@@ -273,7 +274,9 @@ export function AppSidebarLayout({ children }: { children: ReactNode }) {
   const frame = useAppFrame();
   const railWidth = frame ? SPACE_RAIL_WIDTH : 0;
   // Full-width pages: the rail is their way out, so phones (rail in the sheet) keep the sidebar.
-  const sidebarHidden = frame !== null && (pathname === "/usage" || pathname === "/pull-requests");
+  const sidebarHidden =
+    frame !== null &&
+    (pathname === "/usage" || pathname === "/pull-requests" || isSuiteModulePath(pathname));
   const [sidebarWidth, setSidebarWidth] = useState(readInitialThreadSidebarWidth);
   // Subscribed rather than read once: the clamp must track live window size,
   // and a clamped drag ends with an unchanged width, which skips the re-render

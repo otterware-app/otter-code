@@ -222,6 +222,7 @@ import {
 import type { Project } from "../types";
 import { PullRequestGlyph } from "~/components/pullRequest/pullRequestIcons";
 import { readPullRequestListPreferences } from "~/components/pullRequest/pullRequestListPreferences";
+import { suiteCommandPaletteItems } from "~/suite/commandPaletteItems";
 
 const EMPTY_BROWSE_ENTRIES: FilesystemBrowseResult["entries"] = [];
 
@@ -2270,6 +2271,7 @@ function OpenCommandPaletteDialog(props: {
     });
   }
 
+  actionItems.push(...suiteCommandPaletteItems(navigate));
   actionItems.push({
     kind: "action",
     value: "action:usage",

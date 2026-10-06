@@ -5,8 +5,10 @@ import { verifyPreloadBundle } from "./verify-preload-bundle.mjs";
 const validPreload = `
   const electron = require("electron");
   const PICK_FOLDER_CHANNEL = "desktop:pick-folder";
-  electron.contextBridge.exposeInMainWorld("__clerk_internal_electron_passkeys", {});
   electron.contextBridge.exposeInMainWorld("desktopBridge", {
+    getAccountSession: async () => null,
+    setAccountSession: async () => {},
+    authorizeAccount: async () => ({}),
     getClientPlatform: () => process.platform,
     getLocalEnvironmentBootstraps: () => [],
     getPathForFile: () => "",
@@ -20,7 +22,6 @@ describe("desktop preload bundle verifier", () => {
       () =>
         verifyPreloadBundle(`
           "desktopBridge getClientPlatform getLocalEnvironmentBootstraps pickFolder";
-          "__clerk_internal_electron_passkeys";
           require("electron");
         `),
       /missing executable APIs/,

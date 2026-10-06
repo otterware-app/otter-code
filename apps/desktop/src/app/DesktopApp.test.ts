@@ -14,23 +14,22 @@ import * as Stream from "effect/Stream";
 import { vi } from "vite-plus/test";
 
 vi.mock("electron", () => ({}));
-vi.mock("@clerk/electron", () => ({ createClerkBridge: vi.fn() }));
-vi.mock("@clerk/electron/storage", () => ({ storage: vi.fn() }));
 vi.mock("../ipc/DesktopIpcHandlers.ts", () => ({
   installDesktopIpcHandlers: () => Effect.void,
 }));
 vi.mock("../updates/DesktopRemoteUpdates.ts", () => ({ listen: Effect.void }));
 vi.mock("./DesktopStartupRecovery.ts", () => ({ listen: Effect.void }));
 
+import * as DesktopAccountSession from "./DesktopAccountSession.ts";
 import * as DesktopApp from "./DesktopApp.ts";
 import * as DesktopAppActivation from "./DesktopAppActivation.ts";
 import * as DesktopAppIdentity from "./DesktopAppIdentity.ts";
-import * as DesktopClerk from "./DesktopClerk.ts";
 import * as DesktopEnvironment from "./DesktopEnvironment.ts";
 import * as DesktopLegacyLocalStorage from "./DesktopLegacyLocalStorage.ts";
 import * as DesktopLifecycle from "./DesktopLifecycle.ts";
 import * as DesktopLinuxUrlHandler from "./DesktopLinuxUrlHandler.ts";
 import * as DesktopPreReadyPlatform from "./DesktopPreReadyPlatform.ts";
+import * as DesktopProtocols from "./DesktopProtocols.ts";
 import * as DesktopShutdown from "./DesktopShutdown.ts";
 import * as DesktopState from "./DesktopState.ts";
 import * as DesktopBackendPool from "../backend/DesktopBackendPool.ts";
@@ -92,6 +91,7 @@ it.effect(
           } as DesktopAppIdentity.DesktopAppIdentity["Service"]),
           Effect.provideService(ElectronApp.ElectronApp, {
             setPath: () => Effect.void,
+            on: () => Effect.void,
             whenReady: record("ready"),
           } as unknown as ElectronApp.ElectronApp["Service"]),
           Effect.provideService(ElectronDialog.ElectronDialog, {
@@ -124,12 +124,16 @@ it.effect(
             register: Effect.void,
             relaunch: () => Effect.void,
           }),
-          Effect.provideService(DesktopClerk.DesktopClerk, {
-            configure: Effect.void,
-          } as DesktopClerk.DesktopClerk["Service"]),
           Effect.provideService(ElectronSafeStorage.ElectronSafeStorage, {
             selectedStorageBackend: Effect.succeedNone,
           } as unknown as ElectronSafeStorage.ElectronSafeStorage["Service"]),
+          Effect.provideService(
+            DesktopAccountSession.DesktopAccountSession,
+            {} as unknown as DesktopAccountSession.DesktopAccountSession["Service"],
+          ),
+          Effect.provideService(DesktopProtocols.DesktopProtocols, {
+            configure: Effect.void,
+          } as unknown as DesktopProtocols.DesktopProtocols["Service"]),
           Effect.provideService(PreviewPasskeys.PreviewPasskeys, {
             configure: Effect.void,
           } as PreviewPasskeys.PreviewPasskeys["Service"]),

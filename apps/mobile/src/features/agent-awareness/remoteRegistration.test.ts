@@ -481,7 +481,7 @@ describe("makeRelayDeviceRegistrationRequest", () => {
       end,
     };
     widgetMocks.getInstances.mockReturnValue([activity] as never);
-    setAgentAwarenessRelayTokenProvider(() => Promise.resolve("clerk-token-user-a"));
+    setAgentAwarenessRelayTokenProvider(() => Promise.resolve("account-token-user-a"));
     expect(appStateMock.listeners).toHaveLength(1);
 
     setAgentAwarenessRelayTokenProvider(null);
@@ -515,7 +515,7 @@ describe("makeRelayDeviceRegistrationRequest", () => {
       },
     };
 
-    setAgentAwarenessRelayTokenProvider(() => Promise.resolve("clerk-token-user-a"));
+    setAgentAwarenessRelayTokenProvider(() => Promise.resolve("account-token-user-a"));
 
     return Effect.gen(function* () {
       yield* runBackgroundOperations();
@@ -555,7 +555,7 @@ describe("makeRelayDeviceRegistrationRequest", () => {
         url: "https://relay.example.test/",
       },
     };
-    setAgentAwarenessRelayTokenProvider(() => Promise.resolve("clerk-token-user-a"));
+    setAgentAwarenessRelayTokenProvider(() => Promise.resolve("account-token-user-a"));
 
     return Effect.gen(function* () {
       yield* runBackgroundOperations();
@@ -575,7 +575,7 @@ describe("makeRelayDeviceRegistrationRequest", () => {
         url: "https://relay.example.test/",
       },
     };
-    setAgentAwarenessRelayTokenProvider(() => Promise.resolve("clerk-token-user-a"));
+    setAgentAwarenessRelayTokenProvider(() => Promise.resolve("account-token-user-a"));
 
     return Effect.gen(function* () {
       yield* refreshAgentAwarenessRegistration();
@@ -600,7 +600,7 @@ describe("makeRelayDeviceRegistrationRequest", () => {
     const tokenProvider = vi
       .fn<() => Promise<string | null>>()
       .mockRejectedValueOnce(new Error("auth unavailable"))
-      .mockResolvedValue("clerk-token-user-a");
+      .mockResolvedValue("account-token-user-a");
     setAgentAwarenessRelayTokenProvider(tokenProvider);
     const tokenListener = vi.mocked(Notifications.addPushTokenListener).mock.calls.at(-1)?.[0];
     expect(tokenListener).toBeDefined();
@@ -639,7 +639,7 @@ describe("makeRelayDeviceRegistrationRequest", () => {
         return Response.json({ ok: true });
       });
       Constants.expoConfig!.extra = { relay: { url: "https://permission-relay.example.test" } };
-      setAgentAwarenessRelayTokenProvider(() => Promise.resolve("clerk"), "user-a");
+      setAgentAwarenessRelayTokenProvider(() => Promise.resolve("account"), "user-a");
       return Effect.gen(function* () {
         yield* runBackgroundOperations();
         expect(registrations.at(-1)).toMatchObject({
@@ -688,7 +688,7 @@ describe("makeRelayDeviceRegistrationRequest", () => {
       return Promise.resolve(response);
     });
     Constants.expoConfig!.extra = { relay: { url: "https://relay.example.test" } };
-    setAgentAwarenessRelayTokenProvider(() => Promise.resolve("clerk-token-user-a"), "user-a");
+    setAgentAwarenessRelayTokenProvider(() => Promise.resolve("account-token-user-a"), "user-a");
 
     return Effect.gen(function* () {
       // Hermes' compiled error hashing reads the response's cookie getter.
@@ -718,7 +718,7 @@ describe("makeRelayDeviceRegistrationRequest", () => {
       vi.spyOn(Platform, "OS", "get").mockReturnValue("android");
       vi.spyOn(Platform, "Version", "get").mockReturnValue(36);
       Constants.expoConfig!.extra = { relay: { url: "https://relay.example.test" } };
-      setAgentAwarenessRelayTokenProvider(() => Promise.resolve("clerk-token"), "user-a");
+      setAgentAwarenessRelayTokenProvider(() => Promise.resolve("account-token"), "user-a");
       releaseAgentAwarenessRelayTokenProvider();
       vi.mocked(configureAndroidAgentNotifications).mockClear();
       return Effect.gen(function* () {

@@ -1,4 +1,8 @@
-import { AuthPreviewOperateScope, type EnvironmentId } from "@t3tools/contracts";
+import {
+  AuthPreviewOperateScope,
+  type EnvironmentId,
+  type ScopedProjectRef,
+} from "@t3tools/contracts";
 import type { AnyRouter } from "@tanstack/react-router";
 
 import { stackedThreadToast, toastManager } from "~/components/ui/toast";
@@ -9,6 +13,7 @@ import { dispatchPreviewAction, type PreviewAction } from "../components/preview
 import { isAppModalPage } from "../components/sidebar/mainAppLocation";
 import { shouldCreateNewThreadInCurrentProject } from "../components/Sidebar.logic";
 import { createNewThreadHandler, resolveDefaultProjectRef } from "../hooks/useHandleNewThread";
+import { readActiveProjectSpace } from "../hooks/useProjectSpace";
 import { createScratchProjectActions } from "../hooks/useScratchProject";
 import { getClientSettings } from "../hooks/useSettings";
 import { startNewThreadFromContext } from "../lib/chatThreadActions";
@@ -58,8 +63,22 @@ export function installChatRouteCommands(router: AnyRouter): () => void {
       ? selectActiveRightPanel(useRightPanelStore.getState().byThreadKey, threadRef) === "preview"
       : false;
   };
+  // New threads default to a project in the rail's space, and do not follow
+  // the open thread out of it. A space with no projects (an empty group, or
+  // Chats on a machine without a no-project home) leaves every project open.
+  const readSpaceProjects = () => {
+    const allProjects = readProjects();
+    const { projectFilter } = readActiveProjectSpace();
+    const spaceProjects = projectFilter === null ? allProjects : allProjects.filter(projectFilter);
+    return {
+      projects: spaceProjects.length > 0 ? spaceProjects : allProjects,
+      scoped: projectFilter !== null && spaceProjects.length > 0,
+    };
+  };
   const readThreadContext = () => {
     const target = readRouteTarget();
+    const { projects, scoped } = readSpaceProjects();
+    const spaceKeys = new Set(projects.map((project) => `${project.environmentId}:${project.id}`));
     const drafts = useComposerDraftStore.getState();
     const activeThread = target?.kind === "server" ? readThreadShell(target.threadRef) : null;
     const activeDraftThread = target
@@ -71,16 +90,21 @@ export function installChatRouteCommands(router: AnyRouter): () => void {
       activeDraftThread,
       activeThread: activeThread ?? undefined,
       defaultProjectRef: resolveDefaultProjectRef(
-        readProjects(),
+        projects,
         useUiStateStore.getState().projectOrder,
       ),
       handleNewThread,
+      isProjectInSpace: scoped
+        ? (projectRef: ScopedProjectRef) =>
+            spaceKeys.has(`${projectRef.environmentId}:${projectRef.projectId}`)
+        : undefined,
     };
   };
-  // Grouped like the sidebar, so the shortcut and the New thread button agree.
+  // Grouped like the sidebar and counted within the rail's space, so the shortcut and the
+  // New thread button agree: a group of one project has no choice to make.
   const readProjectGroups = () =>
     buildSidebarProjectSnapshots({
-      projects: readProjects(),
+      projects: readSpaceProjects().projects,
       groupScratchProjects: true,
       settings: selectProjectGroupingSettings(getClientSettings()),
       primaryEnvironmentId: appAtomRegistry.get(primaryEnvironmentIdAtom),
@@ -88,6 +112,15 @@ export function installChatRouteCommands(router: AnyRouter): () => void {
     });
   const canOperatePreview = (environmentId: EnvironmentId) =>
     readEnvironmentScope(environmentId, AuthPreviewOperateScope);
+
+  const readScratchEnvironmentId = () => {
+    const { activeThread, activeDraftThread } = readThreadContext();
+    return scratch.scratchEnvironmentId(
+      activeThread?.environmentId ??
+        activeDraftThread?.environmentId ??
+        appAtomRegistry.get(primaryEnvironmentIdAtom),
+    );
+  };
 
   const claim = (event: KeyboardEvent) => {
     event.preventDefault();
@@ -114,15 +147,22 @@ export function installChatRouteCommands(router: AnyRouter): () => void {
     {
       "chat.newLocal": startNewLocal,
       "chat.newWithoutProject": (event) => {
-        const { activeThread, activeDraftThread } = readThreadContext();
-        const environmentId = scratch.scratchEnvironmentId(
-          activeThread?.environmentId ?? activeDraftThread?.environmentId ?? null,
-        );
+        const environmentId = readScratchEnvironmentId();
         if (environmentId === null) return;
         claim(event);
         void scratch.startScratchThread(environmentId);
       },
       "chat.new": (event) => {
+        // In Chats, chat.new starts without a project too, unless the machine
+        // offers no such home; then it falls through to the ordinary new thread.
+        if (readActiveProjectSpace().space.kind === "chats") {
+          const environmentId = readScratchEnvironmentId();
+          if (environmentId !== null) {
+            claim(event);
+            void scratch.startScratchThread(environmentId);
+            return;
+          }
+        }
         const { legacySidebarEnabled } = getClientSettings();
         const groups = readProjectGroups();
         if (

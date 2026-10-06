@@ -40,16 +40,17 @@ import {
 import { BackgroundThreadAnnouncer } from "./BackgroundThreadAnnouncer";
 import LegacyThreadSidebar from "./LegacySidebar";
 import ThreadSidebar from "./Sidebar";
-import { SidebarBrandWidthProbe } from "./sidebar/SidebarChrome";
 import { isAppModalPage } from "./sidebar/mainAppLocation";
 import type { SidebarRouteReveal } from "./sidebar/routeReveal";
+import { SpaceRail } from "./sidebar/SpaceRail";
+import { useAppFrame } from "./sidebar/appFrame";
 import { useSidebarStageBackdropVariant } from "./SidebarStageBackdrop";
 import {
   clampThreadSidebarWidth,
   resolveInitialThreadSidebarWidth,
   resolveThreadSidebarMaximumWidth,
-  resolveThreadSidebarMinimumWidth,
   THREAD_MAIN_CONTENT_MIN_WIDTH,
+  THREAD_SIDEBAR_MIN_WIDTH,
   THREAD_SIDEBAR_WIDTH_STORAGE_KEY,
 } from "./threadSidebarWidth";
 import {
@@ -65,7 +66,12 @@ import { appAtomRegistry } from "../rpc/atomRegistry";
 import { registerCommands, registerMenuAction } from "../shortcuts/dispatcher";
 import { resolveThreadRouteRef } from "../threadRoutes";
 
-const MACOS_TRAFFIC_LIGHTS_LEFT_INSET = "var(--desktop-window-controls-inset, 90px)";
+const MACOS_TRAFFIC_LIGHTS_LEFT_INSET = "var(--desktop-window-controls-inset, 82px)";
+/** The rail's width (appFrame.css's --workspace-rail-width). */
+const SPACE_RAIL_WIDTH = 52;
+/** Where the pinned sidebar toggle sits without traffic lights to clear: past the rail. */
+const FRAMED_CONTROLS_LEFT =
+  "calc(env(safe-area-inset-left, 0px) + env(titlebar-area-x, 0px) + var(--workspace-rail-width) + 0.75rem)";
 
 function subscribeToViewportWidth(onChange: () => void): () => void {
   window.addEventListener("resize", onChange);
@@ -320,6 +326,9 @@ function SidebarControl() {
   const isSidebarVisible = useSidebarVisibility();
   const environmentIdentificationMode = useEnvironmentIdentificationMode();
   const stageBackdropVariant = useSidebarStageBackdropVariant(environmentIdentificationMode);
+  // In the desktop app's frame the toggle sits on the title band, above the art.
+  const frame = useAppFrame();
+  const overArtwork = isSidebarVisible && stageBackdropVariant !== null && frame !== "window";
   const shortcutLabel = shortcutLabelForCommand(keybindings, "sidebar.toggle", {
     context: { usagePageOpen },
   });
@@ -384,10 +393,12 @@ function SidebarControl() {
         <TooltipTrigger
           render={
             <SidebarTrigger
-              variant={isSidebarVisible && stageBackdropVariant ? "media-navigation" : "ghost"}
+              // Over the stage artwork the trigger is a control on imagery, like the media
+              // viewer's arrows; that variant positions itself, so the layout is reset here.
+              variant={overArtwork ? "media-navigation" : "ghost"}
               className={cn(
                 "pointer-events-auto",
-                isSidebarVisible && stageBackdropVariant && "relative top-auto translate-y-0",
+                overArtwork && "relative top-auto translate-y-0",
               )}
               aria-label="Toggle main sidebar"
             />
@@ -397,6 +408,33 @@ function SidebarControl() {
           Toggle main sidebar{shortcutLabel ? ` (${shortcutLabel})` : ""}
         </TooltipPopup>
       </Tooltip>
+    </div>
+  );
+}
+
+/** On phones the sidebar is a sheet: the rail runs down its left edge. */
+function MobileSpaceRailLayout({ enabled, children }: { enabled: boolean; children: ReactNode }) {
+  if (!enabled) return children;
+  return (
+    <div className="flex min-h-0 w-full flex-1">
+      <SpaceRail className="border-r border-sidebar-border" />
+      <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+    </div>
+  );
+}
+
+/**
+ * The content panel's rim and rounded corners, drawn over the panes so they
+ * keep painting their own surfaces (appFrame.css).
+ */
+function AppFramePanelEdge() {
+  return (
+    <div aria-hidden data-app-panel-edge="">
+      <div data-corner="top-left" />
+      <div data-corner="top-right" />
+      <div data-corner="bottom-left" />
+      <div data-corner="bottom-right" />
+      <div data-rim="" />
     </div>
   );
 }
@@ -414,12 +452,20 @@ export function AppSidebarLayout({ children }: { children: ReactNode }) {
   const panelAnimationsSuppressed = usePanelNavigationSuppression(pathname);
   const routePanelAnimationsActive = panelAnimationsActive && !panelAnimationsSuppressed;
   const isMacosDesktop = isElectron && isMacPlatform(navigator.platform);
+  // Otter Mail's frame: the rail and one inset panel. Phones keep the sheet,
+  // with the rail inside it.
+  const frame = useAppFrame();
+  const railWidth = frame ? SPACE_RAIL_WIDTH : 0;
+  // Full-width pages: the rail is their way out, so phones (rail in the sheet) keep the sidebar.
+  const sidebarHidden = frame !== null && pathname === "/pull-requests";
   const [sidebarWidth, setSidebarWidth] = useState(readInitialThreadSidebarWidth);
   // A clamped drag may not change width, so viewport changes need a separate subscription.
   const viewportWidth = useSyncExternalStore(subscribeToViewportWidth, readViewportWidth);
-  const [brandWidth, setBrandWidth] = useState(0);
-  const sidebarMinimumWidth = resolveThreadSidebarMinimumWidth(brandWidth);
-  const sidebarMaximumWidth = resolveThreadSidebarMaximumWidth(viewportWidth, sidebarMinimumWidth);
+  const sidebarMinimumWidth = THREAD_SIDEBAR_MIN_WIDTH;
+  const sidebarMaximumWidth = resolveThreadSidebarMaximumWidth(
+    viewportWidth - railWidth,
+    sidebarMinimumWidth,
+  );
   const resetSidebarWidth = () => {
     try {
       removeLocalStorageItem(THREAD_SIDEBAR_WIDTH_STORAGE_KEY);
@@ -437,49 +483,68 @@ export function AppSidebarLayout({ children }: { children: ReactNode }) {
       ? { "--workspace-controls-left": MACOS_TRAFFIC_LIGHTS_LEFT_INSET }
       : {}
   ) as CSSProperties;
+  const sidebarContent = legacySidebarEnabled ? (
+    <LegacyThreadSidebar routeReveal={sidebarRouteReveal} />
+  ) : (
+    <ThreadSidebar routeReveal={sidebarRouteReveal} />
+  );
   const sidebarProviderStyle = {
     "--sidebar-width": `${clampThreadSidebarWidth(sidebarWidth, sidebarMinimumWidth, sidebarMaximumWidth)}px`,
     "--panel-animation-duration": `${panelAnimationDurationMs}ms`,
+    ...(frame ? { "--workspace-controls-left": FRAMED_CONTROLS_LEFT } : {}),
     ...windowControlsInsetStyle,
+    // Headers place their content after the pinned toggle, in their own
+    // coordinates: the panes start after the rail.
+    ...(frame
+      ? {
+          "--workspace-titlebar-content-left":
+            "calc(var(--workspace-controls-left) + var(--workspace-titlebar-control-size) + var(--workspace-titlebar-control-gap) - var(--workspace-rail-width))",
+        }
+      : {}),
   } as CSSProperties;
 
   return (
     <PanelAnimationSuppressionProvider value={panelAnimationsSuppressed}>
       <SidebarProvider
         className="h-dvh! min-h-0!"
+        data-app-frame={frame ?? undefined}
         data-panel-animations={routePanelAnimationsActive ? "true" : "false"}
         defaultOpen
+        // Stays mounted but slid away; "hidden" keeps headers from clearing a toggle.
+        {...(sidebarHidden ? { open: false, "data-sidebar-state": "hidden" } : {})}
         style={sidebarProviderStyle}
       >
-        <SidebarBrandWidthProbe onWidthChange={setBrandWidth} />
-        <Sidebar
-          side="left"
-          collapsible="offcanvas"
-          data-app-sidebar=""
-          {...sidebarArea}
-          role="navigation"
-          aria-label="Threads"
-          resizable={{
-            maxWidth: sidebarMaximumWidth,
-            minWidth: sidebarMinimumWidth,
-            shouldAcceptWidth: ({ currentWidth, nextWidth, wrapper }) =>
-              nextWidth <= currentWidth ||
-              wrapper.clientWidth - nextWidth >= THREAD_MAIN_CONTENT_MIN_WIDTH,
-            storageKey: THREAD_SIDEBAR_WIDTH_STORAGE_KEY,
-            onResize: setSidebarWidth,
-          }}
-          style={windowControlsInsetStyle}
-        >
-          {legacySidebarEnabled ? (
-            <LegacyThreadSidebar routeReveal={sidebarRouteReveal} />
-          ) : (
-            <ThreadSidebar routeReveal={sidebarRouteReveal} />
-          )}
-          <SidebarRail onDoubleClick={resetSidebarWidth} />
-        </Sidebar>
-        {children}
+        {/* Above the panel, so the sidebar slides away under it. */}
+        {frame ? <SpaceRail className="relative z-20 bg-(--app-frame)" /> : null}
+        {/* No stacking context: the panes' floating controls stack with root-level webviews. */}
+        <div className="relative flex min-h-0 min-w-0 flex-1" data-app-panel="">
+          <Sidebar
+            side="left"
+            collapsible="offcanvas"
+            data-app-sidebar=""
+            {...sidebarArea}
+            role="navigation"
+            aria-label="Threads"
+            resizable={{
+              maxWidth: sidebarMaximumWidth,
+              minWidth: sidebarMinimumWidth,
+              shouldAcceptWidth: ({ currentWidth, nextWidth, wrapper }) =>
+                nextWidth <= currentWidth ||
+                wrapper.clientWidth - railWidth - nextWidth >= THREAD_MAIN_CONTENT_MIN_WIDTH,
+              storageKey: THREAD_SIDEBAR_WIDTH_STORAGE_KEY,
+              onResize: setSidebarWidth,
+            }}
+            // The narrow-window sidebar is a sheet, portaled outside the provider's styles.
+            style={windowControlsInsetStyle}
+          >
+            <MobileSpaceRailLayout enabled={frame === null}>{sidebarContent}</MobileSpaceRailLayout>
+            <SidebarRail onDoubleClick={resetSidebarWidth} />
+          </Sidebar>
+          {children}
+          {frame ? <AppFramePanelEdge /> : null}
+        </div>
         <BackgroundThreadAnnouncer />
-        <SidebarControl />
+        {sidebarHidden ? null : <SidebarControl />}
       </SidebarProvider>
     </PanelAnimationSuppressionProvider>
   );

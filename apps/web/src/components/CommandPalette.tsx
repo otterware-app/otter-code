@@ -89,6 +89,7 @@ import { useAtomValue } from "@effect/atom-react";
 import { isDesktopLocalConnectionTarget } from "../connection/desktopLocal";
 import { useDesktopLocalBootstraps } from "../connection/useDesktopLocalBootstraps";
 import { useHandleNewThread } from "../hooks/useHandleNewThread";
+import { useActiveProjectSpace } from "../hooks/useProjectSpace";
 import { useOpenPanelPullRequestUrl } from "../hooks/useOpenPanelPullRequestUrl";
 import { copyThreadReference } from "../lib/copyThreadReference";
 import {
@@ -431,9 +432,10 @@ function OpenCommandPaletteDialog(props: {
   const desktopLocalBootstraps = useDesktopLocalBootstraps();
   const primaryEnvironmentId = usePrimaryEnvironmentId();
   const availableSettingsSearchItems = useAvailableSettingsSearchItems();
-  const { activeDraftThread, activeThread, defaultProjectRef, handleNewThread } =
+  const { activeDraftThread, activeThread, defaultProjectRef, handleNewThread, isProjectInSpace } =
     useHandleNewThread();
   const paletteRouteTarget = useThreadRouteTarget();
+  const { space, projectFilter } = useActiveProjectSpace();
   const projects = useProjects();
   const referenceThreadRef =
     pathname === "/pull-requests"
@@ -499,6 +501,7 @@ function OpenCommandPaletteDialog(props: {
     activeThread: activeThread ?? undefined,
     defaultProjectRef,
     handleNewThread,
+    isProjectInSpace,
   });
   const projectPickerEntries = buildSidebarProjectPickerEntries({
     groups: projectGroups,
@@ -1180,6 +1183,7 @@ function OpenCommandPaletteDialog(props: {
             activeThread: activeThread ?? undefined,
             defaultProjectRef,
             handleNewThread,
+            isProjectInSpace,
           });
         },
       });

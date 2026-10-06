@@ -1,0 +1,64 @@
+name: Deploy Otter Code web
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published desktop/CLI release tag for this web-only deployment
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: otter-web-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.repository == 'otterware-app/otter-code' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: production
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag }}
+      GH_TOKEN: ${{ github.token }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      T3CODE_ACCOUNTS_URL: ${{ vars.ACCOUNTS_URL }}
+      T3CODE_ACCOUNTS_CLI_CLIENT_ID: ${{ vars.ACCOUNTS_CLI_CLIENT_ID }}
+      T3CODE_RELAY_URL: https://relay.code.otterware.app
+      VITE_HOSTED_APP_CHANNEL: nightly
+    steps:
+      - uses: actions/checkout@v6
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version-file: package.json
+          cache: true
+          run-install: |
+            args:
+              - --filter=@t3tools/scripts...
+              - --filter=@t3tools/web...
+              - --filter=t3code-relay...
+      - name: Verify published release
+        run: |
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null
+          echo "APP_VERSION=${RELEASE_TAG#v}" >> "$GITHUB_ENV"
+      - name: Read production relay tracing config
+        working-directory: infra/relay
+        run: |
+          set -euo pipefail
+          output="$(npx alchemy state read T3CodeRelay/prod/output --backend cloudflare --log-level error --no-input | sed -n '/^{/,$p')"
+          tracing_token="$(jq -er '.clientTracingToken.__redacted__ // .clientTracingToken' <<< "$output")"
+          echo "::add-mask::$tracing_token"
+          echo "T3CODE_RELAY_CLIENT_OTLP_TRACES_TOKEN=$tracing_token" >> "$GITHUB_ENV"
+          echo "T3CODE_RELAY_CLIENT_OTLP_TRACES_URL=$(jq -er '.clientTracingUrl' <<< "$output")" >> "$GITHUB_ENV"
+          echo "T3CODE_RELAY_CLIENT_OTLP_TRACES_DATASET=$(jq -er '.clientTracingDataset' <<< "$output")" >> "$GITHUB_ENV"
+      - id: stage
+        name: Stage web build on Cloudflare
+        run: node scripts/otter/web-hosting.mjs stage
+      - name: Promote verified web build
+        env:
+          WEB_VERSION_ID: ${{ steps.stage.outputs.version_id }}
+        run: node scripts/otter/web-hosting.mjs promote

@@ -903,3 +903,18 @@ describe("synchronized model preferences", () => {
     ).toEqual([{ provider: otherProvider, model: "sol" }]);
   });
 });
+
+describe("railProjectGroups", () => {
+  it("replaces the whole list, so a deleted group does not survive", () => {
+    const zentio = { id: "zentio", name: "Zentio", projectKeys: ["github.com/zentio/app"] };
+    const otterware = { id: "otterware", name: "Otterware", projectKeys: [] };
+    const withBoth = applyServerSettingsPatch(DEFAULT_SERVER_SETTINGS, {
+      railProjectGroups: [zentio, otterware],
+    });
+
+    expect(
+      applyServerSettingsPatch(withBoth, { railProjectGroups: [otterware] }).railProjectGroups,
+    ).toEqual([otterware]);
+    expect(applyServerSettingsPatch(withBoth, {}).railProjectGroups).toEqual([zentio, otterware]);
+  });
+});

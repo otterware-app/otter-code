@@ -11,7 +11,7 @@ const OPEN_THREAD_LINK_ACTION = "open-thread-link";
 
 /**
  * `ottercode://app/<environmentId>/<threadId>` as the in-app thread path, or
- * null for any other URL. Clerk's sign-in callback is the bare `ottercode://app/`.
+ * null for any other URL. Account sign-in uses a separate loopback callback.
  */
 export function threadPathFromDeepLink(url: string, scheme: string): string | null {
   try {

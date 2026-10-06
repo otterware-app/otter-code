@@ -207,6 +207,9 @@ vi.mock("../lib/utils", () => ({
   newDraftId: () => "draft-delayed",
   newThreadId: () => "thread-delayed",
 }));
+vi.mock("./useProjectSpace", () => ({
+  useActiveProjectSpace: () => ({ space: { kind: "all" }, projectFilter: null }),
+}));
 vi.mock("@t3tools/client-runtime/state/project-grouping", () => ({
   deriveLogicalProjectKeyFromSettings: () => "remote-project",
   getProjectOrderKey: () => "remote-project",

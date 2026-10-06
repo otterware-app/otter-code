@@ -1,3 +1,5 @@
+import type { ProjectSpaceProject } from "../projectSpaces";
+
 import { useMemo } from "react";
 
 import { orderItemsByPreferredIds, sortSidebarV2ProjectGroups } from "../components/Sidebar.logic";
@@ -8,8 +10,14 @@ import { useProjects, useThreadShells } from "../state/entities";
 import { legacyProjectCwdPreferenceKey, useUiStateStore } from "../uiStateStore";
 import { useClientSettings } from "./useSettings";
 
-export function useSidebarProjectGroups() {
-  const projects = useProjects();
+export function useSidebarProjectGroups(
+  projectFilter: ((project: ProjectSpaceProject) => boolean) | null = null,
+) {
+  const allProjects = useProjects();
+  const projects = useMemo(
+    () => (projectFilter === null ? allProjects : allProjects.filter(projectFilter)),
+    [allProjects, projectFilter],
+  );
   const threads = useThreadShells();
   const projectOrder = useUiStateStore((store) => store.projectOrder);
   const sortOrder = useClientSettings((s) => s.sidebarProjectSortOrder);

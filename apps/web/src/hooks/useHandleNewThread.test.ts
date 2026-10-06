@@ -158,6 +158,9 @@ vi.mock("../lib/utils", () => ({
   newDraftId: () => "draft-delayed",
   newThreadId: () => "thread-delayed",
 }));
+vi.mock("./useProjectSpace", () => ({
+  useActiveProjectSpace: () => ({ space: { kind: "all" }, projectFilter: null }),
+}));
 vi.mock("../logicalProject", () => ({
   deriveLogicalProjectKeyFromSettings: () => "remote-project",
   getProjectOrderKey: () => "remote-project",

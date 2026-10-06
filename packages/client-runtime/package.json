@@ -422,6 +422,10 @@
     "./pull-request-markdown": {
       "types": "./src/pullRequestMarkdown.ts",
       "default": "./src/pullRequestMarkdown.ts"
+    },
+    "./accounts": {
+      "types": "./src/accounts/session.ts",
+      "default": "./src/accounts/session.ts"
     }
   },
   "scripts": {

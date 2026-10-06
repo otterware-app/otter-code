@@ -15,6 +15,7 @@ import * as DesktopAppSettings from "../settings/DesktopAppSettings.ts";
 import * as DesktopConfig from "./DesktopConfig.ts";
 import { resolveLinuxDesktopEntryName } from "./DesktopEarlyElectronStartup.ts";
 import { resolveDesktopBaseDir, resolveDesktopStateDir } from "./DesktopStatePaths.ts";
+import { resolveOtterwareClientStateDir } from "./OtterwarePaths.ts";
 import { isNightlyDesktopVersion } from "../updates/updateChannels.ts";
 import type { OtlpProtocol } from "@t3tools/shared/observability";
 
@@ -44,8 +45,11 @@ export class DesktopEnvironment extends Context.Service<
     readonly resourcesPath: string;
     readonly homeDirectory: string;
     readonly appDataDirectory: string;
+    // Backend (shared Otter Code) home and its state dir; the server owns these.
     readonly baseDir: string;
     readonly stateDir: string;
+    // Desktop-only state (settings, catalog, account session, logs). See OtterwarePaths.
+    readonly clientStateDir: string;
     readonly desktopSettingsPath: string;
     readonly clientSettingsPath: string;
     readonly savedEnvironmentRegistryPath: string;
@@ -187,6 +191,14 @@ const make = Effect.fn("desktop.environment.make")(function* (
     joinPath: path.join,
     t3Home: config.t3Home,
   });
+  const clientStateDir = resolveOtterwareClientStateDir({
+    homeDirectory,
+    joinPath: path.join,
+    otterwareHome: config.otterwareHome,
+    t3Home: config.t3Home,
+    isDevelopment,
+    backendStateDir: stateDir,
+  });
   const linuxApplicationsDir = path.join(
     Option.getOrElse(config.xdgDataHome, () => path.join(homeDirectory, ".local", "share")),
     "applications",
@@ -207,12 +219,13 @@ const make = Effect.fn("desktop.environment.make")(function* (
     appDataDirectory,
     baseDir,
     stateDir,
-    desktopSettingsPath: path.join(stateDir, "desktop-settings.json"),
-    clientSettingsPath: path.join(stateDir, "client-settings.json"),
-    savedEnvironmentRegistryPath: path.join(stateDir, "saved-environments.json"),
+    clientStateDir,
+    desktopSettingsPath: path.join(clientStateDir, "desktop-settings.json"),
+    clientSettingsPath: path.join(clientStateDir, "client-settings.json"),
+    savedEnvironmentRegistryPath: path.join(clientStateDir, "saved-environments.json"),
     serverSettingsPath: path.join(stateDir, "settings.json"),
-    logDir: path.join(stateDir, "logs"),
-    browserArtifactsDir: path.join(stateDir, "browser-artifacts"),
+    logDir: path.join(clientStateDir, "logs"),
+    browserArtifactsDir: path.join(clientStateDir, "browser-artifacts"),
     rootDir,
     appRoot,
     serverRoot,

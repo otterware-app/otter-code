@@ -14,6 +14,7 @@ import {
   resolveDesktopStateDir,
   type JoinPath,
 } from "./DesktopStatePaths.ts";
+import { resolveOtterwareClientStateDir } from "./OtterwarePaths.ts";
 
 interface EarlyDesktopSettingsInput {
   readonly env: NodeJS.ProcessEnv;
@@ -49,36 +50,51 @@ const decodeEarlyDesktopSettingsJson = Schema.decodeSync(EarlyDesktopSettingsJso
 const isDevelopmentEnvironment = (env: NodeJS.ProcessEnv): boolean =>
   trimNonEmpty(env.VITE_DEV_SERVER_URL) !== null;
 
-function resolveEarlyDesktopSettingsPath(input: {
+// The client copy wins; before the first-start migration has copied it, fall
+// back to the shared Otter Code state dir so the password store stays stable.
+function resolveEarlyDesktopSettingsPaths(input: {
   readonly env: NodeJS.ProcessEnv;
   readonly homeDirectory: string;
   readonly joinPath: JoinPath;
-}): string {
+}): readonly string[] {
   const t3Home = Option.fromUndefinedOr(input.env.T3CODE_HOME);
   const baseDir = resolveDesktopBaseDir({
     homeDirectory: input.homeDirectory,
     joinPath: input.joinPath,
     t3Home,
   });
+  const isDevelopment = isDevelopmentEnvironment(input.env);
   const stateDir = resolveDesktopStateDir({
     baseDir,
-    isDevelopment: isDevelopmentEnvironment(input.env),
+    isDevelopment,
     joinPath: input.joinPath,
     t3Home,
   });
-  return input.joinPath(stateDir, "desktop-settings.json");
+  const clientStateDir = resolveOtterwareClientStateDir({
+    homeDirectory: input.homeDirectory,
+    joinPath: input.joinPath,
+    otterwareHome: Option.fromUndefinedOr(input.env.OTTERWARE_HOME),
+    t3Home,
+    isDevelopment,
+    backendStateDir: stateDir,
+  });
+  return [...new Set([clientStateDir, stateDir])].map((dir) =>
+    input.joinPath(dir, "desktop-settings.json"),
+  );
 }
 
 export function resolveEarlyLinuxPasswordStorePreference(
   input: EarlyDesktopSettingsInput,
 ): LinuxPasswordStorePreference {
-  const settingsPath = resolveEarlyDesktopSettingsPath(input);
-  try {
-    const parsed = decodeEarlyDesktopSettingsJson(input.readFileString(settingsPath));
-    return normalizeLinuxPasswordStorePreference(parsed.linuxPasswordStore);
-  } catch {
-    return DEFAULT_LINUX_PASSWORD_STORE;
+  for (const settingsPath of resolveEarlyDesktopSettingsPaths(input)) {
+    try {
+      const parsed = decodeEarlyDesktopSettingsJson(input.readFileString(settingsPath));
+      return normalizeLinuxPasswordStorePreference(parsed.linuxPasswordStore);
+    } catch {
+      continue;
+    }
   }
+  return DEFAULT_LINUX_PASSWORD_STORE;
 }
 
 export function resolveEarlyLinuxElectronOptions(

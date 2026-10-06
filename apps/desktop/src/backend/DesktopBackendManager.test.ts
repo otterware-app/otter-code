@@ -22,6 +22,7 @@ import * as TestClock from "effect/testing/TestClock";
 import { HttpClient, HttpClientRequest, HttpClientResponse } from "effect/http";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";
 
+import type { StateDirInUse } from "./OtterwareStateDirInUse.ts";
 import * as DesktopBackendManager from "./DesktopBackendManager.ts";
 import * as DesktopApp from "../app/DesktopApp.ts";
 import * as DesktopBackendPool from "./DesktopBackendPool.ts";
@@ -127,6 +128,7 @@ interface MakeInstanceInput {
   readonly onPreflightFailed?: (
     failure: DesktopBackendManager.PreflightFailure,
   ) => Effect.Effect<boolean>;
+  readonly onStateDirInUse?: (info: StateDirInUse) => Effect.Effect<boolean>;
   readonly config?: DesktopBackendManager.DesktopBackendStartConfig;
   readonly configResolve?: Effect.Effect<
     DesktopBackendManager.DesktopBackendStartConfig,
@@ -187,6 +189,7 @@ function makeTestInstance(input: MakeInstanceInput) {
     ...(input.onReady ? { onReady: () => input.onReady! } : {}),
     ...(input.onShutdown ? { onShutdown: () => input.onShutdown! } : {}),
     ...(input.onPreflightFailed ? { onPreflightFailed: input.onPreflightFailed } : {}),
+    ...(input.onStateDirInUse ? { onStateDirInUse: input.onStateDirInUse } : {}),
   });
 
   return instance.pipe(Effect.provide(layerServices));
@@ -1202,6 +1205,52 @@ describe("DesktopBackendManager", () => {
         assert.equal(yield* Queue.size(starts), 0);
         yield* TestClock.adjust(Duration.millis(1));
         assert.equal(yield* Queue.take(starts), 3);
+      }).pipe(Effect.provide(TestClock.layer())),
+    ),
+  );
+
+  it.effect("stops restarting when another server owns the data dir until retry is chosen", () =>
+    Effect.scoped(
+      Effect.gen(function* () {
+        const prompts = yield* Queue.unbounded<StateDirInUse>();
+        const encoder = new TextEncoder();
+        let startCount = 0;
+        const layerSpawner = Layer.succeed(
+          ChildProcessSpawner.ChildProcessSpawner,
+          ChildProcessSpawner.make(() =>
+            Effect.sync(() => {
+              startCount += 1;
+              return makeProcess({
+                // The marker line arrives split across chunks.
+                stderr: Stream.make(
+                  encoder.encode('booting\nOTTERWARE_STATE_DIR_IN_USE {"pid":42,"sta'),
+                  encoder.encode('teDir":"/home/u/.otter-code/userdata"}\n'),
+                ),
+                exitCode: Effect.succeed(ChildProcessSpawner.ExitCode(1)),
+              });
+            }),
+          ),
+        );
+
+        const instance = yield* makeTestInstance({
+          spawnerLayer: layerSpawner,
+          httpClientLayer: layerHttpClient(() => Effect.never),
+          // Retry once, then give up.
+          onStateDirInUse: (info) =>
+            Queue.offer(prompts, info).pipe(Effect.map(() => startCount === 1)),
+        });
+
+        yield* instance.start;
+        const expected = { pid: 42, stateDir: "/home/u/.otter-code/userdata" };
+        assert.deepEqual(yield* Queue.take(prompts), expected);
+        assert.deepEqual(yield* Queue.take(prompts), expected);
+
+        yield* TestClock.adjust(Duration.minutes(5));
+        assert.equal(startCount, 2);
+        assert.equal(yield* Queue.size(prompts), 0);
+        const snapshot = yield* instance.snapshot;
+        assert.equal(snapshot.desiredRunning, false);
+        assert.equal(snapshot.restartScheduled, false);
       }).pipe(Effect.provide(TestClock.layer())),
     ),
   );

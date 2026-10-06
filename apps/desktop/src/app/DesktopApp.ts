@@ -24,6 +24,7 @@ import * as DesktopLifecycle from "./DesktopLifecycle.ts";
 import * as DesktopThreadLinks from "./DesktopThreadLinks.ts";
 import * as DesktopLinuxUrlHandler from "./DesktopLinuxUrlHandler.ts";
 import * as DesktopObservability from "./DesktopObservability.ts";
+import * as OtterwarePaths from "./OtterwarePaths.ts";
 import * as DesktopPreReadyPlatform from "./DesktopPreReadyPlatform.ts";
 import * as DesktopShutdown from "./DesktopShutdown.ts";
 import * as DesktopServerExposure from "../backend/DesktopServerExposure.ts";
@@ -301,6 +302,7 @@ const startup = Effect.gen(function* () {
   const userDataPath = yield* appIdentity.resolveUserDataPath;
   yield* electronApp.setPath("userData", userDataPath);
   yield* logStartupInfo("runtime logging configured", { logDir: environment.logDir });
+  yield* OtterwarePaths.migrateDesktopClientState(environment);
   yield* desktopSettings.load;
 
   if (linuxElectronOptions !== null) {

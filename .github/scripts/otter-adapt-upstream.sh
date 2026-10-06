@@ -24,27 +24,15 @@ perl -0pi -e '
   s/\n[ \t]*echo \x27release-assets\/\*\.exe\x27//g;
 ' .github/workflows/release.yml
 
-# Otter's nightly is also latest. Keep every hosted alias on the same build so
-# the legacy domains serve the redirect in apps/web/vercel.ts after the cutover.
-OTTER_WEB_ALIAS_BLOCK='
-          # Otter Code hosted aliases
+# Keep the fork's domain promotion independent of upstream's CLI domain checks.
+OTTER_WEB_PROMOTE_BLOCK='
           if [[ "${GITHUB_REPOSITORY}" == "otterware-app/otter-code" ]]; then
-            for otter_domain in \
-              code.otterware.app latest.code.otterware.app nightly.code.otterware.app \
-              code.otterware.dev latest.code.otterware.dev nightly.code.otterware.dev; do
-              if [[ "$otter_domain" != "$channel_domain" ]]; then
-                vp dlx vercel@53.1.1 alias set "$DEPLOYMENT_URL" "$otter_domain" \
-                  --token "$VERCEL_TOKEN" \
-                  "${vercel_scope_args[@]}"
-              fi
-            done
+            node scripts/otter/promote-web.mjs
+            exit 0
           fi
 ' perl -0pi -e '
-  s/(          vercel_scope_args=\([^\n]*\)\n.*?)(?=\n  # Same split as the web app)/
-    my $block = $1;
-    $block =~ s{(          fi\n)(?=\s*\z)}{$1$ENV{OTTER_WEB_ALIAS_BLOCK}};
-    $block;
-  /se unless /# Otter Code hosted aliases/;
+  s/(  deploy_web:.*?        run: \|\n          set -euo pipefail\n)/$1$ENV{OTTER_WEB_PROMOTE_BLOCK}/s
+    unless /node scripts\/otter\/promote-web\.mjs/;
 ' .github/workflows/release.yml
 
 # Point agents at the fork guide from AGENTS.md, which every agent reads first.

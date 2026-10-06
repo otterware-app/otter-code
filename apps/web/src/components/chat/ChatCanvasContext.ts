@@ -16,3 +16,14 @@ export const ChatCanvasContext = createContext<{
 } | null>(null);
 
 export const useChatCanvas = () => useContext(ChatCanvasContext);
+
+/**
+ * The canvas's callbacks alone. They never change, so a consumer that only
+ * registers or reports does not re-render each frame the canvas resizes (a
+ * sidebar or panel animating open beside it).
+ */
+export const ChatCanvasActionsContext = createContext<{
+  registerTimeline: (element: HTMLElement | null) => void;
+} | null>(null);
+
+export const useChatCanvasActions = () => useContext(ChatCanvasActionsContext);

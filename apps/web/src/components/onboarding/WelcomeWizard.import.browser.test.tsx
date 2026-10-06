@@ -1,3 +1,6 @@
+vi.mock("../../accounts/AccountProvider", () => ({
+  useAuth: () => ({ isLoaded: true, isSignedIn: false }),
+}));
 import { RegistryContext } from "@effect/atom-react";
 import {
   AuthOrchestrationOperateScope,

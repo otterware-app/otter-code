@@ -1,35 +1,18 @@
-import { describe, expect, it, vi } from "vite-plus/test";
-
-import { resolveCloudPublicConfig } from "./publicConfig";
-
-vi.mock("expo-constants", () => ({
-  default: {
-    expoConfig: {
-      extra: {},
-    },
-  },
-}));
-
-describe("resolveCloudPublicConfig", () => {
-  it("rejects an insecure relay URL", () => {
-    expect(
-      resolveCloudPublicConfig({
-        clerk: { publishableKey: "pk_test_example", jwtTemplate: "t3-relay" },
-        relay: { url: "http://relay.example.test" },
-      }),
-    ).toEqual({
-      clerk: {
-        publishableKey: "pk_test_example",
-        jwtTemplate: "t3-relay",
-      },
-      relay: {
-        url: null,
-      },
-      observability: {
-        tracesUrl: null,
-        tracesDataset: null,
-        tracesToken: null,
-      },
-    });
-  });
+import { expect, it, vi } from "vite-plus/test";
+vi.mock("expo-constants", () => ({ default: { expoConfig: { extra: {} } } }));
+import { resolveCloudPublicConfig, hasTracingPublicConfig } from "./publicConfig";
+it("normalizes the shared issuer and rejects insecure cloud endpoints", () => {
+  expect(
+    resolveCloudPublicConfig({
+      accounts: { url: "https://accounts.otterware.app/v1/auth/" },
+      relay: { url: "https://relay.code.otterware.app" },
+    }).accounts.url,
+  ).toBe("https://accounts.otterware.app/v1/auth");
+  expect(
+    resolveCloudPublicConfig({
+      accounts: { url: "pk_test_example" },
+      relay: { url: "http://relay.test" },
+    }),
+  ).toMatchObject({ accounts: { url: null }, relay: { url: null } });
+  expect(hasTracingPublicConfig(resolveCloudPublicConfig())).toBe(false);
 });

@@ -4,6 +4,8 @@
   "rules": { "types": "off", "nsTypes": "off" },
   // These executables are supplied by the OS or installed separately from npm.
   "ignoreBinaries": ["eas", "file", "mkfifo", "pkill", "pkg-config", "plutil", "sips"],
+  // Otter Mail, vendored verbatim for Otterware (scripts/otterware/sync-otter-mail.ts).
+  "ignoreWorkspaces": ["vendor/otter-mail/**"],
   "workspaces": {
     ".": {
       // Keep vendored reference repositories outside the root project.

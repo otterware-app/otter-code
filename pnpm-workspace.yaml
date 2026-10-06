@@ -4,6 +4,9 @@ packages:
   - oxlint-plugin-t3code
   - packages/*
   - scripts
+  # Otter Mail, vendored for Otterware (scripts/otterware/sync-otter-mail.ts).
+  - vendor/otter-mail/packages/*
+  - vendor/otter-mail/apps/web
 
 # Successor to onlyBuiltDependencies/ignoredBuiltDependencies (pnpm 11).
 # true = allowed to run build scripts; false mirrors the pnpm 10 behavior

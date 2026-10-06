@@ -1,0 +1,16 @@
+{
+  "name": "@otter-mail/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Vendored from Otter Mail by scripts/otterware/sync-otter-mail.ts. Do not edit.",
+  "type": "module",
+  "exports": {
+    "./app-icons": "./src/app-icons.ts",
+    "./themes": "./src/theme-palettes.ts",
+    "./theme-display": "./src/theme-display.ts",
+    "./demo-mailboxes": "./src/demo-mailboxes.ts",
+    "./support": "./src/support.ts",
+    "./changelog": "./src/changelog.ts",
+    "./view-marks": "./src/view-marks.ts"
+  }
+}

@@ -1,6 +1,6 @@
 # T3 Connect
 
-T3 Connect uses Clerk for cloud identity. The relay manages environment links,
+Otter Connect uses Otter Accounts for cloud identity. The relay manages environment links,
 credentials for reaching environments, and managed tunnel allocations. After
 bootstrap, clients send application traffic through the environment's tunnel
 hostname; the relay Worker does not proxy their HTTP or WebSocket sessions.
@@ -29,7 +29,7 @@ read-once bodies of up to 1 MiB that need per-environment order, caps, and
 retry timing. Queues cap messages at 128 KB and cannot hold one environment's
 requests back while it is away.
 
-Clerk, deployment, and native authentication setup live in the
+Accounts, deployment, and native authentication setup live in the
 [Connect setup runbook](../operations/connect-setup.md).
 
 ## The relay is a trusted broker
@@ -182,22 +182,14 @@ while the pin installs. Every binary needs `CLOUDFLARED_MIN_VERSION`, the oldest
 release that accepts every flag the connector is started with. Raise it whenever
 a new flag is added.
 
-## OAuth traps
+## Account boundary
 
-Interactive clients and the headless CLI use the same Clerk application but
-different credentials. The relay accepts both session-template JWTs and CLI
-OAuth tokens; requiring a JWT template for the CLI would reject valid logins.
-The CLI is a public OAuth client using PKCE and stores no client secret.
+Code clients use distinct public OAuth clients on Otter Accounts with the relay as their
+resource. The relay verifies tokens online with Accounts, so session revocation takes effect
+without replicating the identity database. DPoP and environment credentials keep their existing
+roles; an account token does not replace machine pairing or the environment key.
 
-Loopback CLI authorization starts on the hosted `/connect` page so sign-in
-completes before entering Clerk's authorize endpoint. Sending a signed-out
-browser straight to that endpoint loses the authorize parameters during the
-sign-in redirect. The [shared flow](../../packages/shared/src/connectAuth.ts)
-preserves PKCE and state for the loopback callback.
-
-SSH and headless sessions use Clerk's OAuth device authorization grant because
-the browser cannot ordinarily reach a listener on the remote machine. The CLI
-polls Clerk's token endpoint directly while the user approves a short code on
-Clerk's hosted device page; the hosted app plays no part and there is no
-redirect URI or PKCE. The grant must be enabled on the CLI OAuth application
-or the device endpoint returns an error before any prompt is shown.
+Ownership follows the canonical account ID. The provider migration deliberately requires
+reconnecting existing cloud hosts, instead of treating matching email addresses as authority.
+Local state is independent of that ownership. See the
+[account setup guide](../operations/connect-setup.md) for callbacks, device approval and cutover.

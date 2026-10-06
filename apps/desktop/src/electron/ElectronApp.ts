@@ -52,6 +52,7 @@ export class ElectronApp extends Context.Service<
     readonly systemLocale: Effect.Effect<string>;
     readonly whenReady: Effect.Effect<void, ElectronAppWhenReadyError>;
     readonly quit: Effect.Effect<void>;
+    readonly requestSingleInstanceLock: Effect.Effect<boolean>;
     readonly exit: (code: number) => Effect.Effect<void>;
     readonly relaunch: (options: Electron.RelaunchOptions) => Effect.Effect<void>;
     readonly setPath: (
@@ -126,6 +127,7 @@ export const make = ElectronApp.of({
     };
   }),
   name: Effect.sync(() => Electron.app.name),
+  requestSingleInstanceLock: Effect.sync(() => Electron.app.requestSingleInstanceLock()),
   // macOS derives this from NSLocale, which uses POSIX-style identifiers
   // (`en_GB`). `Intl` rejects those outright rather than normalizing them, so
   // the tag is normalized here rather than in the renderer that consumes it.

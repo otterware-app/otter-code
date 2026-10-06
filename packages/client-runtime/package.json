@@ -390,6 +390,10 @@
     "./state/mcp-apps": {
       "types": "./src/state/mcpApps.ts",
       "default": "./src/state/mcpApps.ts"
+    },
+    "./accounts": {
+      "types": "./src/accounts/session.ts",
+      "default": "./src/accounts/session.ts"
     }
   },
   "scripts": {

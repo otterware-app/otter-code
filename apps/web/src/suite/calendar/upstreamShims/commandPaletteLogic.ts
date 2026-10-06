@@ -38,9 +38,14 @@ const toPaletteItem = (
         },
       };
 
-export function toPaletteGroups(groups: ReadonlyArray<CommandPaletteGroup>): PaletteGroup[] {
-  return groups.map(({ searchOnly: _searchOnly, ...group }) => ({
-    ...group,
-    items: group.items.map(toPaletteItem),
-  }));
+export function toPaletteGroups(
+  groups: ReadonlyArray<CommandPaletteGroup>,
+  query: string,
+): PaletteGroup[] {
+  return groups
+    .filter((group) => group.searchOnly !== true || query.trim().length > 0)
+    .map(({ searchOnly: _searchOnly, ...group }) => ({
+      ...group,
+      items: group.items.map(toPaletteItem),
+    }));
 }

@@ -144,6 +144,7 @@ export interface CalendarServiceOptions {
   readonly demoLatency?: boolean;
   /** The background sync schedule. Tests turn it off and sync explicitly. */
   readonly autoSync?: boolean;
+  readonly beforeAutoSync?: Effect.Effect<void>;
 }
 
 /** A published change of one calendar's instances. */
@@ -1908,6 +1909,7 @@ const make = Effect.fn("CalendarServiceLive.make")(function* (
 
   /** Starts every sync that is due, then sleeps until the next one or a wake-up. */
   const schedule = Effect.gen(function* () {
+    yield* options.beforeAutoSync ?? Effect.void;
     while (true) {
       const now = yield* Clock.currentTimeMillis;
       const accounts = yield* store.listAccounts.pipe(Effect.orElseSucceed(() => []));

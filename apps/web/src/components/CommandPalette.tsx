@@ -2334,7 +2334,7 @@ function OpenCommandPaletteDialog(props: {
     });
   }
 
-  const suiteGroups = useSuiteCommandPaletteGroups();
+  const suiteGroups = useSuiteCommandPaletteGroups(deferredQuery);
   const rootGroups = [...buildRootGroups({ actionItems, recentThreadItems }), ...suiteGroups];
   const settingsSearchItems: CommandPaletteActionItem[] = searchSettings(
     deferredQuery,

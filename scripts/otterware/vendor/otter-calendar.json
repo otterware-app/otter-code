@@ -85,7 +85,7 @@
       "replacement": "apps/web/src/suite/calendar/upstreamShims/CommandPaletteResults"
     }
   ],
-  "patches": [],
+  "patches": ["patches/otter-calendar-activation.patch"],
   "watch": [
     "apps/desktop/src/ipc/DesktopIpcHandlers.ts",
     "apps/desktop/src/ipc/channels.ts",

@@ -2,6 +2,8 @@ import { NodeHttpServer } from "@effect/platform-node";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { describe, expect, it } from "@effect/vitest";
 import { EnvironmentId, ProviderInstanceId, ThreadId } from "@t3tools/contracts";
+import * as Clock from "effect/Clock";
+import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
@@ -28,6 +30,7 @@ import * as ProviderRegistry from "../../provider/ProviderRegistry.ts";
 import * as ScheduledTaskService from "../../scheduledTasks/ScheduledTaskService.ts";
 import * as SecretRequests from "../../secrets/SecretRequests.ts";
 import * as ServerSettings from "../../serverSettings.ts";
+import { ServerActivation } from "../../serverActivation.ts";
 import * as VcsStatusBroadcaster from "../../vcs/VcsStatusBroadcaster.ts";
 import { suiteAgentInstructions } from "../agentInstructions.ts";
 import * as SuiteDatabase from "../SuiteDatabase.ts";
@@ -88,9 +91,12 @@ const CALENDAR_TOOLS = [
 ];
 
 describe("Calendar module", () => {
-  it.effect("runs in the suite: capabilities, migrations, agent tools over /mcp and Home", () =>
+  // The production module includes the demo provider's simulated network latency.
+  it.live("runs in the suite: capabilities, migrations, agent tools over /mcp and Home", () =>
     Effect.scoped(
       Effect.gen(function* () {
+        const activation = yield* Deferred.make<void>();
+        const parked = yield* Deferred.make<void>();
         const layerRoutes = McpHttpServer.layer.pipe(Layer.provide(McpSessionRegistry.layer));
         const suite = yield* HttpRouter.serve(layerRoutes, {
           disableListenLog: true,
@@ -102,6 +108,12 @@ describe("Calendar module", () => {
             }),
           ),
           Layer.provideMerge(SuiteServer.layer),
+          Layer.provide(
+            Layer.succeed(
+              ServerActivation,
+              Deferred.succeed(parked, undefined).pipe(Effect.andThen(Deferred.await(activation))),
+            ),
+          ),
           Layer.provide(ServerSecretStore.layer),
           Layer.provide(PreviewAutomationBroker.layer),
           Layer.provide(PreviewBrowser.layer),
@@ -110,6 +122,9 @@ describe("Calendar module", () => {
         );
 
         const registry = yield* SuiteRegistry.pipe(Effect.provideContext(suite));
+        // Calendar's services finish building while account sync waits for activation.
+        yield* Deferred.await(parked);
+        expect(yield* Deferred.isDone(activation)).toBe(false);
         expect((yield* registry.capabilities).modules).toContain("calendar");
         const sql = yield* SuiteDatabase.SuiteSqlClient.pipe(Effect.provideContext(suite));
         const applied = yield* sql<{ readonly module: string; readonly id: number }>`
@@ -121,6 +136,18 @@ describe("Calendar module", () => {
         const calendar = yield* CalendarService.pipe(Effect.provideContext(suite));
         yield* calendar.addDemo({ size: "standard" });
         yield* calendar.sync({});
+        const directory = yield* calendar.getDirectory;
+        const writable = directory.calendars.find((entry) => entry.accessRole === "owner")!;
+        const now = yield* Clock.currentTimeMillis;
+        const created = yield* calendar.createEvent({
+          calendarId: writable.calendarId,
+          title: "Suite Home integration event",
+          time: {
+            allDay: false,
+            start: new Date(now).toISOString(),
+            end: new Date(now + 60_000).toISOString(),
+          },
+        });
 
         const credential = yield* McpSessionRegistry.issueActiveMcpCredential({
           threadId: ThreadId.make("thread-calendar"),
@@ -159,7 +186,13 @@ describe("Calendar module", () => {
         const contributors = yield* SuiteHomeContributors.pipe(Effect.provideContext(suite));
         const home = contributors.find((contributor) => contributor.module === "calendar");
         expect(home?.today).toBeDefined();
-        yield* home!.today!;
+        expect(yield* home!.today!).toContainEqual(
+          expect.objectContaining({
+            title: "Suite Home integration event",
+            id: `${writable.calendarId}/${created.event!.eventId}`,
+          }),
+        );
+        yield* Deferred.succeed(activation, undefined);
       }),
     ).pipe(
       Effect.provide(

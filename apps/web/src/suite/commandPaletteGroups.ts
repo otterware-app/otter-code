@@ -10,16 +10,15 @@ import { suiteModuleForPath } from "./modules";
 /**
  * Module entries for the command palette's root (one hook call in `CommandPalette.tsx`), listed
  * while the module's page is open; elsewhere `suiteCommandPaletteItems` offers "Go to <module>".
- * Groups a module marks search-only (every calendar, say) stay out: Otter Code's palette has no
- * search-only groups.
+ * Groups a module marks search-only (individual calendars, say) appear once the user types.
  */
-export function useSuiteCommandPaletteGroups(): ReadonlyArray<CommandPaletteGroup> {
+export function useSuiteCommandPaletteGroups(query: string): ReadonlyArray<CommandPaletteGroup> {
   const pathname = useLocation({ select: (location) => location.pathname });
   const onCalendar = suiteModuleForPath(pathname)?.id === "calendar";
-  const calendar = useCalendarPaletteGroups(usePrimaryEnvironmentId());
+  const environmentId = usePrimaryEnvironmentId();
+  const calendar = useCalendarPaletteGroups(onCalendar ? environmentId : null);
   return useMemo(
-    () =>
-      onCalendar ? toPaletteGroups(calendar.filter((group) => group.searchOnly !== true)) : [],
-    [calendar, onCalendar],
+    () => (onCalendar ? toPaletteGroups(calendar, query) : []),
+    [calendar, onCalendar, query],
   );
 }

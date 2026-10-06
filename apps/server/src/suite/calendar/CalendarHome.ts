@@ -41,7 +41,7 @@ const RSVP_ACTIONS: ReadonlyArray<{
   readonly response: CalendarResponseStatus;
 }> = [
   { id: "accept", label: "Accept", response: "accepted" },
-  { id: "tentative", label: "Maybe", response: "tentative" },
+  { id: "tentative", label: "Tentative", response: "tentative" },
   { id: "decline", label: "Decline", response: "declined" },
 ];
 

@@ -51,6 +51,7 @@ import * as NodeFS from "node:fs";
 import * as NodePath from "node:path";
 
 import * as Channels from "./channels.ts";
+import { enableNativeMessaging } from "./NativeMessagingIPC.ts";
 
 /** The parts of an extension's manifest.json read here. */
 type Manifest = {
@@ -1475,11 +1476,16 @@ async function share(from: Profile, extension: Extension): Promise<void> {
 // ── Setup ────────────────────────────────────────────────────────────
 
 let preloadPath = "";
+let nativeDirectories: string[] = [];
 
 /** The preview's toolbar and Settings: what the renderer asks for, and new tabs to track. */
-export function installPreviewExtensions(options: { readonly preloadPath: string }): void {
+export function installPreviewExtensions(options: {
+  readonly preloadPath: string;
+  readonly nativeMessagingDirectories: string[];
+}): void {
   if (preloadPath) return;
   preloadPath = options.preloadPath;
+  nativeDirectories = options.nativeMessagingDirectories;
   wire(ipcMain);
 
   // The app's renderer only: never a preview page or an extension's.
@@ -1566,6 +1572,7 @@ export function installPreviewExtensions(options: { readonly preloadPath: string
  */
 export function enablePreviewExtensions(session: Session): void {
   if (!preloadPath || profiles.has(session)) return;
+  enableNativeMessaging(session, nativeDirectories);
   const profile: Profile = {
     session,
     listening: new Map(),

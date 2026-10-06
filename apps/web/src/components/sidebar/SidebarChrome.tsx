@@ -23,7 +23,7 @@ import { useAppFrame } from "./appFrame";
 import { isSidebarUtilityPage, useNavigateToMainApp } from "./mainAppLocation";
 import { SidebarThreadUndoNotice } from "./SidebarThreadUndoNotice";
 import { SidebarProviderUpdatePill } from "./SidebarProviderUpdatePill";
-import { SidebarUpdateArchitectureWarning, SidebarUpdatePill } from "./SidebarUpdatePill";
+import { SidebarUpdateArchitectureWarning } from "./SidebarUpdatePill";
 
 /**
  * The sidebar's first row, which names the space it shows (`children`: its
@@ -131,7 +131,7 @@ export function SidebarSpaceHeading({
   );
 }
 
-// Settings, Usage and Pull Requests live in the space rail; their pages
+// Settings, Usage, Pull Requests and updates live in the space rail; their pages
 // offer Back here, to the thread they were opened over.
 export const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
   const navigateToMainApp = useNavigateToMainApp();
@@ -145,17 +145,15 @@ export const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
     void navigateToMainApp();
   }, [isMobile, navigateToMainApp, setOpenMobile]);
 
+  if (!isOnUtilityPage) return null;
   return (
-    <SidebarMenu className="flex-row items-center">
-      {isOnUtilityPage ? (
-        <SidebarMenuItem className="min-w-0 flex-1">
-          <SidebarMenuButton onClick={handleBackClick}>
-            <ArrowLeftIcon />
-            <span>Back</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      ) : null}
-      <SidebarUpdatePill />
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <SidebarMenuButton onClick={handleBackClick}>
+          <ArrowLeftIcon />
+          <span>Back</span>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
     </SidebarMenu>
   );
 });

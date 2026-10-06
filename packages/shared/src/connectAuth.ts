@@ -12,12 +12,12 @@ const CONNECT_AUTHORIZE_PATH = "/connect";
  * decide whether it is the hosted deployment — the two must agree, so the
  * default lives here.
  */
-export const DEFAULT_HOSTED_APP_URL = "https://code.otterware.dev";
+export const DEFAULT_HOSTED_APP_URL = "https://code.otterware.app";
 
 /**
  * Requested at authorize time by the hosted page and by the CLI's device
  * authorization request; keep both sides on this single definition.
- * `offline_access` asks Clerk for the refresh token the CLI relies on.
+ * `offline_access` asks Otter Accounts for the refresh token the CLI relies on.
  */
 export const CONNECT_OAUTH_SCOPES = ["openid", "profile", "email", "offline_access"] as const;
 
@@ -25,7 +25,7 @@ export interface ConnectAuthorizeRequest {
   readonly state: string;
   readonly challenge: string;
   /**
-   * The hosted /connect page asks Clerk to redirect the authorization code
+   * The hosted /connect page asks Otter Accounts to redirect the authorization code
    * straight to `http://127.0.0.1:<port>/callback` on the waiting CLI.
    */
   readonly loopbackPort: number;
@@ -36,13 +36,8 @@ export interface ConnectAuthorizeRequest {
  * `code_challenge` ride the fragment so they never reach the hosted app's
  * server or CDN logs; neither is a secret.
  *
- * The CLI routes through the hosted /connect page rather than hitting
- * Clerk's /oauth/authorize directly: a signed-out browser sent straight to
- * /oauth/authorize goes through Clerk's sign-in redirect, which does not
- * reliably preserve the authorize query parameters (state, response_type,
- * code_challenge). The hosted page waits for a Clerk session first, then
- * forwards the request with the parameters intact. Headless hosts use the
- * OAuth device authorization grant instead and never involve this page.
+ * The hosted page forwards the PKCE request to Otter Accounts. Headless hosts
+ * use the device authorization grant and do not need a loopback listener.
  */
 export function buildConnectAuthorizeRequestUrl(input: {
   readonly hostedAppUrl: string;
@@ -80,13 +75,13 @@ function parseLoopbackPort(value: string): number | null {
 
 /**
  * Redirect URI for the CLI's local callback listener. Must stay in sync with
- * the redirect URI registered on the Clerk CLI OAuth application.
+ * the redirect URI registered on the Otter Accounts CLI OAuth application.
  */
 export function connectLoopbackRedirectUri(port: number): string {
   return `http://127.0.0.1:${port}${CONNECT_LOOPBACK_CALLBACK_PATH}`;
 }
 
-export function buildConnectClerkAuthorizeUrl(input: {
+export function buildConnectAuthorizeUrl(input: {
   readonly authorizationEndpoint: string;
   readonly clientId: string;
   readonly redirectUri: string;

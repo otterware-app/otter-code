@@ -1,4 +1,5 @@
 import * as Alchemy from "alchemy";
+import * as RemovalPolicy from "alchemy/RemovalPolicy";
 import { adopt } from "alchemy/AdoptPolicy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Config from "effect/Config";
@@ -49,6 +50,7 @@ export const ManagedEndpointZone = RelayDeploymentConfig.pipe(
   Effect.flatMap(({ stage, managedEndpointZoneName }) =>
     relayOwnsManagedEndpointZone(stage)
       ? Cloudflare.Zone.Zone("ManagedEndpointZone", { name: managedEndpointZoneName }).pipe(
+          RemovalPolicy.retain(),
           adopt(true),
         )
       : Cloudflare.Zone.Zone.ref("ManagedEndpointZone", {
@@ -66,7 +68,10 @@ export const RelayApiZone = RelayDeploymentConfig.pipe(
     relayApiZoneName === managedEndpointZoneName
       ? ManagedEndpointZone
       : relayOwnsManagedEndpointZone(stage)
-        ? Cloudflare.Zone.Zone("RelayApiZone", { name: relayApiZoneName }).pipe(adopt(true))
+        ? Cloudflare.Zone.Zone("RelayApiZone", { name: relayApiZoneName }).pipe(
+            RemovalPolicy.retain(),
+            adopt(true),
+          )
         : Cloudflare.Zone.Zone.ref("RelayApiZone", {
             stage: MANAGED_ENDPOINT_ZONE_OWNER_STAGE,
           }),

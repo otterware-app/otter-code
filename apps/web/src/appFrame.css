@@ -38,7 +38,7 @@ html[data-theme-id]:not([data-theme-id=""]) {
 /* The Mac app's thin chrome (Linear's): the traffic lights sit centered in it
    (apps/desktop DesktopWindow). Windows and Linux follow their overlay. */
 html.electron:not(.wco) {
-  --workspace-topbar-height: 42px;
+  --workspace-topbar-height: 43px;
 }
 
 [data-app-frame] {

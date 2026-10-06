@@ -34,6 +34,8 @@ export const SETTINGS_DEVICE_ONLY_PATHS: ReadonlySet<string> = new Set([
   "/settings/appearance",
   "/settings/snap-shot",
   "/settings/connections",
+  // Saved on every environment alike, so no scope applies either.
+  "/settings/project-groups",
 ]);
 
 interface SettingsScopeMenuProps {

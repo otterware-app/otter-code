@@ -76,7 +76,6 @@ const VARIANT_CONFIG = {
     scheme: "ottercode-dev",
     iosBundleIdentifier: "dev.otterware.code.dev",
     androidPackage: "dev.otterware.code.dev",
-    relyingParty: "clerk.otterware.dev",
     assets: DEVELOPMENT_ASSETS,
   },
   preview: {
@@ -84,7 +83,6 @@ const VARIANT_CONFIG = {
     scheme: "ottercode-preview",
     iosBundleIdentifier: "dev.otterware.code.preview",
     androidPackage: "dev.otterware.code.preview",
-    relyingParty: "clerk.otterware.dev",
     assets: PREVIEW_ASSETS,
   },
   production: {
@@ -92,7 +90,6 @@ const VARIANT_CONFIG = {
     scheme: "ottercode",
     iosBundleIdentifier: "dev.otterware.code",
     androidPackage: "dev.otterware.code",
-    relyingParty: "clerk.otterware.dev",
     assets: RELEASE_ASSETS,
   },
 } as const;
@@ -255,10 +252,6 @@ const config: ExpoConfig = {
     // does not fall back to a personal team (which cannot sign app groups,
     // Sign in with Apple, or push notification entitlements).
     appleTeamId: "YNJ5WLH965",
-    associatedDomains: [
-      `applinks:${variant.relyingParty}`,
-      `webcredentials:${variant.relyingParty}`,
-    ],
     entitlements: {
       "keychain-access-groups": [`$(AppIdentifierPrefix)${variant.iosBundleIdentifier}`],
     },
@@ -359,8 +352,6 @@ const config: ExpoConfig = {
       },
     ],
     // appleSignIn must be gated here: withoutIosPersonalTeamCapabilities.cjs runs before
-    // plugins earlier in this array, so it cannot strip the entitlement Clerk would add.
-    ["@clerk/expo", { theme: "./clerk-theme.json", appleSignIn: !isIosPersonalTeamBuild }],
     "expo-web-browser",
     [
       "expo-quick-actions",
@@ -474,19 +465,7 @@ const config: ExpoConfig = {
     relay: {
       url: repoEnv.T3CODE_RELAY_URL ?? null,
     },
-    clerk: {
-      publishableKey: repoEnv.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? null,
-      jwtTemplate: repoEnv.EXPO_PUBLIC_CLERK_JWT_TEMPLATE ?? null,
-    },
-    // Native Google sign-in credentials. @clerk/expo reads these from `extra`
-    // under their exact env-var names (not nested), and its config plugin reads
-    // the iOS URL scheme at prebuild to register it in Info.plist.
-    // Unset values must be omitted (not null): the public manifest serializes
-    // null to {}, which is truthy and would defeat Clerk's fallback checks.
-    EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID: repoEnv.EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID,
-    EXPO_PUBLIC_CLERK_GOOGLE_IOS_CLIENT_ID: repoEnv.EXPO_PUBLIC_CLERK_GOOGLE_IOS_CLIENT_ID,
-    EXPO_PUBLIC_CLERK_GOOGLE_ANDROID_CLIENT_ID: repoEnv.EXPO_PUBLIC_CLERK_GOOGLE_ANDROID_CLIENT_ID,
-    EXPO_PUBLIC_CLERK_GOOGLE_IOS_URL_SCHEME: repoEnv.EXPO_PUBLIC_CLERK_GOOGLE_IOS_URL_SCHEME,
+    accounts: { url: repoEnv.EXPO_PUBLIC_ACCOUNTS_URL ?? null },
     observability: {
       tracesUrl: repoEnv.EXPO_PUBLIC_OTLP_TRACES_URL ?? "https://api.axiom.co/v1/traces",
       tracesDataset: repoEnv.EXPO_PUBLIC_OTLP_TRACES_DATASET ?? null,

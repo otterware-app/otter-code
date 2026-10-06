@@ -2,7 +2,7 @@ import { ThreadFindTimelineContext } from "./ThreadFindProvider";
 import { shouldPreserveAssistantLineBreaks } from "@t3tools/shared/markdownPipeline";
 import { MarkdownFindContext, useFindRevealRef } from "./markdownFindContext";
 import { ComputerUseAppIcon } from "~/components/Icons";
-import { useChatCanvas } from "./ChatCanvasContext";
+import { useChatCanvasActions } from "./ChatCanvasContext";
 import { WorkLogBlock, WorkLogButton, WorkLogDetails, WorkLogList, WorkLogRow } from "./WorkLog";
 import { PullRequestGlyph } from "../pullRequest/pullRequestIcons";
 import type { WorktreeSetupSnapshot } from "@t3tools/contracts";
@@ -1436,8 +1436,7 @@ const ConversationTimeline = memo(function ConversationTimeline({
     );
   }, [historyControls, onOpenThread, parentThreadLink, topFadeEnabled]);
 
-  const canvas = useChatCanvas();
-  const registerTimeline = canvas?.registerTimeline;
+  const registerTimeline = useChatCanvasActions()?.registerTimeline;
   const setTimelineList = useCallback(
     (list: LegendListRef | null) => {
       listRef.current = list;

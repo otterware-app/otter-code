@@ -11,6 +11,7 @@ import { openCommandPalette } from "~/commandPaletteBus";
 import { shortcutLabelForCommand } from "~/keybindings";
 import { primaryServerKeybindingsAtom } from "~/state/server";
 import { useNewThreadHandler } from "~/hooks/useHandleNewThread";
+import { useActiveProjectSpace } from "~/hooks/useProjectSpace";
 import { useScratchProject } from "~/hooks/useScratchProject";
 import { useClientSettings } from "~/hooks/useSettings";
 import { hasExplicitComposerModelSelection } from "~/lib/chatThreadActions";
@@ -78,6 +79,7 @@ export function DraftHeroHeadline({
   const { scratchEnvironmentId, scratchWorkspaceRootFor, openScratchProject } = useScratchProject();
   const openProjectDraft = useNewThreadHandler();
   const keybindings = useAtomValue(primaryServerKeybindingsAtom);
+  const { space, projectFilter } = useActiveProjectSpace();
 
   const environmentLabelById = useMemo(
     () =>
@@ -154,14 +156,18 @@ export function DraftHeroHeadline({
   const canChooseProject = projectPickerEntries.length > 0;
   const shouldShowProjectMenu = canChooseProject;
   // The project that hosts threads without a project is not a row: the line
-  // under the headline is the way into it.
+  // under the headline is the way into it. A project group offers only its
+  // own projects.
   const menuEntries = useMemo(
     () =>
       projectPickerEntries.filter(
-        ({ targetProject }) =>
-          !isScratchProject(targetProject, scratchWorkspaceRootFor(targetProject.environmentId)),
+        ({ group, targetProject }) =>
+          !isScratchProject(targetProject, scratchWorkspaceRootFor(targetProject.environmentId)) &&
+          (space.kind !== "group" ||
+            projectFilter === null ||
+            group.memberProjects.some((project) => projectFilter(project))),
       ),
-    [projectPickerEntries, scratchWorkspaceRootFor],
+    [projectPickerEntries, projectFilter, scratchWorkspaceRootFor, space.kind],
   );
   const activeProject =
     activeProjectRef === null

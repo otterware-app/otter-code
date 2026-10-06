@@ -7,7 +7,7 @@ import {
   type ComponentProps,
   type CSSProperties,
 } from "react";
-import { ChatCanvasContext } from "./ChatCanvasContext";
+import { ChatCanvasActionsContext, ChatCanvasContext } from "./ChatCanvasContext";
 import { resolveChatCanvasLayout, type ChatCanvasPreview } from "./chatCanvasLayout";
 import type { PreviewMiniPlayerObstacles } from "../preview/previewMiniPlayerLayout";
 import { observeResize } from "../../lib/observeResize";
@@ -118,30 +118,33 @@ export function ChatCanvas({
     reportDetailsCard,
     detailsCardTopInset,
   ]);
+  const actions = useMemo(() => ({ registerTimeline }), [registerTimeline]);
   const { layout } = context;
   return (
-    <ChatCanvasContext value={context}>
-      <div
-        {...props}
-        ref={elementRef}
-        data-chat-canvas
-        data-preview-overlaps-chat={layout.overlapsChat || undefined}
-        className="relative flex min-h-0 min-w-0 flex-1 flex-col"
-        style={
-          {
-            "--chat-timeline-gutter": `${measurements.timelineGutter}px`,
-            "--chat-lane-inset-start": `${layout.chat.insetStart}px`,
-            "--chat-lane-inset-end": `${layout.chat.insetEnd}px`,
-          } as CSSProperties
-        }
-      >
+    <ChatCanvasActionsContext value={actions}>
+      <ChatCanvasContext value={context}>
         <div
-          ref={widthProbeRef}
-          aria-hidden
-          className="pointer-events-none invisible absolute h-0 w-(--chat-content-max-width) min-w-[40rem] box-content ps-3 sm:ps-12"
-        />
-        {children}
-      </div>
-    </ChatCanvasContext>
+          {...props}
+          ref={elementRef}
+          data-chat-canvas
+          data-preview-overlaps-chat={layout.overlapsChat || undefined}
+          className="relative flex min-h-0 min-w-0 flex-1 flex-col"
+          style={
+            {
+              "--chat-timeline-gutter": `${measurements.timelineGutter}px`,
+              "--chat-lane-inset-start": `${layout.chat.insetStart}px`,
+              "--chat-lane-inset-end": `${layout.chat.insetEnd}px`,
+            } as CSSProperties
+          }
+        >
+          <div
+            ref={widthProbeRef}
+            aria-hidden
+            className="pointer-events-none invisible absolute h-0 w-(--chat-content-max-width) min-w-[40rem] box-content ps-3 sm:ps-12"
+          />
+          {children}
+        </div>
+      </ChatCanvasContext>
+    </ChatCanvasActionsContext>
   );
 }

@@ -3,17 +3,16 @@ import {
   CONNECT_OAUTH_SCOPES,
   DEFAULT_HOSTED_APP_URL,
 } from "@t3tools/shared/connectAuth";
-import { clerkFrontendApiUrlFromPublishableKey } from "@t3tools/shared/relayAuth";
+import { ACCOUNT_CLIENT_IDS, normalizeAccountsUrl } from "@t3tools/shared/otterAccounts";
 import { normalizeSecureRelayUrl } from "@t3tools/shared/relayUrl";
 import * as Config from "effect/Config";
-import * as ConfigProvider from "effect/ConfigProvider";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import * as SchemaIssue from "effect/SchemaIssue";
 
 declare const __T3CODE_BUILD_RELAY_URL__: string | undefined;
-declare const __T3CODE_BUILD_CLERK_PUBLISHABLE_KEY__: string | undefined;
-declare const __T3CODE_BUILD_CLERK_CLI_OAUTH_CLIENT_ID__: string | undefined;
+declare const __T3CODE_BUILD_ACCOUNTS_URL__: string | undefined;
+declare const __T3CODE_BUILD_ACCOUNTS_CLI_CLIENT_ID__: string | undefined;
 declare const __T3CODE_BUILD_RELAY_CLIENT_OTLP_TRACES_URL__: string | undefined;
 declare const __T3CODE_BUILD_RELAY_CLIENT_OTLP_TRACES_DATASET__: string | undefined;
 declare const __T3CODE_BUILD_RELAY_CLIENT_OTLP_TRACES_TOKEN__: string | undefined;
@@ -53,15 +52,13 @@ const buildTimeRelayUrl =
   typeof __T3CODE_BUILD_RELAY_URL__ === "undefined"
     ? ""
     : (normalizeSecureRelayUrl(__T3CODE_BUILD_RELAY_URL__) ?? "");
-const buildTimeClerkPublishableKey = readBuildTimeValue(
-  typeof __T3CODE_BUILD_CLERK_PUBLISHABLE_KEY__ === "undefined"
-    ? undefined
-    : __T3CODE_BUILD_CLERK_PUBLISHABLE_KEY__,
+const buildTimeAccountsUrl = readBuildTimeValue(
+  typeof __T3CODE_BUILD_ACCOUNTS_URL__ === "undefined" ? undefined : __T3CODE_BUILD_ACCOUNTS_URL__,
 );
-const buildTimeClerkCliOAuthClientId = readBuildTimeValue(
-  typeof __T3CODE_BUILD_CLERK_CLI_OAUTH_CLIENT_ID__ === "undefined"
+const buildTimeAccountsCliClientId = readBuildTimeValue(
+  typeof __T3CODE_BUILD_ACCOUNTS_CLI_CLIENT_ID__ === "undefined"
     ? undefined
-    : __T3CODE_BUILD_CLERK_CLI_OAUTH_CLIENT_ID__,
+    : __T3CODE_BUILD_ACCOUNTS_CLI_CLIENT_ID__,
 );
 const buildTimeRelayClientTracing = {
   tracesUrl: readBuildTimeValue(
@@ -149,14 +146,9 @@ function makePublicValueConfig(name: string, fallback: string) {
   );
 }
 
-/**
- * The CLI never calls Clerk's /oauth/authorize itself: the browser leg goes
- * through the hosted /connect page, which builds the authorize URL after a
- * Clerk session exists (see CliTokenManager.login). The token endpoint and,
- * for headless hosts, the device authorization endpoint are contacted
- * directly.
- */
+/** Public OAuth endpoints used by browser and headless CLI login. */
 export interface CloudCliOAuthConfig {
+  readonly resource: string;
   readonly tokenEndpoint: string;
   readonly deviceAuthorizationEndpoint: string;
   readonly clientId: string;
@@ -166,46 +158,39 @@ export interface CloudCliOAuthConfig {
 }
 
 export function makeCloudCliOAuthConfig({
-  clerkPublishableKeyFallback = buildTimeClerkPublishableKey,
-  clerkCliOAuthClientIdFallback = buildTimeClerkCliOAuthClientId,
+  accountsUrlFallback = buildTimeAccountsUrl,
+  accountsCliClientIdFallback = buildTimeAccountsCliClientId || ACCOUNT_CLIENT_IDS.cli,
 }: {
-  readonly clerkPublishableKeyFallback?: string;
-  readonly clerkCliOAuthClientIdFallback?: string;
+  readonly accountsUrlFallback?: string;
+  readonly accountsCliClientIdFallback?: string;
 } = {}) {
   return Config.all({
-    clerkPublishableKey: makePublicValueConfig(
-      "T3CODE_CLERK_PUBLISHABLE_KEY",
-      clerkPublishableKeyFallback,
-    ),
-    clientId: makePublicValueConfig(
-      "T3CODE_CLERK_CLI_OAUTH_CLIENT_ID",
-      clerkCliOAuthClientIdFallback,
-    ),
+    accountsUrl: makePublicValueConfig("T3CODE_ACCOUNTS_URL", accountsUrlFallback),
+    clientId: makePublicValueConfig("T3CODE_ACCOUNTS_CLI_CLIENT_ID", accountsCliClientIdFallback),
+    resource: relayUrlConfig,
   }).pipe(
-    Config.mapEffect(({ clerkPublishableKey, clientId }) =>
-      Effect.try({
-        try: () => clerkFrontendApiUrlFromPublishableKey(clerkPublishableKey),
-        catch: (cause) =>
+    Config.mapEffect(({ accountsUrl, clientId, resource }) => {
+      const issuer = normalizeAccountsUrl(accountsUrl);
+      if (!issuer)
+        return Effect.fail(
           new Config.ConfigError(
-            new ConfigProvider.SourceError({
-              message: "Failed to derive Clerk Frontend API URL from the publishable key.",
-              cause,
-            }),
+            new Schema.SchemaError(
+              new SchemaIssue.InvalidValue({
+                message: "Accounts URL must be an HTTPS /v1/auth issuer.",
+              }),
+            ),
           ),
-      }).pipe(
-        Effect.map(
-          (clerkFrontendApiUrl) =>
-            ({
-              tokenEndpoint: `${clerkFrontendApiUrl}/oauth/token`,
-              deviceAuthorizationEndpoint: `${clerkFrontendApiUrl}/oauth/device_authorization`,
-              clientId,
-              loopbackPort: CLOUD_CLI_OAUTH_LOOPBACK_PORT,
-              redirectUri: connectLoopbackRedirectUri(CLOUD_CLI_OAUTH_LOOPBACK_PORT),
-              scopes: CLOUD_CLI_OAUTH_SCOPES,
-            }) satisfies CloudCliOAuthConfig,
-        ),
-      ),
-    ),
+        );
+      return Effect.succeed({
+        resource,
+        tokenEndpoint: `${issuer}/oauth2/token`,
+        deviceAuthorizationEndpoint: `${issuer}/device/code`,
+        clientId,
+        loopbackPort: CLOUD_CLI_OAUTH_LOOPBACK_PORT,
+        redirectUri: connectLoopbackRedirectUri(CLOUD_CLI_OAUTH_LOOPBACK_PORT),
+        scopes: CLOUD_CLI_OAUTH_SCOPES,
+      } satisfies CloudCliOAuthConfig);
+    }),
   );
 }
 
@@ -213,6 +198,5 @@ export const cloudCliOAuthConfig = makeCloudCliOAuthConfig();
 
 export const hasCloudPublicConfig = Boolean(
   (normalizeSecureRelayUrl(process.env.T3CODE_RELAY_URL ?? "") ?? buildTimeRelayUrl) &&
-  (process.env.T3CODE_CLERK_PUBLISHABLE_KEY?.trim() || buildTimeClerkPublishableKey) &&
-  (process.env.T3CODE_CLERK_CLI_OAUTH_CLIENT_ID?.trim() || buildTimeClerkCliOAuthClientId),
+  normalizeAccountsUrl(process.env.T3CODE_ACCOUNTS_URL?.trim() || buildTimeAccountsUrl),
 );

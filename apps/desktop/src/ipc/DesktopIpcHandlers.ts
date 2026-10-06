@@ -1,3 +1,8 @@
+import {
+  getAccountSession,
+  setAccountSession,
+  authorizeAccount,
+} from "./methods/accountSession.ts";
 import * as Effect from "effect/Effect";
 import * as HostProcess from "@t3tools/shared/HostProcess";
 
@@ -117,6 +122,9 @@ export const installDesktopIpcHandlers = Effect.fn("desktop.ipc.installHandlers"
   yield* ipc.handle(getClientSettings);
   yield* ipc.handle(setClientSettings);
   yield* ipc.handle(getConnectionCatalog);
+  yield* ipc.handle(getAccountSession);
+  yield* ipc.handle(setAccountSession);
+  yield* ipc.handle(authorizeAccount);
   yield* ipc.handle(getSnapShotState);
   yield* ipc.handle(setupSnapShot);
   yield* ipc.handle(previewSnapShotConfig);

@@ -36,7 +36,7 @@ import { makeQuitShortcutHandler } from "./QuitHold.ts";
 const TITLEBAR_HEIGHT = 40;
 // Matches the Mac app's --workspace-topbar-height in apps/web/src/appFrame.css.
 // Native macOS buttons are 14 points tall and do not scale with the renderer's zoom.
-const MACOS_WORKSPACE_TOPBAR_HEIGHT = 42;
+const MACOS_WORKSPACE_TOPBAR_HEIGHT = 43;
 const MACOS_WINDOW_BUTTON_RADIUS = 7;
 // The buttons' left inset; the renderer leaves them 82px (preload.ts).
 const MACOS_WINDOW_BUTTON_X = 14;
@@ -265,7 +265,7 @@ function getWindowTitleBarOptions(
       titleBarStyle: "hiddenInset",
       trafficLightPosition: {
         x: MACOS_WINDOW_BUTTON_X,
-        y: MACOS_WORKSPACE_TOPBAR_HEIGHT / 2 - MACOS_WINDOW_BUTTON_RADIUS,
+        y: Math.round(MACOS_WORKSPACE_TOPBAR_HEIGHT / 2 - MACOS_WINDOW_BUTTON_RADIUS),
       },
     };
   }

@@ -1,3 +1,4 @@
+import type { ProjectSpaceProject } from "../projectSpaces";
 import { orderItemsByPreferredIds, sortSidebarV2ProjectGroups } from "../components/Sidebar.logic";
 import { getProjectOrderKey, selectProjectGroupingSettings } from "../logicalProject";
 import { buildSidebarProjectSnapshots } from "../sidebarProjectGrouping";
@@ -5,9 +6,11 @@ import { useEnvironmentIdentities, usePrimaryEnvironmentId } from "../state/envi
 import { useProjects, useThreadShells } from "../state/entities";
 import { legacyProjectCwdPreferenceKey, useUiStateStore } from "../uiStateStore";
 import { useClientSettings } from "./useSettings";
-
-export function useSidebarProjectGroups() {
-  const projects = useProjects();
+export function useSidebarProjectGroups(
+  projectFilter: ((project: ProjectSpaceProject) => boolean) | null = null,
+) {
+  const allProjects = useProjects();
+  const projects = projectFilter === null ? allProjects : allProjects.filter(projectFilter);
   const threads = useThreadShells();
   const projectOrder = useUiStateStore((store) => store.projectOrder);
   const sortOrder = useClientSettings((s) => s.sidebarProjectSortOrder);

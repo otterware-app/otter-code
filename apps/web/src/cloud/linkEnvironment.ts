@@ -216,7 +216,7 @@ export function updatePrimaryCloudPreferences(input: {
 
 export function unlinkPrimaryEnvironmentFromCloud(input: {
   readonly target: CloudLinkTarget;
-  readonly clerkToken: string | null;
+  readonly accountToken: string | null;
 }): Effect.Effect<
   void,
   CloudEnvironmentLinkError,
@@ -229,11 +229,11 @@ export function unlinkPrimaryEnvironmentFromCloud(input: {
       .pipe(Effect.mapError(environmentApiError("Could not unlink the environment from cloud.")));
 
     const configuredRelayUrl = relayUrl();
-    if (configuredRelayUrl && input.clerkToken) {
+    if (configuredRelayUrl && input.accountToken) {
       const relayClient = yield* ManagedRelay.ManagedRelayClient;
       yield* relayClient
         .unlinkEnvironment({
-          clerkToken: input.clerkToken,
+          accountToken: input.accountToken,
           environmentId: EnvironmentId.make(input.target.environmentId),
         })
         .pipe(
@@ -253,7 +253,7 @@ const PUBLISH_ONLY_PROVIDER_KIND = "manual" satisfies RelayManagedEndpointProvid
 
 export function linkPrimaryEnvironmentToCloud(input: {
   readonly target: CloudLinkTarget;
-  readonly clerkToken: string;
+  readonly accountToken: string;
   readonly mode?: CloudLinkMode;
 }): Effect.Effect<
   void,
@@ -279,7 +279,7 @@ export function linkPrimaryEnvironmentToCloud(input: {
 
     const challenge = yield* relayClient
       .createEnvironmentLinkChallenge({
-        clerkToken: input.clerkToken,
+        accountToken: input.accountToken,
         payload: {
           notificationsEnabled: true,
           liveActivitiesEnabled: true,
@@ -310,7 +310,7 @@ export function linkPrimaryEnvironmentToCloud(input: {
       .pipe(Effect.mapError(environmentApiError("Could not obtain environment link proof.")));
     const link = yield* relayClient
       .linkEnvironment({
-        clerkToken: input.clerkToken,
+        accountToken: input.accountToken,
         payload: {
           proof,
           notificationsEnabled: true,

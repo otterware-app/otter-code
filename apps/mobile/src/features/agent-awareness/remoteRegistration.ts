@@ -217,6 +217,9 @@ export function setAgentAwarenessRelayTokenProvider(
     "active live activity registration after cloud sign-in failed",
   );
   if (isExistingIdentity) {
+    // Same account re-activating (e.g. Otter Accounts token refresh) normally needs no
+    // re-registration — but if the previous attempt never succeeded, this is
+    // the only trigger that will retry it before the next cold start.
     if (registrationStatus !== "registered") {
       enqueueDeviceRegistration({}, "device registration retry after cloud session refresh failed");
     }
@@ -403,7 +406,7 @@ function registerDeviceWithRelay(
       expectedGeneration,
     });
     yield* client.registerDevice({
-      clerkToken: token,
+      accountToken: token,
       payload,
     });
     if (expectedGeneration !== deviceRegistrationGeneration) {
@@ -453,7 +456,7 @@ function unregisterDeviceWithRelay(input: {
 
     const client = yield* ManagedRelay.ManagedRelayClient;
     yield* client.unregisterDevice({
-      clerkToken: token,
+      accountToken: token,
       deviceId: input.deviceId,
     });
   });
@@ -548,7 +551,7 @@ function readAgentActivitySnapshot(): Effect.Effect<
       return null;
     }
     const client = yield* ManagedRelay.ManagedRelayClient;
-    return yield* client.getAgentActivitySnapshot({ clerkToken: token });
+    return yield* client.getAgentActivitySnapshot({ accountToken: token });
   }).pipe(
     Effect.catch((error) =>
       Effect.sync(() => {
@@ -572,7 +575,7 @@ function registerLiveActivityWithRelay(
 
     const client = yield* ManagedRelay.ManagedRelayClient;
     yield* client.registerLiveActivity({
-      clerkToken: token,
+      accountToken: token,
       payload: body,
     });
     return true;

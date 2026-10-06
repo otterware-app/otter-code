@@ -41,7 +41,7 @@ function layerManagedRelayTest(
   }).pipe(Layer.provide(layerSigner), Layer.provide(layerHttpClient));
 }
 
-function clerkToken(subject: string, nonce: string): string {
+function accountToken(subject: string, nonce: string): string {
   const encode = (value: unknown) =>
     btoa(JSON.stringify(value)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
   return `${encode({ alg: "none" })}.${encode({ sub: subject, nonce })}.signature`;
@@ -94,7 +94,7 @@ describe("ManagedRelayClient", () => {
     return Effect.gen(function* () {
       const relayClient = yield* ManagedRelay.ManagedRelayClient;
       yield* relayClient.getEnvironmentStatus({
-        clerkToken: clerkToken("user-1", "session-1"),
+        accountToken: accountToken("user-1", "session-1"),
         scopes: [RelayEnvironmentStatusScope],
         environmentId: EnvironmentId.make("env-1"),
       });
@@ -128,7 +128,7 @@ describe("ManagedRelayClient", () => {
     return Effect.gen(function* () {
       const relayClient = yield* ManagedRelay.ManagedRelayClient;
       const error = yield* relayClient
-        .listEnvironments({ clerkToken: "clerk-token" })
+        .listEnvironments({ accountToken: "account-token" })
         .pipe(Effect.flip);
 
       expect(error).toMatchObject({
@@ -180,7 +180,7 @@ describe("ManagedRelayClient", () => {
     return Effect.gen(function* () {
       const relayClient = yield* ManagedRelay.ManagedRelayClient;
       const statusInput = {
-        clerkToken: clerkToken("user-1", "session-1"),
+        accountToken: accountToken("user-1", "session-1"),
         scopes: [RelayEnvironmentStatusScope],
         environmentId: EnvironmentId.make("env-1"),
       } as const;
@@ -257,7 +257,7 @@ describe("ManagedRelayClient", () => {
     return Effect.gen(function* () {
       const relayClient = yield* ManagedRelay.ManagedRelayClient;
       const statusInput = {
-        clerkToken: clerkToken("user-1", "session-1"),
+        accountToken: accountToken("user-1", "session-1"),
         scopes: [RelayEnvironmentStatusScope],
         environmentId: EnvironmentId.make("env-1"),
       } as const;
@@ -295,77 +295,80 @@ describe("ManagedRelayClient", () => {
     );
   });
 
-  it.effect("reuses a persisted token across runtimes and Clerk session token rotation", () => {
-    let tokenExchangeCount = 0;
-    let persistedTokens: ReadonlyArray<ManagedRelay.ManagedRelayAccessTokenCacheEntry> = [];
-    const accessTokenStore: ManagedRelay.ManagedRelayAccessTokenStore = {
-      load: Effect.sync(() => persistedTokens),
-      save: (entries) =>
-        Effect.sync(() => {
-          persistedTokens = entries;
+  it.effect(
+    "reuses a persisted token across runtimes and Otter account session token rotation",
+    () => {
+      let tokenExchangeCount = 0;
+      let persistedTokens: ReadonlyArray<ManagedRelay.ManagedRelayAccessTokenCacheEntry> = [];
+      const accessTokenStore: ManagedRelay.ManagedRelayAccessTokenStore = {
+        load: Effect.sync(() => persistedTokens),
+        save: (entries) =>
+          Effect.sync(() => {
+            persistedTokens = entries;
+          }),
+        clear: Effect.sync(() => {
+          persistedTokens = [];
         }),
-      clear: Effect.sync(() => {
-        persistedTokens = [];
-      }),
-    };
-    const fetchFn = ((input) => {
-      const url = String(input);
-      if (url.endsWith("/v1/client/dpop-token")) {
-        tokenExchangeCount += 1;
+      };
+      const fetchFn = ((input) => {
+        const url = String(input);
+        if (url.endsWith("/v1/client/dpop-token")) {
+          tokenExchangeCount += 1;
+          return Promise.resolve(
+            Response.json({
+              access_token: "persisted-relay-token",
+              issued_token_type: "urn:ietf:params:oauth:token-type:access_token",
+              token_type: "DPoP",
+              expires_in: 1_800,
+              scope: RelayEnvironmentStatusScope,
+            }),
+          );
+        }
         return Promise.resolve(
           Response.json({
-            access_token: "persisted-relay-token",
-            issued_token_type: "urn:ietf:params:oauth:token-type:access_token",
-            token_type: "DPoP",
-            expires_in: 1_800,
-            scope: RelayEnvironmentStatusScope,
+            environmentId: "env-1",
+            endpoint: {
+              httpBaseUrl: "https://desktop.example.test/",
+              wsBaseUrl: "wss://desktop.example.test/ws",
+              providerKind: "cloudflare_tunnel",
+            },
+            status: "online",
+            checkedAt: "2026-06-05T20:00:00.000Z",
+            descriptor: {
+              environmentId: "env-1",
+              label: "Desktop",
+              platform: { os: "darwin", arch: "arm64" },
+              serverVersion: "0.0.0-test",
+              capabilities: { repositoryIdentity: true },
+            },
           }),
         );
-      }
-      return Promise.resolve(
-        Response.json({
-          environmentId: "env-1",
-          endpoint: {
-            httpBaseUrl: "https://desktop.example.test/",
-            wsBaseUrl: "wss://desktop.example.test/ws",
-            providerKind: "cloudflare_tunnel",
-          },
-          status: "online",
-          checkedAt: "2026-06-05T20:00:00.000Z",
-          descriptor: {
-            environmentId: "env-1",
-            label: "Desktop",
-            platform: { os: "darwin", arch: "arm64" },
-            serverVersion: "0.0.0-test",
-            capabilities: { repositoryIdentity: true },
-          },
-        }),
-      );
-    }) satisfies typeof globalThis.fetch;
-    const statusInput = (token: string) =>
-      ({
-        clerkToken: token,
-        scopes: [RelayEnvironmentStatusScope],
-        environmentId: EnvironmentId.make("env-1"),
-      }) as const;
+      }) satisfies typeof globalThis.fetch;
+      const statusInput = (token: string) =>
+        ({
+          accountToken: token,
+          scopes: [RelayEnvironmentStatusScope],
+          environmentId: EnvironmentId.make("env-1"),
+        }) as const;
 
-    return Effect.gen(function* () {
-      yield* Effect.gen(function* () {
-        const relayClient = yield* ManagedRelay.ManagedRelayClient;
-        yield* relayClient.getEnvironmentStatus(statusInput(clerkToken("user-1", "session-1")));
-      }).pipe(Effect.provide(layerManagedRelayTest(fetchFn, undefined, accessTokenStore)));
+      return Effect.gen(function* () {
+        yield* Effect.gen(function* () {
+          const relayClient = yield* ManagedRelay.ManagedRelayClient;
+          yield* relayClient.getEnvironmentStatus(statusInput(accountToken("user-1", "session-1")));
+        }).pipe(Effect.provide(layerManagedRelayTest(fetchFn, undefined, accessTokenStore)));
 
-      expect(tokenExchangeCount).toBe(1);
-      expect(persistedTokens).toHaveLength(1);
+        expect(tokenExchangeCount).toBe(1);
+        expect(persistedTokens).toHaveLength(1);
 
-      yield* Effect.gen(function* () {
-        const relayClient = yield* ManagedRelay.ManagedRelayClient;
-        yield* relayClient.getEnvironmentStatus(statusInput(clerkToken("user-1", "session-2")));
-      }).pipe(Effect.provide(layerManagedRelayTest(fetchFn, undefined, accessTokenStore)));
+        yield* Effect.gen(function* () {
+          const relayClient = yield* ManagedRelay.ManagedRelayClient;
+          yield* relayClient.getEnvironmentStatus(statusInput(accountToken("user-1", "session-2")));
+        }).pipe(Effect.provide(layerManagedRelayTest(fetchFn, undefined, accessTokenStore)));
 
-      expect(tokenExchangeCount).toBe(1);
-    });
-  });
+        expect(tokenExchangeCount).toBe(1);
+      });
+    },
+  );
 
   it.effect("refreshes a persisted DPoP token once when the relay rejects it", () => {
     let tokenExchangeCount = 0;
@@ -445,7 +448,7 @@ describe("ManagedRelayClient", () => {
     return Effect.gen(function* () {
       const relayClient = yield* ManagedRelay.ManagedRelayClient;
       const result = yield* relayClient.getEnvironmentStatus({
-        clerkToken: clerkToken("user-1", "session-1"),
+        accountToken: accountToken("user-1", "session-1"),
         scopes: [RelayEnvironmentStatusScope],
         environmentId: EnvironmentId.make("env-1"),
       });
@@ -461,7 +464,7 @@ describe("ManagedRelayClient", () => {
     }).pipe(Effect.provide(layerManagedRelayTest(fetchFn, undefined, accessTokenStore)));
   });
 
-  it.effect("does not persist tokens when the Clerk subject cannot be decoded", () => {
+  it.effect("does not persist tokens when the Otter account subject cannot be decoded", () => {
     let persistedTokens: ReadonlyArray<ManagedRelay.ManagedRelayAccessTokenCacheEntry> = [];
     const accessTokenStore: ManagedRelay.ManagedRelayAccessTokenStore = {
       load: Effect.succeed([]),
@@ -508,7 +511,7 @@ describe("ManagedRelayClient", () => {
     return Effect.gen(function* () {
       const relayClient = yield* ManagedRelay.ManagedRelayClient;
       yield* relayClient.getEnvironmentStatus({
-        clerkToken: "not-a-jwt",
+        accountToken: "not-a-jwt",
         scopes: [RelayEnvironmentStatusScope],
         environmentId: EnvironmentId.make("env-1"),
       });
@@ -524,7 +527,7 @@ describe("ManagedRelayClient", () => {
     return Effect.gen(function* () {
       const relayClient = yield* ManagedRelay.ManagedRelayClient;
       const errorFiber = yield* relayClient
-        .listEnvironments({ clerkToken: "clerk-token" })
+        .listEnvironments({ accountToken: "account-token" })
         .pipe(Effect.flip, Effect.forkScoped);
 
       yield* Effect.yieldNow;
@@ -546,7 +549,7 @@ describe("ManagedRelayClient", () => {
     return Effect.gen(function* () {
       const relayClient = yield* ManagedRelay.ManagedRelayClient;
       const error = yield* relayClient
-        .listEnvironments({ clerkToken: "clerk-token" })
+        .listEnvironments({ accountToken: "account-token" })
         .pipe(Effect.flip);
       expect(error).toMatchObject({
         _tag: "ManagedRelayRequestFailedError",
@@ -567,7 +570,7 @@ describe("ManagedRelayClient", () => {
     return Effect.gen(function* () {
       const relayClient = yield* ManagedRelay.ManagedRelayClient;
       const error = yield* relayClient
-        .listEnvironments({ clerkToken: "clerk-token" })
+        .listEnvironments({ accountToken: "account-token" })
         .pipe(Effect.flip);
       expect(error.message).toBe("Could not list relay-managed environments.");
     }).pipe(Effect.provide(layerManagedRelayTest(fetchFn)));
@@ -590,7 +593,7 @@ describe("ManagedRelayClient", () => {
     return Effect.gen(function* () {
       const relayClient = yield* ManagedRelay.ManagedRelayClient;
       const error = yield* relayClient
-        .listEnvironments({ clerkToken: "clerk-token" })
+        .listEnvironments({ accountToken: "account-token" })
         .pipe(Effect.flip);
 
       expect(error).toMatchObject({
@@ -618,7 +621,7 @@ describe("ManagedRelayClient", () => {
       const relayClient = yield* ManagedRelay.ManagedRelayClient;
       const error = yield* relayClient
         .linkEnvironment({
-          clerkToken: "clerk-token",
+          accountToken: "account-token",
           payload: {
             proof: "link-proof",
             notificationsEnabled: true,
@@ -656,7 +659,7 @@ describe("ManagedRelayClient", () => {
     return Effect.gen(function* () {
       const relayClient = yield* ManagedRelay.ManagedRelayClient;
       const error = yield* relayClient
-        .listEnvironments({ clerkToken: "clerk-token" })
+        .listEnvironments({ accountToken: "account-token" })
         .pipe(Effect.flip);
 
       expect(error).toMatchObject({
@@ -676,11 +679,11 @@ describe("ManagedRelayClient", () => {
     }).pipe(Effect.provide(layerManagedRelayTest(fetchFn)));
   });
 
-  it.effect("lists account devices through the v2 Clerk bearer client endpoint", () => {
+  it.effect("lists account devices through the v2 Otter account bearer client endpoint", () => {
     const fetchFn = ((input, init) => {
       expect(String(input)).toBe("https://relay.example.test/v2/client/devices");
       expect(init?.headers).toMatchObject({
-        authorization: "Bearer clerk-token",
+        authorization: "Bearer account-token",
       });
       return Promise.resolve(
         Response.json({
@@ -727,7 +730,7 @@ describe("ManagedRelayClient", () => {
 
     return Effect.gen(function* () {
       const relayClient = yield* ManagedRelay.ManagedRelayClient;
-      const devices = yield* relayClient.listDevices({ clerkToken: "clerk-token" });
+      const devices = yield* relayClient.listDevices({ accountToken: "account-token" });
       expect(devices).toMatchObject([
         {
           deviceId: "device-1",

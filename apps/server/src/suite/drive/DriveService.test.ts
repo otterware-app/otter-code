@@ -228,6 +228,7 @@ describe("DriveService", () => {
   it.effect("creates its tables in suite.sqlite", () =>
     Effect.gen(function* () {
       yield* runSuiteMigrations(DRIVE_MIGRATIONS);
+      yield* runSuiteMigrations(DRIVE_MIGRATIONS);
       const sql = yield* SqlClient.SqlClient;
       const tables = yield* sql<{ readonly name: string }>`
         SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'drive_%' ORDER BY name
@@ -363,6 +364,13 @@ describe("DriveService", () => {
       });
       const read = yield* drive.readDocument(DOC_ID);
       expect(read).toMatchObject({ version: 2, text: "# Plan v2" });
+      expect(yield* drive.readDocument(`${BASE}/team-docs/a/q3-plan/v1`)).toMatchObject({
+        version: 1,
+        text: "# Plan v1",
+      });
+      expect(
+        (yield* Effect.flip(drive.documentDetail(`${BASE}/team-docs/a/q3-plan/v99`))).reason,
+      ).toBe("not_found");
     }).pipe(Effect.scoped, Effect.provide(testLayer)),
   );
 
@@ -380,6 +388,41 @@ describe("DriveService", () => {
       });
       const error = yield* Effect.flip(drive.listFolders);
       expect(error.reason).toBe("not_connected");
+    }).pipe(Effect.scoped, Effect.provide(testLayer)),
+  );
+
+  it.effect("resolves offline links after connection and preserves snapshots on API failure", () =>
+    Effect.gen(function* () {
+      const fake = makeFakeDrive();
+      const drive = yield* setup(fake, makeSecretStore());
+      const { link } = yield* drive.linkDocument({
+        threadId: "thread-1",
+        reference: `${BASE}/team-docs/a/q3-plan/v1?sheet=Summary%202026`,
+        source: "manual",
+      });
+      expect(link.syncState).toBe("not_connected");
+      expect(link.url).toBe(`${BASE}/team-docs/a/q3-plan/v1?sheet=Summary%202026`);
+      fake.state.deviceApproved = true;
+      yield* drive.connect;
+      yield* TestClock.adjust(Duration.seconds(5));
+      yield* drive.syncNow;
+      expect((yield* drive.listThreadLinks("thread-1"))[0]).toMatchObject({
+        artifactId: DOC_ID,
+        url: `${BASE}/team-docs/a/q3-plan/v1?sheet=Summary+2026`,
+        version: 1,
+        syncState: "synced",
+        changed: false,
+        snapshot: { title: "Q3 plan", version: 2 },
+      });
+      fake.documents.delete(DOC_ID);
+      yield* drive.syncNow;
+      expect((yield* drive.listThreadLinks("thread-1"))[0]).toMatchObject({
+        artifactId: DOC_ID,
+        url: `${BASE}/team-docs/a/q3-plan/v1?sheet=Summary+2026`,
+        version: 1,
+        syncState: "not_found",
+        snapshot: { title: "Q3 plan", version: 2 },
+      });
     }).pipe(Effect.scoped, Effect.provide(testLayer)),
   );
 

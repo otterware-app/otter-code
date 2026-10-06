@@ -94,6 +94,7 @@ const SETTINGS_SECTION_ICONS: Readonly<
   "/settings/code-intelligence": BracesIcon,
   "/settings/storage": HardDriveIcon,
   "/settings/connections": Link2Icon,
+  "/settings/drive": HardDriveIcon,
   "/settings/archived": ArchiveIcon,
 };
 

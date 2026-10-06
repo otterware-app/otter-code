@@ -39,7 +39,17 @@ describe("parseDriveUrl", () => {
   it("keeps the workbook sheet", () => {
     expect(
       parseDriveUrl("https://drive.otterware.app/finance/a/budget?sheet=Summary%202026"),
-    ).toMatchObject({ reference: "budget", sheet: "Summary 2026" });
+    ).toMatchObject({
+      reference: "budget",
+      sheet: "Summary 2026",
+      url: "https://drive.otterware.app/finance/a/budget?sheet=Summary%202026",
+    });
+    expect(
+      parseDriveUrl("https://app.otterware.dev/finance/a/budget/v2?sheet=Summary%202026"),
+    ).toMatchObject({
+      version: 2,
+      url: "https://drive.otterware.app/finance/a/budget/v2?sheet=Summary%202026",
+    });
   });
 
   it("reads a standalone shared document by its id in the slug position", () => {

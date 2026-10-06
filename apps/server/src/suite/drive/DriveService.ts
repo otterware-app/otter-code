@@ -41,7 +41,6 @@ import {
   type DriveConnection,
   DriveBaseUrlConfig,
   driveErrorOf,
-  driveNotConnected,
   makeDriveConnection,
 } from "./DriveConnection.ts";
 import {
@@ -293,15 +292,17 @@ export const makeWith = (options: { readonly api: DriveApi; readonly store: Driv
         const snapshot = snapshotOfArtifact(artifact, baseUrl, now);
         let changed = false;
         for (const link of links) {
+          const target = parseDriveUrl(link.url, baseUrl);
+          const url = new URL(canonicalArtifactUrl(artifact));
+          if (link.version !== null) url.pathname += `/v${link.version}`;
+          if (target?.type === "document" && target.sheet)
+            url.searchParams.set("sheet", target.sheet);
           const updated = yield* store.recordSync(
             link,
             {
               artifactId: artifact.id,
               // A link to a pinned version keeps naming that version.
-              url:
-                link.version === null
-                  ? canonicalArtifactUrl(artifact)
-                  : `${canonicalArtifactUrl(artifact)}/v${link.version}`,
+              url: url.toString(),
               folderSlug: snapshot.folderSlug,
               slug: artifact.slug,
               snapshot,
@@ -542,34 +543,40 @@ export const makeWith = (options: { readonly api: DriveApi; readonly store: Driv
     // ----- documents -----------------------------------------------------------
 
     const listDocuments: DriveService["Service"]["listDocuments"] = (input) =>
-      withSession((token) =>
-        Effect.gen(function* () {
-          let artifacts: Array<Artifact>;
-          if (input.scope === "shared") {
-            artifacts = (yield* api.sharedWithMe({ token })).flatMap((item) =>
-              item.artifact ? [item.artifact] : [],
-            );
-          } else if (input.scope === "folder") {
-            artifacts = yield* api.listArtifacts({ token, folderId: input.folderId }, 100);
-          } else {
-            // Drive lists one folder at a time: the newest across your top folders.
-            const roots = (yield* folders(token)).slice(0, 12);
-            const lists = yield* Effect.forEach(
-              roots,
-              (folder) => api.listArtifacts({ token, folderId: folder.id }, 20),
-              { concurrency: 4 },
-            );
-            artifacts = lists.flat();
-          }
-          const seen = new Set<string>();
-          return artifacts
-            .filter((artifact) => !seen.has(artifact.id) && seen.add(artifact.id))
-            .map((artifact) => summaryOfArtifact(artifact, baseUrl))
-            .filter((document) => !document.archived && matchesDocumentQuery(document, input.query))
-            .toSorted((left, right) => right.updatedAt.localeCompare(left.updatedAt))
-            .slice(0, 100);
-        }),
-      );
+      input.scope === "folder" && !input.folderId
+        ? Effect.fail(
+            new DriveError({ reason: "invalid_url", detail: "Choose a Drive folder first." }),
+          )
+        : withSession((token) =>
+            Effect.gen(function* () {
+              let artifacts: Array<Artifact>;
+              if (input.scope === "shared") {
+                artifacts = (yield* api.sharedWithMe({ token })).flatMap((item) =>
+                  item.artifact ? [item.artifact] : [],
+                );
+              } else if (input.scope === "folder") {
+                artifacts = yield* api.listArtifacts({ token, folderId: input.folderId }, 100);
+              } else {
+                // Drive lists one folder at a time: the newest across your top folders.
+                const roots = (yield* folders(token)).slice(0, 12);
+                const lists = yield* Effect.forEach(
+                  roots,
+                  (folder) => api.listArtifacts({ token, folderId: folder.id }, 20),
+                  { concurrency: 4 },
+                );
+                artifacts = lists.flat();
+              }
+              const seen = new Set<string>();
+              return artifacts
+                .filter((artifact) => !seen.has(artifact.id) && seen.add(artifact.id))
+                .map((artifact) => summaryOfArtifact(artifact, baseUrl))
+                .filter(
+                  (document) => !document.archived && matchesDocumentQuery(document, input.query),
+                )
+                .toSorted((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+                .slice(0, 100);
+            }),
+          );
 
     /** Writes a document read for its page onto the links that name it, like a sweep would. */
     const recordRead = (artifact: Artifact) =>
@@ -599,6 +606,11 @@ export const makeWith = (options: { readonly api: DriveApi; readonly store: Driv
           .listVersions(artifact.id, { token })
           .pipe(Effect.mapError(driveErrorOf));
         const selected = versions.find((entry) => entry.number === requested) ?? null;
+        if (requested !== null && selected === null)
+          return yield* new DriveError({
+            reason: "not_found",
+            detail: `This document has no version ${requested}.`,
+          });
         const entryPath = selected?.entryPath ?? artifact.currentVersion?.entryPath ?? null;
         const kind = entryPath === null ? null : driveDocumentKind("", entryPath);
         const previewVersion = selected?.number ?? artifact.currentVersion?.number ?? null;
@@ -641,15 +653,16 @@ export const makeWith = (options: { readonly api: DriveApi; readonly store: Driv
 
     const readDocument: DriveService["Service"]["readDocument"] = (reference, version) =>
       Effect.gen(function* () {
-        const { artifact, token } = yield* resolve(reference);
+        const { artifact, token, target } = yield* resolve(reference);
         const summary = summaryOfArtifact(artifact, baseUrl);
-        const number = version ?? summary.version;
+        const pinned = "type" in target && target.type === "document" ? target.version : null;
+        const number = version ?? pinned ?? summary.version;
         if (number === null)
           return yield* new DriveError({
             reason: "not_found",
             detail: "This document has no published version yet.",
           });
-        if (version === undefined && !isDriveTextKind(summary.kind))
+        if (!isDriveTextKind(summary.kind))
           return yield* new DriveError({
             reason: "invalid_url",
             detail: `This is a ${summary.kind ?? "binary"} document; only markdown, text, CSV and TSV are readable as text. Open it in Drive: ${summary.url}`,
@@ -745,7 +758,9 @@ export const makeWith = (options: { readonly api: DriveApi; readonly store: Driv
           viewedVersion: viewed,
           updatedAt: snapshot.updatedAt,
           updatedBy: snapshot.updatedBy,
-          threadIds: [...(current?.threadIds ?? []), ...(threadId === null ? [] : [threadId])],
+          threadIds: [
+            ...new Set([...(current?.threadIds ?? []), ...(threadId === null ? [] : [threadId])]),
+          ],
           shared: (current?.shared ?? false) || isShared,
         });
       };
@@ -754,7 +769,7 @@ export const makeWith = (options: { readonly api: DriveApi; readonly store: Driv
           consider(
             link.artifactId,
             link.snapshot,
-            link.url.replace(/\/v\d+$/u, ""),
+            link.url.replace(/\/v\d+(?=\?|$)/u, ""),
             link.threadId,
             false,
           );

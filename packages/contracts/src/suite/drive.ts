@@ -190,22 +190,24 @@ export function parseDriveUrl(
       reference: third,
       version,
       sheet: sheet && sheet.trim().length > 0 ? sheet : null,
-      url: driveDocumentUrl(baseUrl, first, third, version),
+      url: driveDocumentUrl(baseUrl, first, third, version, sheet),
     };
   }
   return null;
 }
 
-/** `https://drive.otterware.app/<folderSlug>/a/<slugOrId>[/v<N>]`. */
+/** `https://drive.otterware.app/<folderSlug>/a/<slugOrId>[/v<N>][?sheet=<name>]`. */
 export function driveDocumentUrl(
   baseUrl: string,
   folderSlug: string,
   reference: string,
   version?: number | null,
+  sheet?: string | null,
 ): string {
   const origin = new URL(baseUrl).origin;
   const path = `/${encodeURIComponent(folderSlug)}/a/${encodeURIComponent(reference)}`;
-  return `${origin}${path}${version ? `/v${version}` : ""}`;
+  const query = sheet?.trim() ? `?sheet=${encodeURIComponent(sheet)}` : "";
+  return `${origin}${path}${version ? `/v${version}` : ""}${query}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -542,3 +544,22 @@ export const SuiteDriveContract = defineSuiteContract({
     [SUITE_DRIVE_METHODS.subscribeThreadLinks]: AuthOrchestrationReadScope,
   },
 });
+
+/** The native Drive view's isolated IPC boundary; it never receives the API token. */
+export interface DriveDesktopState {
+  readonly url: string;
+  readonly title: string;
+  readonly canGoBack: boolean;
+  readonly canGoForward: boolean;
+  readonly loading: boolean;
+  readonly failed: string | null;
+}
+
+export interface DriveDesktopBridge {
+  openDriveUrl: (url: string, baseUrl: string) => Promise<DriveDesktopState>;
+  setBounds: (
+    bounds: { x: number; y: number; width: number; height: number } | null,
+  ) => Promise<void>;
+  command: (command: "back" | "forward" | "reload") => Promise<void>;
+  onState: (listener: (state: DriveDesktopState) => void) => () => void;
+}

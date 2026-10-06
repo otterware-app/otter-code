@@ -27,6 +27,26 @@ beforeEach(() => {
 });
 
 describe("rightPanelStore", () => {
+  it("keeps Drive document tabs distinct and scoped to their thread", () => {
+    const store = useRightPanelStore.getState();
+    store.open(refA, "drive-documents");
+    store.openDriveDocument(refA, { reference: "doc-a", title: "A" });
+    store.openDriveDocument(refA, { reference: "doc-b", title: "B" });
+    store.openDriveDocument(refA, { reference: "doc-a", title: "A updated" });
+    const state = selectThreadRightPanelState(useRightPanelStore.getState().byThreadKey, refA);
+    expect(state.surfaces).toHaveLength(3);
+    expect(
+      selectActiveRightPanelSurface(useRightPanelStore.getState().byThreadKey, refA),
+    ).toMatchObject({ kind: "drive-document", reference: "doc-a", title: "A updated" });
+    expect(
+      selectThreadRightPanelState(useRightPanelStore.getState().byThreadKey, refB).surfaces,
+    ).toHaveLength(0);
+    store.closeSurface(refA, state.activeSurfaceId!);
+    expect(
+      selectThreadRightPanelState(useRightPanelStore.getState().byThreadKey, refA).surfaces,
+    ).toHaveLength(2);
+  });
+
   it("gives each host/device its own tab and preserves renamed tabs", () => {
     const store = useRightPanelStore.getState();
     const android = {

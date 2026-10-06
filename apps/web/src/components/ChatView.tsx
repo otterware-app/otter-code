@@ -285,6 +285,8 @@ import { ThreadPullRequestsPanel } from "./pullRequest/ThreadPullRequestsPanel";
 import { ThreadLinearIssuesPanel } from "./linear/ThreadLinearIssuesPanel";
 import { LinearIssueDetailPanel } from "./linear/LinearIssueDetailPanel";
 import { LinkLinearIssueDialogHost } from "./linear/LinkLinearIssueDialog";
+import { DriveRightPanelSurface, useDriveDocumentsLauncher } from "~/suite/drive/driveRightPanel";
+import { LinkDriveDocumentDialogHost } from "~/suite/drive/LinkDriveDocumentDialog";
 import { useDeviceState } from "~/state/device";
 import { DeviceSetup } from "./device/DeviceSetup";
 import { Dialog } from "./ui/dialog";
@@ -5313,6 +5315,7 @@ export default function ChatView(props: ChatViewProps) {
     if (!activeThreadRef || !linearIssuesSurfaceAvailable) return;
     useRightPanelStore.getState().open(activeThreadRef, "linear-issues");
   }, [activeThreadRef, linearIssuesSurfaceAvailable]);
+  const driveDocumentsLauncher = useDriveDocumentsLauncher(isServerThread ? activeThreadRef : null);
   const { state: deviceState, loaded: deviceStateLoaded } = useDeviceState(
     activeThreadRef?.environmentId ?? null,
   );
@@ -10768,6 +10771,16 @@ export default function ChatView(props: ChatViewProps) {
         onBack={linkedLinearIssueCount > 1 ? addLinearIssuesSurface : undefined}
         onCite={citeAssistantText}
       />
+    ) : (renderedRightPanelSurface?.kind === "drive-documents" ||
+        renderedRightPanelSurface?.kind === "drive-document") &&
+      activeThreadRef ? (
+      <DriveRightPanelSurface
+        surface={renderedRightPanelSurface}
+        threadRef={activeThreadRef}
+        onCite={(markdown) => {
+          composerRef.current?.insertTextAtEnd(markdown, { ensureLeadingBoundary: true });
+        }}
+      />
     ) : renderedRightPanelSurface?.kind === "device" ? (
       <Suspense fallback={null}>
         <DevicePanel
@@ -11643,6 +11656,7 @@ export default function ChatView(props: ChatViewProps) {
           onAddPullRequest={addPullRequestSurface}
           onAddPullRequests={addPullRequestsSurface}
           onAddLinearIssues={addLinearIssuesSurface}
+          onAddDriveDocuments={driveDocumentsLauncher.onAdd}
           onAddDevice={addDeviceSurface}
           browserAvailable={browserAvailable}
           terminalAvailable={activeProject !== null}
@@ -11651,6 +11665,7 @@ export default function ChatView(props: ChatViewProps) {
           pullRequestAvailable={pullRequestSurfaceAvailable}
           pullRequestsAvailable={pullRequestsSurfaceAvailable}
           linearIssuesAvailable={linearIssuesSurfaceAvailable}
+          driveDocumentsAvailable={driveDocumentsLauncher.available}
           deviceAvailable={activeThreadRef !== null}
         >
           {rightPanelContent}
@@ -11700,6 +11715,7 @@ export default function ChatView(props: ChatViewProps) {
             onAddPullRequest={addPullRequestSurface}
             onAddPullRequests={addPullRequestsSurface}
             onAddLinearIssues={addLinearIssuesSurface}
+            onAddDriveDocuments={driveDocumentsLauncher.onAdd}
             onAddDevice={addDeviceSurface}
             browserAvailable={browserAvailable}
             terminalAvailable={activeProject !== null}
@@ -11708,6 +11724,7 @@ export default function ChatView(props: ChatViewProps) {
             pullRequestAvailable={pullRequestSurfaceAvailable}
             pullRequestsAvailable={pullRequestsSurfaceAvailable}
             linearIssuesAvailable={linearIssuesSurfaceAvailable}
+            driveDocumentsAvailable={driveDocumentsLauncher.available}
             deviceAvailable={activeThreadRef !== null}
           >
             {rightPanelContent}
@@ -11755,6 +11772,7 @@ export default function ChatView(props: ChatViewProps) {
       </AlertDialog>
       <LinkPullRequestDialogHost />
       <LinkLinearIssueDialogHost />
+      <LinkDriveDocumentDialogHost />
       {expandedImage && (
         <ExpandedImageDialog
           key={expandedImageKey(expandedImage)}

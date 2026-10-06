@@ -26,6 +26,7 @@
     ]
   },
   "include": [
+    "../../packages/shared/src/otterAccounts.ts",
     "src",
     "vite",
     "vite.config.ts",

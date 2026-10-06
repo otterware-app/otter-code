@@ -37,17 +37,16 @@ it.effect("rejects malformed or insecure hosted app URLs", () =>
   }),
 );
 
-it.effect("derives direct Clerk OAuth endpoints from statically injected public config", () =>
+it.effect("derives account token and device endpoints with a relay audience", () =>
   Effect.gen(function* () {
     const config = yield* makeCloudCliOAuthConfig({
-      clerkPublishableKeyFallback: "pk_test_Y2xlcmsuZXhhbXBsZS50ZXN0JA==",
-      clerkCliOAuthClientIdFallback: "oauth_client_embedded",
-    }).pipe(provideEnv({}));
-
+      accountsUrlFallback: "https://accounts.otterware.app/v1/auth",
+    }).pipe(provideEnv({ T3CODE_RELAY_URL: "https://relay.code.otterware.app" }));
     assert.deepEqual(config, {
-      tokenEndpoint: "https://clerk.example.test/oauth/token",
-      deviceAuthorizationEndpoint: "https://clerk.example.test/oauth/device_authorization",
-      clientId: "oauth_client_embedded",
+      tokenEndpoint: "https://accounts.otterware.app/v1/auth/oauth2/token",
+      deviceAuthorizationEndpoint: "https://accounts.otterware.app/v1/auth/device/code",
+      resource: "https://relay.code.otterware.app",
+      clientId: "otter-code-cli",
       loopbackPort: 34338,
       redirectUri: "http://127.0.0.1:34338/callback",
       scopes: ["openid", "profile", "email", "offline_access"],

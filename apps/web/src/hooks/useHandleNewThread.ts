@@ -40,6 +40,7 @@ import { environmentSummaries } from "../state/presentation";
 import { environmentServerConfigsAtom } from "../state/server";
 import { resolveThreadRouteTarget } from "../threadRoutes";
 import { legacyProjectCwdPreferenceKey, useUiStateStore } from "../uiStateStore";
+import { useActiveProjectSpace } from "./useProjectSpace";
 import { useClientSettings } from "./useSettings";
 import { useThreadRouteTarget } from "./useThreadRouteTarget";
 import { readUnloadedThreadCount } from "../state/olderSettledShelf";
@@ -50,7 +51,6 @@ interface NewThreadWorkspaceOptions {
   envMode?: DraftThreadEnvMode;
   startFromOrigin?: boolean;
 }
-
 function pickExplicitWorkspaceOptions(options: NewThreadWorkspaceOptions | undefined) {
   return {
     ...(options?.branch !== undefined ? { branch: options.branch } : {}),
@@ -59,7 +59,6 @@ function pickExplicitWorkspaceOptions(options: NewThreadWorkspaceOptions | undef
     ...(options?.startFromOrigin !== undefined ? { startFromOrigin: options.startFromOrigin } : {}),
   };
 }
-
 export function useNewThreadHandler() {
   const projectGroupingSettings = useClientSettings(selectProjectGroupingSettings);
   const router = useRouter();
@@ -67,7 +66,6 @@ export function useNewThreadHandler() {
     const currentRouteParams = router.state.matches[router.state.matches.length - 1]?.params ?? {};
     return resolveThreadRouteTarget(currentRouteParams);
   };
-
   return (
     projectRef: ScopedProjectRef,
     options?: {
@@ -77,7 +75,10 @@ export function useNewThreadHandler() {
       startFromOrigin?: boolean;
       replace?: boolean;
     },
-  ): Promise<{ draftId: DraftId; threadId: ThreadId } | null> => {
+  ): Promise<{
+    draftId: DraftId;
+    threadId: ThreadId;
+  } | null> => {
     const projects = readProjects();
     // Read at call time; status pushes replace the config map and would recreate every sidebar handler.
     const environmentServerConfigs = appAtomRegistry.get(environmentServerConfigsAtom);
@@ -295,7 +296,6 @@ export function useNewThreadHandler() {
         return opened;
       })();
     }
-
     if (
       latestActiveDraftThread &&
       currentRouteTarget?.kind === "draft" &&
@@ -323,7 +323,6 @@ export function useNewThreadHandler() {
         threadId: latestActiveDraftThread.threadId,
       });
     }
-
     const draftId = newDraftId();
     const threadId = newThreadId();
     const createdAt = new Date().toISOString();
@@ -382,7 +381,6 @@ export function useNewThreadHandler() {
     })();
   };
 }
-
 export function useHandleNewThread() {
   const projectOrder = useUiStateStore((store) => store.projectOrder);
   const routeTarget = useThreadRouteTarget();
@@ -397,7 +395,19 @@ export function useHandleNewThread() {
         : useComposerDraftStore.getState().getDraftSession(routeTarget.draftId)
       : null,
   );
-  const projects = useProjects();
+  const allProjects = useProjects();
+  // New threads default to a project in the rail's space, and do not follow
+  // the open thread out of it. A space with no projects (an empty group, or
+  // Chats on a machine without a no-project home) leaves every project open.
+  const { projectFilter } = useActiveProjectSpace();
+  const spaceProjects = projectFilter === null ? allProjects : allProjects.filter(projectFilter);
+  const projects = spaceProjects.length > 0 ? spaceProjects : allProjects;
+  const isProjectInSpace = (() => {
+    if (projectFilter === null || spaceProjects.length === 0) return undefined;
+    const keys = new Set(projects.map((project) => `${project.environmentId}:${project.id}`));
+    return (projectRef: ScopedProjectRef) =>
+      keys.has(`${projectRef.environmentId}:${projectRef.projectId}`);
+  })();
   const handleNewThread = useNewThreadHandler();
   const [defaultProject] = orderItemsByPreferredIds({
     items: projects,
@@ -411,12 +421,12 @@ export function useHandleNewThread() {
   const defaultProjectRef = defaultProject
     ? scopeProjectRef(defaultProject.environmentId, defaultProject.id)
     : null;
-
   return {
     activeDraftThread,
     activeThread,
     defaultProjectRef,
     handleNewThread,
+    isProjectInSpace,
     routeDraftId,
     routeThreadRef,
   };

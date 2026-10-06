@@ -18,6 +18,7 @@ import {
 
 export type SettingsPath =
   | "/settings/projects"
+  | "/settings/project-groups"
   | "/settings/general"
   | "/settings/diagnostics"
   | "/settings/appearance"
@@ -81,6 +82,7 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   "/settings/diagnostics": "Diagnostics",
   "/settings/projects": "Project",
   "/settings/general": "General",
+  "/settings/project-groups": "Project groups",
   "/settings/appearance": "Appearance",
   "/settings/keybindings": "Keybindings",
   "/settings/snap-shot": "SnapShots",
@@ -845,6 +847,12 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["pull request merge squash rebase last selected"],
   },
   {
+    id: "project-groups",
+    title: "Project groups",
+    to: "/settings/project-groups",
+    searchTerms: ["rail spaces workspaces organize group projects repositories"],
+  },
+  {
     id: "browser-extensions",
     title: "Browser extensions",
     to: "/settings/extensions",
@@ -1100,6 +1108,7 @@ const SEARCH_ITEMS_BY_ID = new Map(SETTINGS_SEARCH_ITEMS.map((item) => [item.id,
 const SETTINGS_CATEGORY_SCOPES: Readonly<Record<SettingsPath, SettingsSearchScope | null>> = {
   "/settings/diagnostics": "environment",
   "/settings/projects": "project",
+  "/settings/project-groups": null,
   "/settings/general": null,
   "/settings/appearance": null,
   "/settings/snap-shot": null,

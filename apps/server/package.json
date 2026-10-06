@@ -16,7 +16,7 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/bin.ts",
-    "build:bundle": "vp pack",
+    "build:bundle": "vp pack && node src/suite/mail/worker/buildMailWorker.ts dist/otter-mail-worker.mjs",
     "build:exe": "node scripts/cli.ts build-exe",
     "start": "node dist/bin.mjs",
     "typecheck": "tsc --noEmit",

@@ -4,8 +4,6 @@
  * capabilities report and instructions are appended in.
  */
 import { SuiteCoreModule } from "./core/SuiteCoreModule.ts";
+import { MailModule } from "./mail/MailModule.ts";
 
-export const SUITE_SERVER_MODULES = [
-  SuiteCoreModule,
-  // MailModule,
-] as const;
+export const SUITE_SERVER_MODULES = [SuiteCoreModule, MailModule] as const;

@@ -5,15 +5,14 @@
  */
 import { mergeSuiteContracts, type SuiteRpcTag } from "./contract.ts";
 import { SuiteCoreContract } from "./core.ts";
+import { SuiteMailContract } from "./mail.ts";
 
 export * from "./contract.ts";
 export * from "./core.ts";
 export * from "./home.ts";
+export * from "./mail.ts";
 
-const SuiteContracts = mergeSuiteContracts(
-  SuiteCoreContract,
-  // SuiteMailContract,
-);
+const SuiteContracts = mergeSuiteContracts(SuiteCoreContract, SuiteMailContract);
 
 export const SuiteRpcGroup = SuiteContracts.group;
 export const SUITE_RPC_REQUIRED_SCOPES = SuiteContracts.scopes;

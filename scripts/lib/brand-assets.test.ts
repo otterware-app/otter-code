@@ -84,18 +84,18 @@ describe("brand-assets", () => {
     expect(resolveWebAssetBrandForPackageVersion("0.0.29-preview.20260723.882")).toBe("nightly");
   });
 
-  it("uses the otter icons in every build, development included", () => {
+  it("gives each channel its own otter icon and never a T3 one", () => {
     expect([
       BRAND_ASSET_PATHS.developmentIconComposerProject,
       BRAND_ASSET_PATHS.nightlyIconComposerProject,
       BRAND_ASSET_PATHS.productionIconComposerProject,
     ]).toEqual([
-      "assets/otter/app-icon.icon",
-      "assets/otter/app-icon.icon",
+      "assets/otter-dev/app-icon.icon",
+      "assets/otter-nightly/app-icon.icon",
       "assets/otter/app-icon.icon",
     ]);
-    expect(BRAND_ASSET_PATHS.developmentDesktopIconPng).toMatch(/^assets\/otter\/otter-/);
-    expect(BRAND_ASSET_PATHS.nightlyMacIconPng).toMatch(/^assets\/otter\/otter-/);
-    expect(BRAND_ASSET_PATHS.productionMacIconPng).toMatch(/^assets\/otter\/otter-/);
+    for (const path of Object.values(BRAND_ASSET_PATHS)) {
+      expect(path).toMatch(/^assets\/otter(-dev|-nightly)?\//);
+    }
   });
 });

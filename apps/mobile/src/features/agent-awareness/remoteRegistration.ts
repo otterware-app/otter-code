@@ -370,7 +370,7 @@ const registerDeviceWithRelay = Effect.fn("remoteRegistration.registerDeviceWith
 
   const client = yield* ManagedRelay.ManagedRelayClient;
   yield* client.registerDevice({
-    clerkToken: token,
+    accountToken: token,
     payload,
   });
   if (expectedGeneration !== deviceRegistrationGeneration) {
@@ -411,7 +411,7 @@ const unregisterDeviceWithRelay = Effect.fn("remoteRegistration.unregisterDevice
 
     const client = yield* ManagedRelay.ManagedRelayClient;
     yield* client.unregisterDevice({
-      clerkToken: token,
+      accountToken: token,
       deviceId: input.deviceId,
     });
   },
@@ -500,7 +500,7 @@ const readAgentActivitySnapshot: () => Effect.Effect<
       return null;
     }
     const client = yield* ManagedRelay.ManagedRelayClient;
-    return yield* client.getAgentActivitySnapshot({ clerkToken: token });
+    return yield* client.getAgentActivitySnapshot({ accountToken: token });
   },
   Effect.catch((error) =>
     Effect.sync(() => {
@@ -522,7 +522,7 @@ const registerLiveActivityWithRelay = Effect.fn("remoteRegistration.registerLive
 
     const client = yield* ManagedRelay.ManagedRelayClient;
     yield* client.registerLiveActivity({
-      clerkToken: token,
+      accountToken: token,
       payload: body,
     });
     return true;

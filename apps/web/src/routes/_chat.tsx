@@ -44,7 +44,6 @@ function ChatRouteLayout() {
     </>
   );
 }
-
 export const Route = createFileRoute("/_chat")({
   beforeLoad: async ({ context, location }) => {
     if (

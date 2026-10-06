@@ -1,87 +1,29 @@
-import { useAuth, useClerk } from "@clerk/react";
 import { readConnectAuthorizeRequest } from "@t3tools/shared/connectAuth";
-import { useEffect, useEffectEvent, useRef, useState } from "react";
-
-import {
-  buildConnectCliClerkAuthorizeUrl,
-  connectCliSignInRedirectUrl,
-} from "../../cloud/connectCliAuth";
-import { isElectron } from "../../env";
-import { StandalonePage, StandalonePageHeader } from "../ui/standalone-page";
-import { resolveClerkSignInProps } from "../clerk/authRedirect";
+import { useEffect, useState } from "react";
+import { buildConnectCliAuthorizeUrl } from "../../cloud/connectCliAuth";
+import { StandalonePage } from "../ui/standalone-page";
 import { Button } from "../ui/button";
-
-const invalidLinkMessage = {
-  context: "Authorization request",
-  title: "This connect link is incomplete",
-  description:
-    "The link is missing its authorization request. Re-run `otter-code connect` in your terminal and open the freshly printed URL.",
-} as const;
 
 export function ConnectCliAuthorizeSurface() {
   const [request] = useState(() => readConnectAuthorizeRequest(new URL(window.location.href)));
-  const clerk = useClerk();
-  const { isLoaded, isSignedIn } = useAuth();
-  const signInOpened = useRef(false);
-  const redirecting = useRef(false);
-
-  const openSignIn = () => {
-    if (!request) {
-      return;
-    }
-    clerk.openSignIn(
-      resolveClerkSignInProps(
-        connectCliSignInRedirectUrl(request, window.location.href),
-        isElectron,
-      ),
-    );
-  };
-  const openSignInOnLoad = useEffectEvent(openSignIn);
-
-  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- opens Clerk sign-in or navigates the window to the authorize URL once Clerk has loaded
+  const destination = request ? buildConnectCliAuthorizeUrl(request) : null;
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- navigates the window to the Otter authorize URL once the request is read
   useEffect(() => {
-    if (!request || !isLoaded || redirecting.current) {
-      return;
-    }
-    if (!isSignedIn) {
-      if (!signInOpened.current) {
-        signInOpened.current = true;
-        openSignInOnLoad();
-      }
-      return;
-    }
-    const authorizeUrl = buildConnectCliClerkAuthorizeUrl(request);
-    if (!authorizeUrl) {
-      return;
-    }
-    redirecting.current = true;
-    window.location.assign(authorizeUrl);
-  }, [isLoaded, isSignedIn, request]);
-
-  if (!request) {
-    return (
-      <StandalonePage>
-        <StandalonePageHeader {...invalidLinkMessage} />
-      </StandalonePage>
-    );
-  }
-
+    if (destination) window.location.replace(destination);
+  }, [destination]);
   return (
     <StandalonePage>
-      <StandalonePageHeader
-        context="Browser authorization"
-        title="Connecting your terminal"
-        description={
-          isSignedIn
-            ? "Redirecting to authorize Otter Connect for your CLI…"
-            : "Sign in to continue authorizing Otter Connect for your CLI."
-        }
-      />
-      {isLoaded && !isSignedIn ? (
+      <h1 className="text-2xl font-semibold">
+        {destination ? "Connecting your terminal" : "This connect link is incomplete"}
+      </h1>
+      <p className="mt-3 text-sm text-muted-foreground">
+        {destination
+          ? "Continue with your Otter account to authorize this machine."
+          : "Run otter-code connect in your terminal and open the new link."}
+      </p>
+      {destination ? (
         <div className="mt-6">
-          <Button type="button" onClick={openSignIn}>
-            Sign in
-          </Button>
+          <Button onClick={() => window.location.assign(destination)}>Continue with Otter</Button>
         </div>
       ) : null}
     </StandalonePage>

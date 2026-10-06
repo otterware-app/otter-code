@@ -1,4 +1,7 @@
 import * as Effect from "effect/Effect";
+import { HostProcessPlatform, HostProcessEnvironment } from "@t3tools/shared/hostProcess";
+
+import { nativeMessagingDirectories } from "../preview/extensions/NativeMessagingLocations.ts";
 
 import { receiveProviderAuthCallback, cancelProviderAuthCallback } from "./methods/providerAuth.ts";
 import * as DesktopIpc from "./DesktopIpc.ts";
@@ -82,9 +85,12 @@ export const installDesktopIpcHandlers = Effect.fn("desktop.ipc.installHandlers"
   const ipc = yield* DesktopIpc.DesktopIpc;
   yield* installNotificationBadge();
   yield* PreviewIpc.installPreviewEventForwarding();
+  const platform = yield* HostProcessPlatform;
+  const environment = yield* HostProcessEnvironment;
   yield* Effect.sync(() =>
     PreviewExtensions.installPreviewExtensions({
       preloadPath: `${__dirname}/preview-extensions-preload.cjs`,
+      nativeMessagingDirectories: nativeMessagingDirectories(platform, environment.XDG_CONFIG_HOME),
     }),
   );
 

@@ -24,16 +24,56 @@ perl -0pi -e '
   s/\n[ \t]*echo \x27release-assets\/\*\.exe\x27//g;
 ' .github/workflows/release.yml
 
-# Keep the fork's domain promotion independent of upstream's CLI domain checks.
-OTTER_WEB_PROMOTE_BLOCK='
-          if [[ "${GITHUB_REPOSITORY}" == "otterware-app/otter-code" ]]; then
-            node scripts/otter/promote-web.mjs
+# Keep Cloudflare hosting at the fork's deployment boundary. Upstream retains
+# its Vercel implementation; Otter stages a Worker version and promotes it only
+# after the desktop/CLI release exists.
+python3 - <<'PY'
+from pathlib import Path
+import re
+
+def fork_block(action):
+    return f'''\n          if [[ "${{GITHUB_REPOSITORY}}" == "otterware-app/otter-code" ]]; then
+            node scripts/otter/web-hosting.mjs {action}
             exit 0
           fi
-' perl -0pi -e '
-  s/(  deploy_web:.*?        run: \|\n          set -euo pipefail\n)/$1$ENV{OTTER_WEB_PROMOTE_BLOCK}/s
-    unless /node scripts\/otter\/promote-web\.mjs/;
-' .github/workflows/release.yml
+'''
+
+def adapt_job(text, name, action, entries):
+    pattern = rf"(^  {name}:\n.*?)(?=^  [a-zA-Z0-9_]+:\n|\Z)"
+    match = re.search(pattern, text, re.M | re.S)
+    if not match:
+        raise SystemExit(f"Missing upstream hosting job: {name}")
+    job = match[0]
+    # Replace the previous Otter-only Vercel promotion guard during migration.
+    job = re.sub(r'\n          if \[\[ "\$\{GITHUB_REPOSITORY\}" == "otterware-app/otter-code" \]\]; then\n            node scripts/otter/promote-web.mjs\n            exit 0\n          fi\n', '', job)
+    if f"node scripts/otter/web-hosting.mjs {action}\n" not in job:
+        anchor = "          set -euo pipefail\n"
+        if anchor not in job:
+            raise SystemExit(f"Missing upstream hosting step: {name}")
+        job = job.replace(anchor, anchor + fork_block(action), 1)
+    for section, key, value in entries:
+        if f"      {key}:" not in job:
+            job = job.replace(f"    {section}:\n", f"    {section}:\n      {key}: {value}\n", 1)
+    return text[:match.start()] + job + text[match.end():]
+
+release_path = Path('.github/workflows/release.yml')
+release = release_path.read_text()
+release = adapt_job(release, 'build_web', 'stage', [
+    ('env', 'CLOUDFLARE_API_TOKEN', '${{ secrets.CLOUDFLARE_API_TOKEN }}'),
+    ('env', 'APP_VERSION', '${{ needs.preflight.outputs.version }}'),
+    ('env', 'VITE_HOSTED_APP_CHANNEL', "${{ needs.preflight.outputs.release_channel == 'stable' && 'latest' || 'nightly' }}"),
+    ('outputs', 'version_id', '${{ steps.deploy.outputs.version_id }}'),
+])
+release = adapt_job(release, 'deploy_web', 'promote', [
+    ('env', 'CLOUDFLARE_API_TOKEN', '${{ secrets.CLOUDFLARE_API_TOKEN }}'),
+    ('env', 'WEB_VERSION_ID', '${{ needs.build_web.outputs.version_id }}'),
+])
+release_path.write_text(release)
+preview_path = Path('.github/workflows/web-preview.yml')
+preview_path.write_text(adapt_job(preview_path.read_text(), 'deploy', 'stage-preview', [
+    ('env', 'CLOUDFLARE_API_TOKEN', '${{ secrets.CLOUDFLARE_API_TOKEN }}'),
+]))
+PY
 
 # Point agents at the fork guide from AGENTS.md, which every agent reads first.
 perl -0pi -e '

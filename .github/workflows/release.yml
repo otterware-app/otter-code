@@ -961,8 +961,12 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     outputs:
+      version_id: ${{ steps.deploy.outputs.version_id }}
       deployment_url: ${{ steps.deploy.outputs.deployment_url }}
     env:
+      VITE_HOSTED_APP_CHANNEL: ${{ needs.preflight.outputs.release_channel == 'stable' && 'latest' || 'nightly' }}
+      APP_VERSION: ${{ needs.preflight.outputs.version }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       T3CODE_ACCOUNTS_URL: ${{ needs.relay_public_config.outputs.accounts_url }}
       T3CODE_ACCOUNTS_CLI_CLIENT_ID: ${{ needs.relay_public_config.outputs.accounts_cli_client_id }}
       T3CODE_RELAY_URL: ${{ needs.relay_public_config.outputs.relay_url }}
@@ -1017,6 +1021,11 @@ jobs:
         run: |
           set -euo pipefail
 
+          if [[ "${GITHUB_REPOSITORY}" == "otterware-app/otter-code" ]]; then
+            node scripts/otter/web-hosting.mjs stage
+            exit 0
+          fi
+
           if [[ -z "${VERCEL_TOKEN:-}" || -z "${VERCEL_ORG_ID:-}" || -z "${VERCEL_PROJECT_ID:-}" ]]; then
             echo "Missing one or more required Vercel secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID." >&2
             exit 1
@@ -1058,6 +1067,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
+      WEB_VERSION_ID: ${{ needs.build_web.outputs.version_id }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       DEPLOYMENT_URL: ${{ needs.build_web.outputs.deployment_url }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -1089,7 +1100,7 @@ jobs:
           set -euo pipefail
 
           if [[ "${GITHUB_REPOSITORY}" == "otterware-app/otter-code" ]]; then
-            node scripts/otter/promote-web.mjs
+            node scripts/otter/web-hosting.mjs promote
             exit 0
           fi
 

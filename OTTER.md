@@ -144,8 +144,16 @@ list text that must keep matching what the server or agents emit.
 | Apple                | Team `YNJ5WLH965`, App Store app `6815697255`                                           |
 | Mobile builds        | EAS project `@clary-so/otter-code`                                                      |
 | CLI on npm           | `otter-code` (command `otter-code`), platform builds `@otterware/otter-code-<platform>` |
+| App icons            | `assets/otter` (production), `assets/otter-nightly`, `assets/otter-dev`: see below      |
 
 Secrets live in the repository's Actions secrets and its `production` environment.
+
+The three Icon Composer projects mirror upstream's `assets/prod`, `assets/nightly` and
+`assets/dev`. Production is the otter artwork on black. Nightly and dev reuse upstream's night-sky
+and blueprint layers and shadows, with the otter in place of the T3 mark: a white glyph whose alpha
+is the artwork's brightness, made a little more opaque. `vp run icons:export` regenerates their
+iOS, Linux, Windows and web exports as `assets/README.md` describes; the macOS PNGs still need Icon
+Composer's `macOS pre-Tahoe` export.
 
 ## Releases
 

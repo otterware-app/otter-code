@@ -4,7 +4,7 @@ import { resolveCatalogDependencies } from "./resolve-catalog.ts";
 
 const catalog = {
   effect: "4.0.0-rc.115",
-  "@clerk/backend": "3.18.1",
+  jose: "6.2.12",
   react: "19.2.0",
   undici: "8.11.2",
 };
@@ -14,11 +14,11 @@ describe("resolveCatalogDependencies", () => {
     assert.deepStrictEqual(
       resolveCatalogDependencies(
         {
-          "@clerk/backend": "catalog:",
+          jose: "catalog:",
           "react-dom": "catalog:react",
           "@opencode/protocol>effect": "catalog:",
           "undici@^8": "catalog:",
-          "@clerk/backend@^3": "catalog:",
+          "jose@^6": "catalog:",
           "dbus-next>usocket": "-",
           lodash: "4.17.21",
         },
@@ -26,11 +26,11 @@ describe("resolveCatalogDependencies", () => {
         "apps/desktop",
       ),
       {
-        "@clerk/backend": "3.18.1",
+        jose: "6.2.12",
         "react-dom": "19.2.0",
         "@opencode/protocol>effect": "4.0.0-rc.115",
         "undici@^8": "8.11.2",
-        "@clerk/backend@^3": "3.18.1",
+        "jose@^6": "6.2.12",
         "dbus-next>usocket": "-",
         lodash: "4.17.21",
       },

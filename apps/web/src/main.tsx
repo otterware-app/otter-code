@@ -13,8 +13,6 @@ import { reloadOnceForChunkLoadError } from "./lib/chunkReloadGuard";
 
 const router = startAppServices();
 
-const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
-
 let reloadScheduled = false;
 window.addEventListener("vite:preloadError", (event) => {
   if (reloadOnceForChunkLoadError()) {
@@ -25,13 +23,10 @@ window.addEventListener("vite:preloadError", (event) => {
 
 const app = <AppRoot router={router} />;
 
-// Split by runtime to keep Clerk out of local startup and clerk-js out of browser builds.
-const managedAuthShellModule =
-  clerkPublishableKey && hasCloudPublicConfig()
-    ? isElectron
-      ? import("./components/clerk/ElectronManagedAuthShell")
-      : import("./components/clerk/BrowserManagedAuthShell")
-    : null;
+// Keep account sessions outside the startup graph when cloud features are disabled.
+const managedAuthShellModule = hasCloudPublicConfig()
+  ? import("./components/accounts/ManagedAuthShell")
+  : null;
 
 export const startup = Promise.all([
   managedAuthShellModule?.then((module) => module.default) ?? null,
@@ -43,11 +38,7 @@ export const startup = Promise.all([
     if (reloadScheduled) return;
     ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <React.StrictMode>
-        {ManagedAuthShell && clerkPublishableKey ? (
-          <ManagedAuthShell publishableKey={clerkPublishableKey}>{app}</ManagedAuthShell>
-        ) : (
-          app
-        )}
+        {ManagedAuthShell ? <ManagedAuthShell>{app}</ManagedAuthShell> : app}
       </React.StrictMode>,
     );
   })

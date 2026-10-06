@@ -1,3 +1,4 @@
+import type { ProjectSpaceProject } from "../projectSpaces";
 import { orderItemsByPreferredIds, sortSidebarV2ProjectGroups } from "../components/Sidebar.logic";
 import {
   getProjectOrderKey,

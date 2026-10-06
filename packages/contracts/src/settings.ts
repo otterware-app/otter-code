@@ -1236,6 +1236,17 @@ export const StorageCleanupSettings = Schema.Struct({
 });
 export type StorageCleanupSettings = typeof StorageCleanupSettings.Type;
 
+/**
+ * A named set of projects the rail offers as one space. Members are logical
+ * project keys, so one repository on several machines is one member.
+ */
+export const ProjectGroupSetting = Schema.Struct({
+  id: TrimmedNonEmptyString,
+  name: TrimmedNonEmptyString,
+  projectKeys: Schema.Array(TrimmedNonEmptyString),
+});
+export type ProjectGroupSetting = typeof ProjectGroupSetting.Type;
+
 export const ServerSettings = Schema.Struct({
   worktreeCleanup: WorktreeCleanup.pipe(Schema.withDecodingDefault(Effect.succeed(null))),
   storageCleanup: StorageCleanupSettings.pipe(
@@ -1470,6 +1481,14 @@ export const ServerSettings = Schema.Struct({
     Schema.withDecodingDefault(Effect.succeed({})),
   ),
   linear: LinearSettings.pipe(Schema.withDecodingDefault(Effect.succeed({}))),
+  /**
+   * The rail's project groups, in rail order. A user preference that clients
+   * write to every environment (see `sharedSettings.ts`), so each machine and
+   * the hosted app show the same groups.
+   */
+  railProjectGroups: Schema.Array(ProjectGroupSetting).pipe(
+    Schema.withDecodingDefault(Effect.succeed([])),
+  ),
 });
 export type ServerSettings = typeof ServerSettings.Type;
 
@@ -1782,6 +1801,8 @@ export const ServerSettingsPatch = Schema.Struct({
       promptTemplate: Schema.optionalKey(Schema.String),
     }),
   ),
+  /** Replaces the whole list. */
+  railProjectGroups: Schema.optionalKey(Schema.Array(ProjectGroupSetting)),
 });
 export type ServerSettingsPatch = typeof ServerSettingsPatch.Type;
 

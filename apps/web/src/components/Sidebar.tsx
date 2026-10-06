@@ -134,6 +134,8 @@ import {
 } from "../threadSelectionStore";
 import { useAcknowledgeThreadWoke, useThreadActions } from "../hooks/useThreadActions";
 import { useHandleNewThread } from "../hooks/useHandleNewThread";
+import { useActiveProjectSpace } from "../hooks/useProjectSpace";
+import { useScratchProject } from "../hooks/useScratchProject";
 import { useTerminalFocus } from "../hooks/useTerminalFocus";
 import { isCommandPaletteOpen, openCommandPalette } from "../commandPaletteBus";
 import { startNewThreadFromContext } from "../lib/chatThreadActions";
@@ -2435,6 +2437,7 @@ export default function Sidebar() {
     },
   });
   const newThreadContext = useHandleNewThread();
+  const { scratchEnvironmentId, startScratchThread } = useScratchProject();
   const openAddProjectCommandPalette = useCallback(
     () => openCommandPalette({ open: "add-project" }),
     [],
@@ -2475,10 +2478,17 @@ export default function Sidebar() {
     [environments],
   );
   const environmentMachineById = useEnvironmentMachines();
+  // The rail's space decides which projects the list (and its project picker)
+  // covers at all; the project scope below narrows within it.
+  const { space, projectFilter } = useActiveProjectSpace();
+  const spaceProjects = useMemo(
+    () => (projectFilter === null ? projects : projects.filter(projectFilter)),
+    [projects, projectFilter],
+  );
   const orderedProjects = useMemo(
     () =>
       orderItemsByPreferredIds({
-        items: projects,
+        items: spaceProjects,
         preferredIds: projectOrder,
         getId: getProjectOrderKey,
         getPreferenceIds: (project) => [
@@ -2486,12 +2496,12 @@ export default function Sidebar() {
           legacyProjectCwdPreferenceKey(project.workspaceRoot),
         ],
       }),
-    [projectOrder, projects],
+    [projectOrder, spaceProjects],
   );
   const unsortedProjectGroups = useMemo(
     () =>
       buildSidebarProjectSnapshots({
-        projects: sidebarProjectSortOrder === "manual" ? orderedProjects : projects,
+        projects: sidebarProjectSortOrder === "manual" ? orderedProjects : spaceProjects,
         settings: projectGroupingSettings,
         primaryEnvironmentId,
         resolveEnvironmentLabel: (environmentId) => environmentLabelById.get(environmentId) ?? null,
@@ -2501,7 +2511,7 @@ export default function Sidebar() {
       orderedProjects,
       primaryEnvironmentId,
       projectGroupingSettings,
-      projects,
+      spaceProjects,
       sidebarProjectSortOrder,
     ],
   );
@@ -2561,13 +2571,13 @@ export default function Sidebar() {
   // while the popup search filters the same collection.
   const projectScopeItems = useMemo(
     () => [
-      { value: "all", label: "All projects" },
+      { value: "all", label: space.name },
       ...projectGroups.map((project) => ({
         value: project.projectKey,
         label: project.displayName,
       })),
     ],
-    [projectGroups],
+    [projectGroups, space.name],
   );
   // Same-named projects on two machines are only told apart by where they
   // live, so rows on another machine carry its icon once the catalog spans
@@ -2614,17 +2624,24 @@ export default function Sidebar() {
         : (projectGroups.find((project) => project.projectKey === projectScopeKey) ?? null),
     [projectGroups, projectScopeKey],
   );
-  const scopedProjectKeys = useMemo(
-    () =>
-      scopedProjectGroup === null
-        ? null
-        : new Set(
-            scopedProjectGroup.memberProjectRefs.map(
+  // Threads of the scoped project, else of every project in the space.
+  const scopedProjectKeys = useMemo(() => {
+    const scopeGroups =
+      scopedProjectGroup !== null
+        ? [scopedProjectGroup]
+        : projectFilter !== null
+          ? projectGroups
+          : null;
+    return scopeGroups === null
+      ? null
+      : new Set(
+          scopeGroups.flatMap((group) =>
+            group.memberProjectRefs.map(
               (projectRef) => `${projectRef.environmentId}:${projectRef.projectId}`,
             ),
           ),
-    [scopedProjectGroup],
-  );
+        );
+  }, [projectGroups, scopedProjectGroup, projectFilter]);
   // A persisted scope whose project is gone falls back to all projects, but
   // only after every catalog environment has a live project snapshot. Cached
   // or disconnected environments cannot establish that the project is gone.
@@ -4820,6 +4837,22 @@ export default function Sidebar() {
   // for multi-project setups.
   const handleNewThreadClick = useCallback(
     (event?: ReactMouseEvent) => {
+      // Chats holds threads without a project, so a new one starts there on
+      // the machine in use, as chat.new does. A machine that offers no such
+      // home falls through to the ordinary new thread.
+      const scratchTarget =
+        space.kind === "chats"
+          ? scratchEnvironmentId(
+              newThreadContext.activeThread?.environmentId ??
+                newThreadContext.activeDraftThread?.environmentId ??
+                primaryEnvironmentId,
+            )
+          : null;
+      if (scratchTarget !== null) {
+        if (isMobile) setOpenMobile(false);
+        void startScratchThread(scratchTarget);
+        return;
+      }
       // One project: nothing to pick, create immediately. Shift+click creates
       // directly in the current project even with several projects, skipping
       // the palette picker.
@@ -4830,13 +4863,23 @@ export default function Sidebar() {
           activeThread: newThreadContext.activeThread ?? undefined,
           defaultProjectRef: newThreadContext.defaultProjectRef,
           handleNewThread: newThreadContext.handleNewThread,
+          isProjectInSpace: newThreadContext.isProjectInSpace,
         });
         return;
       }
       if (isMobile) setOpenMobile(false);
       openCommandPalette({ open: "new-thread-in" });
     },
-    [isMobile, newThreadContext, projectGroups.length, setOpenMobile],
+    [
+      isMobile,
+      newThreadContext,
+      primaryEnvironmentId,
+      projectGroups.length,
+      scratchEnvironmentId,
+      setOpenMobile,
+      space.kind,
+      startScratchThread,
+    ],
   );
 
   // The button mirrors chat.new: in multi-project setups both route through
@@ -4852,7 +4895,7 @@ export default function Sidebar() {
     (projectGroups.length <= 1 ? shortcutLabelForCommand(keybindings, "chat.newLocal") : undefined);
   const newThreadInProjectShortcutLabel = shortcutLabelForCommand(keybindings, "chat.newLocal");
   // The space the rail chose, named in the sidebar's heading.
-  const spaceTitle = scopedProjectGroup?.displayName ?? "All projects";
+  const spaceTitle = scopedProjectGroup?.displayName ?? space.name;
   return (
     <>
       <ThreadContextDragGhost />
@@ -5433,8 +5476,8 @@ export default function Sidebar() {
                     Add project
                   </button>
                 </>
-              ) : scopedProjectGroup ? (
-                `No threads in ${scopedProjectGroup.displayName} yet`
+              ) : scopedProjectGroup || space.kind !== "all" ? (
+                `No threads in ${scopedProjectGroup?.displayName ?? space.name} yet`
               ) : (
                 "No threads yet"
               )}

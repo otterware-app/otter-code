@@ -45,13 +45,19 @@ and worktree while you stay in the new thread composer. This requires a Git proj
 
 ## Switch projects
 
-On web and desktop, the rail down the window's left edge holds **All projects**, then
-each of your projects, **+** to add one, and **Pull requests**. Pick a project to list
-only its threads in the sidebar. The sidebar's heading names the project; click it to
-search every project by name. **Usage** and **Settings** sit at the foot of the rail.
-In a narrow browser window, the rail runs down the edge of the sidebar. With
-**Sidebar (legacy)** on, which groups threads by project itself, the rail holds no
-projects.
+On web and desktop, the rail down the window's left edge holds **All projects**,
+**Chats** (threads without a project), your project groups, and **Pull requests**.
+Pick a space to list only its threads in the sidebar. In a project group, new threads
+start in one of the group's projects, and the project picker offers only those. In
+**Chats**, new threads start without a project. The sidebar's heading names the space;
+click it to narrow the list to one of its projects. **Usage** and **Settings** sit at
+the foot of the rail. In a narrow browser window, the rail runs down the edge of the
+sidebar. With **Sidebar (legacy)** on, which groups threads by project itself, the
+rail holds no spaces.
+
+To make a group, open **Settings → Project groups**, choose **New group**, name it,
+and add projects. A project can belong to several groups. Groups are saved on every
+connected server, so each device shows the same ones.
 
 ## Pin and reorder threads
 

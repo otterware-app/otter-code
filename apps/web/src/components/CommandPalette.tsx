@@ -84,6 +84,7 @@ import { useAtomValue } from "@effect/atom-react";
 import { isDesktopLocalConnectionTarget } from "../connection/desktopLocal";
 import { useDesktopLocalBootstraps } from "../connection/useDesktopLocalBootstraps";
 import { useHandleNewThread } from "../hooks/useHandleNewThread";
+import { useActiveProjectSpace } from "../hooks/useProjectSpace";
 import { useOpenPanelPullRequestUrl } from "../hooks/useOpenPanelPullRequestUrl";
 import { writeTextToClipboard } from "../hooks/useCopyToClipboard";
 import { useClientSettings } from "../hooks/useSettings";
@@ -739,8 +740,9 @@ function OpenCommandPaletteDialog(props: {
   const desktopLocalBootstraps = useDesktopLocalBootstraps();
   const primaryEnvironmentId = usePrimaryEnvironmentId();
   const availableSettingsSearchItems = useAvailableSettingsSearchItems();
-  const { activeDraftThread, activeThread, defaultProjectRef, handleNewThread } =
+  const { activeDraftThread, activeThread, defaultProjectRef, handleNewThread, isProjectInSpace } =
     useHandleNewThread();
+  const { space, projectFilter } = useActiveProjectSpace();
   const projects = useProjects();
   const referenceThreadRef =
     pathname === "/pull-requests"
@@ -964,8 +966,9 @@ function OpenCommandPaletteDialog(props: {
         activeThread: activeThread ?? undefined,
         defaultProjectRef,
         handleNewThread,
+        isProjectInSpace,
       }),
-    [activeDraftThread, activeThread, defaultProjectRef, handleNewThread],
+    [activeDraftThread, activeThread, defaultProjectRef, handleNewThread, isProjectInSpace],
   );
   const projectPickerEntries = useMemo(
     () =>
@@ -1316,8 +1319,11 @@ function OpenCommandPaletteDialog(props: {
       enumerateCommandPaletteItems([
         ...buildProjectActionItems({
           // The no-project home shows once, as the "No project" item below.
+          // A project group offers only its own projects.
           projects: pickerProjects.filter(
-            (project) => !isScratchProject(project, scratchWorkspaceRootFor(project.environmentId)),
+            (project) =>
+              !isScratchProject(project, scratchWorkspaceRootFor(project.environmentId)) &&
+              (space.kind !== "group" || projectFilter === null || projectFilter(project)),
           ),
           valuePrefix: "new-thread-in",
           searchTerms: (project) => {
@@ -1388,9 +1394,11 @@ function OpenCommandPaletteDialog(props: {
       handleNewThread,
       pickerProjects,
       projectEnvironmentLocationById,
+      projectFilter,
       projectGroupByTargetKey,
       scratchTargetEnvironmentId,
       scratchWorkspaceRootFor,
+      space.kind,
       startScratchThread,
     ],
   );
@@ -1905,6 +1913,7 @@ function OpenCommandPaletteDialog(props: {
             activeThread: activeThread ?? undefined,
             defaultProjectRef,
             handleNewThread,
+            isProjectInSpace,
           });
         },
       });

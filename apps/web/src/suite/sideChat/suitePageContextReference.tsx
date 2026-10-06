@@ -6,7 +6,10 @@
  * the kind as an unknown record and keeps it, so threads stay readable there.
  */
 import { ComposerContextId, type ComposerContextRecord, type ProjectId } from "@t3tools/contracts";
-import { formatComposerContextReference } from "@t3tools/shared/composerContextReferences";
+import {
+  formatComposerContextReference,
+  sanitizeComposerContextLabel,
+} from "@t3tools/shared/composerContextReferences";
 import type { ReactNode } from "react";
 
 import { ContextChipShell } from "../../components/contextChipParts";
@@ -31,7 +34,10 @@ export function suitePageContextDecoration(
   extra?: { readonly codeProjectId?: ProjectId | undefined },
 ): ChatViewOutgoingMessageDecoration {
   const contextId = ComposerContextId.make(`suite-page-${randomUUID().slice(0, 12)}`);
-  const label = suitePageContextLabel(context);
+  const label = sanitizeComposerContextLabel(
+    suitePageContextLabel(context),
+    SUITE_PAGE_CONTEXT_KIND,
+  );
   const record: ComposerContextRecord = {
     version: 1,
     contextId,

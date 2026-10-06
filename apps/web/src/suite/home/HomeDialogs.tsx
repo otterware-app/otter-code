@@ -100,6 +100,7 @@ function ListInput(props: {
   return (
     <Field label={props.label} {...(props.hint ? { hint: props.hint } : {})}>
       <Input
+        aria-label={props.label}
         value={props.value}
         placeholder={props.placeholder}
         onChange={(event) => props.onChange(event.target.value)}
@@ -271,6 +272,7 @@ function ProjectForm({
               <Field label="Name">
                 <Input
                   autoFocus
+                  aria-label="Project name"
                   value={name}
                   placeholder="Acme rollout"
                   onChange={(event) => setName(event.target.value)}
@@ -520,6 +522,7 @@ function ViewForm({
           <Field label="Name">
             <Input
               autoFocus
+              aria-label="View name"
               value={name}
               placeholder="Waiting on me"
               onChange={(event) => setName(event.target.value)}
@@ -581,6 +584,7 @@ function ViewForm({
           </Field>
           <Field label="Kinds" hint="e.g. agent-approval, reply-needed">
             <Input
+              aria-label="Kinds"
               value={kinds}
               placeholder="any kind"
               onChange={(event) => setKinds(event.target.value)}

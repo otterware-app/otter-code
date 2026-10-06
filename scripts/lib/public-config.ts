@@ -1,13 +1,17 @@
 // @effect-diagnostics nodeBuiltinImport:off - Build bootstrap reads optional root env files before an Effect runtime exists.
+import {
+  OTTER_ACCOUNTS_URL,
+  OTTER_CODE_RELAY_URL,
+  ACCOUNT_CLIENT_IDS,
+} from "../../packages/shared/src/otterAccounts.ts";
 import * as NodeFS from "node:fs";
 import * as NodePath from "node:path";
 import * as NodeURL from "node:url";
 import * as NodeUtil from "node:util";
 
 export interface T3CodePublicConfig {
-  readonly clerkPublishableKey: string | undefined;
-  readonly clerkJwtTemplate: string | undefined;
-  readonly clerkCliOAuthClientId: string | undefined;
+  readonly accountsUrl: string | undefined;
+  readonly accountsCliClientId: string | undefined;
   readonly relayUrl: string | undefined;
   readonly mobileOtlpTracesUrl: string | undefined;
   readonly mobileOtlpTracesDataset: string | undefined;
@@ -38,24 +42,17 @@ export function loadRepoEnv({
     ...rootEnv,
     ...localEnv,
     ...baseEnv,
-    ...(config.clerkPublishableKey
+    ...(config.accountsUrl
       ? {
-          T3CODE_CLERK_PUBLISHABLE_KEY: config.clerkPublishableKey,
-          VITE_CLERK_PUBLISHABLE_KEY: config.clerkPublishableKey,
-          EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: config.clerkPublishableKey,
+          T3CODE_ACCOUNTS_URL: config.accountsUrl,
+          VITE_ACCOUNTS_URL: config.accountsUrl,
+          EXPO_PUBLIC_ACCOUNTS_URL: config.accountsUrl,
         }
       : {}),
-    ...(config.clerkJwtTemplate
+    ...(config.accountsCliClientId
       ? {
-          T3CODE_CLERK_JWT_TEMPLATE: config.clerkJwtTemplate,
-          VITE_CLERK_JWT_TEMPLATE: config.clerkJwtTemplate,
-          EXPO_PUBLIC_CLERK_JWT_TEMPLATE: config.clerkJwtTemplate,
-        }
-      : {}),
-    ...(config.clerkCliOAuthClientId
-      ? {
-          T3CODE_CLERK_CLI_OAUTH_CLIENT_ID: config.clerkCliOAuthClientId,
-          VITE_CLERK_CLI_OAUTH_CLIENT_ID: config.clerkCliOAuthClientId,
+          T3CODE_ACCOUNTS_CLI_CLIENT_ID: config.accountsCliClientId,
+          VITE_ACCOUNTS_CLI_CLIENT_ID: config.accountsCliClientId,
         }
       : {}),
     ...(config.relayUrl
@@ -105,24 +102,18 @@ export function loadRepoEnv({
 
 export function resolvePublicConfig(...sources: readonly Environment[]): T3CodePublicConfig {
   return {
-    clerkPublishableKey: firstNonEmpty(
-      sources,
-      "T3CODE_CLERK_PUBLISHABLE_KEY",
-      "VITE_CLERK_PUBLISHABLE_KEY",
-      "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY",
-    ),
-    clerkJwtTemplate: firstNonEmpty(
-      sources,
-      "T3CODE_CLERK_JWT_TEMPLATE",
-      "VITE_CLERK_JWT_TEMPLATE",
-      "EXPO_PUBLIC_CLERK_JWT_TEMPLATE",
-    ),
-    clerkCliOAuthClientId: firstNonEmpty(
-      sources,
-      "T3CODE_CLERK_CLI_OAUTH_CLIENT_ID",
-      "VITE_CLERK_CLI_OAUTH_CLIENT_ID",
-    ),
-    relayUrl: firstNonEmpty(sources, "T3CODE_RELAY_URL", "VITE_T3CODE_RELAY_URL"),
+    accountsUrl:
+      firstNonEmpty(
+        sources,
+        "T3CODE_ACCOUNTS_URL",
+        "VITE_ACCOUNTS_URL",
+        "EXPO_PUBLIC_ACCOUNTS_URL",
+      ) ?? OTTER_ACCOUNTS_URL,
+    accountsCliClientId:
+      firstNonEmpty(sources, "T3CODE_ACCOUNTS_CLI_CLIENT_ID", "VITE_ACCOUNTS_CLI_CLIENT_ID") ??
+      ACCOUNT_CLIENT_IDS.cli,
+    relayUrl:
+      firstNonEmpty(sources, "T3CODE_RELAY_URL", "VITE_T3CODE_RELAY_URL") ?? OTTER_CODE_RELAY_URL,
     mobileOtlpTracesUrl: firstNonEmpty(
       sources,
       "T3CODE_MOBILE_OTLP_TRACES_URL",

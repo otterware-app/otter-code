@@ -137,10 +137,10 @@ list text that must keep matching what the server or agents emit.
 | Data home            | `~/.otter-code` (never `~/.t3`, so it can sit beside an installed T3 Code)              |
 | Background service   | `otter-code.service` (systemd user unit), `dev.otterware.code.service` (launchd)        |
 | Releases and updates | GitHub Releases of `otterware-app/otter-code`, nightly channel                          |
-| Relay                | `https://relay.otterware.dev` (Cloudflare Worker, deployed from `infra/relay`)          |
-| Tunnels              | `prod-<digest>.otterware.dev`, one per linked machine                                   |
-| Hosted web app       | `https://code.otterware.dev` (Vercel project `otter-code-web`)                          |
-| Sign-in              | Clerk at `clerk.otterware.dev`                                                          |
+| Relay                | `https://relay.code.otterware.app` (Cloudflare Worker, deployed from `infra/relay`)     |
+| Tunnels              | `prod-<digest>.otterware.app`, one per linked machine                                   |
+| Hosted web app       | `https://code.otterware.app` (Vercel project `otter-code-web`)                          |
+| Sign-in              | Otter Accounts at `accounts.otterware.app`                                              |
 | Apple                | Team `YNJ5WLH965`, App Store app `6815697255`                                           |
 | Mobile builds        | EAS project `@clary-so/otter-code`                                                      |
 | CLI on npm           | `otter-code` (command `otter-code`), platform builds `@otterware/otter-code-<platform>` |
@@ -158,7 +158,7 @@ Secrets live in the repository's Actions secrets and its `production` environmen
   tagged `nightly` and also `latest`, so `npx otter-code` and `npm i -g otter-code` get the newest
   build. The token is needed because new packages have no npm trusted publisher yet.
 - **Relay:** `Deploy T3 Connect relay` runs on every push to `main`. The relay adopts the
-  existing `otterware.dev` zone and a PlanetScale database with a retain policy. Never run
+  existing `otterware.app` zone and a PlanetScale database with a retain policy. Never run
   `alchemy destroy` against `prod`. Its PlanetScale service token (`PLANETSCALE_API_TOKEN*`)
   needs `delete_production_branch_password` and `delete_branch_password` on the database.
   Alchemy runs migrations as a temporary role and deletes it with `postgres` as successor, which
@@ -176,7 +176,7 @@ Secrets live in the repository's Actions secrets and its `production` environmen
   ```
 
   Use a **release** Xcode; App Store Connect rejects beta toolchains (error 90534). Public build
-  config (`T3CODE_CLERK_*`, `T3CODE_RELAY_URL`) is stored as EAS environment variables. Don't put
+  config (`T3CODE_ACCOUNTS_URL`, `T3CODE_RELAY_URL`) is stored as EAS environment variables. Don't put
   it in a gitignored `.env.local`: EAS builds from a clean copy of the repo, and the runtime
   fingerprints would not match.
 
@@ -221,18 +221,11 @@ Deliberately not copied:
 - **Stale link:** if a machine says it is "already linked to a different cloud account", clear the
   old link with `t3 connect logout --base-dir ~/.otter-code`. On the desktop, run the CLI through
   the app binary with `ELECTRON_RUN_AS_NODE=1` and `Contents/Resources/app.asar/apps/server/dist/bin.mjs`.
-- **SSH-only hosts:** the desktop has no Connect switch for SSH environments, and Clerk's device
-  grant is not enabled, so link from the host over an SSH session that forwards the loopback
-  OAuth callback:
-
-  ```sh
-  ssh -tt -L 34338:127.0.0.1:34338 <host> \
-    'T=$(ls -d ~/.otter-code/runtime/versions/*/t3 | sort -V | tail -1);
-     env -u SSH_CONNECTION -u SSH_TTY -u SSH_CLIENT "$T" connect --base-dir ~/.otter-code'
-  ```
-
-  Open the printed `code.otterware.dev/connect` link on the local machine, approve it, then
-  restart `otter-code.service` on the host so it brings the link up.
+- **SSH-only hosts:** run `otter-code connect` on the host and approve its connection code at
+  Otter Accounts. No SSH callback forwarding is needed. Restart the host service after linking.
+- **Account cutover:** old provider tokens and links are not migrated by email. Update the app,
+  clear an old link with `otter-code connect logout --base-dir ~/.otter-code`, sign in to Otter
+  Accounts and reconnect. Local projects and thread history stay in place.
 
 - **Relay reaching tunnels:** the relay Worker needs the `global_fetch_strictly_public`
   compatibility flag (`infra/relay/src/worker.ts`), because tunnels share the relay's zone.
@@ -245,13 +238,13 @@ Delegating Linear issues to Otter needs one Linear OAuth app owned by Otter, con
 Without it the relay reports Linear as unavailable and clients hide the section.
 
 - Create the app at `linear.app/settings/api/applications/new` with distribution **public**, callback
-  URL `https://relay.otterware.dev/v1/linear/oauth/callback`, webhooks on, webhook URL
-  `https://relay.otterware.dev/v1/linear/webhook`, and the **Agent session events**, **Issues**,
+  URL `https://relay.code.otterware.app/v1/linear/oauth/callback`, webhooks on, webhook URL
+  `https://relay.code.otterware.app/v1/linear/webhook`, and the **Agent session events**, **Issues**,
   **Comments**, and **OAuth app revoked** categories. Issues and Comments are what make linked
   issues update right away; without them, machines fall back to polling.
 - Store the client ID as the `LINEAR_CLIENT_ID` repository variable, and the client secret and webhook
   signing secret as the `LINEAR_CLIENT_SECRET` and `LINEAR_WEBHOOK_SECRET` secrets in the `production`
-  environment. `HOSTED_APP_URL` is optional and defaults to `https://code.otterware.dev`.
+  environment. `HOSTED_APP_URL` is optional and defaults to `https://code.otterware.app`.
 - The relay generates its own keys for sealing Linear tokens and signing OAuth state. Rotating them
   forces every workspace to reinstall and every user to relink.
 
@@ -263,3 +256,5 @@ Without it the relay reports Linear as unavailable and clients hide the section.
 - **macOS runners:** macOS jobs run on `macos-15`. On GitHub's `macos-26` image, electron-builder
   below 26.16.1 fails to unlock its signing keychain. Move to `macos-26` in the generated script
   once upstream pins 26.16.1 or later.
+
+The account integration is an Otter-owned boundary. Upstream continues to supply the editor, providers, orchestration and transport; its Clerk dependencies and account screens must not return during a sync. Code uses the shared account IDs through OAuth PKCE on every client, with online session validation at the relay. Keep the OAuth clients and issuer aligned with Otter Accounts when resolving upstream auth changes.

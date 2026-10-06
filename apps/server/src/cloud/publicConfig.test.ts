@@ -82,65 +82,34 @@ it.effect("rejects malformed or insecure hosted app URLs", () =>
   }),
 );
 
-it.effect("derives direct Clerk OAuth endpoints from statically injected public config", () =>
+it.effect("derives account token and device endpoints with a relay audience", () =>
   Effect.gen(function* () {
     const config = yield* makeCloudCliOAuthConfig({
-      clerkPublishableKeyFallback: "pk_test_Y2xlcmsuZXhhbXBsZS50ZXN0JA==",
-      clerkCliOAuthClientIdFallback: "oauth_client_embedded",
-    }).pipe(provideEnv({}));
-
+      accountsUrlFallback: "https://accounts.otterware.app/v1/auth",
+    }).pipe(provideEnv({ T3CODE_RELAY_URL: "https://relay.code.otterware.app" }));
     assert.deepEqual(config, {
-      tokenEndpoint: "https://clerk.example.test/oauth/token",
-      deviceAuthorizationEndpoint: "https://clerk.example.test/oauth/device_authorization",
-      clientId: "oauth_client_embedded",
+      tokenEndpoint: "https://accounts.otterware.app/v1/auth/oauth2/token",
+      deviceAuthorizationEndpoint: "https://accounts.otterware.app/v1/auth/device/code",
+      resource: "https://relay.code.otterware.app",
+      clientId: "otter-code-cli",
       loopbackPort: 34338,
       redirectUri: "http://127.0.0.1:34338/callback",
       scopes: ["openid", "profile", "email", "offline_access"],
     });
   }),
 );
-
-it.effect("prefers runtime Clerk OAuth config overrides over statically injected values", () =>
+it.effect("rejects malformed or insecure account issuers as typed failures", () =>
   Effect.gen(function* () {
-    const config = yield* makeCloudCliOAuthConfig({
-      clerkPublishableKeyFallback: "pk_test_ZW1iZWRkZWQuZXhhbXBsZS50ZXN0JA==",
-      clerkCliOAuthClientIdFallback: "oauth_client_embedded",
-    }).pipe(
-      provideEnv({
-        T3CODE_CLERK_PUBLISHABLE_KEY: "pk_test_cnVudGltZS5leGFtcGxlLnRlc3Qk",
-        T3CODE_CLERK_CLI_OAUTH_CLIENT_ID: "oauth_client_runtime",
-      }),
-    );
-
-    assert.equal(config.tokenEndpoint, "https://runtime.example.test/oauth/token");
-    assert.equal(config.clientId, "oauth_client_runtime");
-  }),
-);
-
-it.effect("requires Clerk OAuth config when the server bundle has no injected values", () =>
-  makeCloudCliOAuthConfig({
-    clerkPublishableKeyFallback: "",
-    clerkCliOAuthClientIdFallback: "",
-  }).pipe(provideEnv({}), Effect.flip),
-);
-
-it.effect("reports malformed Clerk publishable keys as typed configuration failures", () =>
-  Effect.gen(function* () {
-    const result = yield* makeCloudCliOAuthConfig({
-      clerkPublishableKeyFallback: "pk_test_not-base64!!",
-      clerkCliOAuthClientIdFallback: "oauth_client_embedded",
-    }).pipe(provideEnv({}), Effect.result);
-
-    assert.isTrue(Result.isFailure(result));
-    if (Result.isFailure(result)) {
-      assert.equal(result.failure.cause._tag, "SourceError");
-      if (result.failure.cause._tag === "SourceError") {
-        assert.equal(
-          result.failure.cause.message,
-          "Failed to derive Clerk Frontend API URL from the publishable key.",
-        );
-        assert.instanceOf(result.failure.cause.cause, Error);
-      }
+    for (const issuer of [
+      "pk_test_invalid",
+      "http://accounts.example/v1/auth",
+      "https://accounts.example/v1/auth?key=secret",
+    ]) {
+      const result = yield* makeCloudCliOAuthConfig({ accountsUrlFallback: issuer }).pipe(
+        provideEnv({ T3CODE_RELAY_URL: "https://relay.code.otterware.app" }),
+        Effect.result,
+      );
+      assert.isTrue(Result.isFailure(result));
     }
   }),
 );

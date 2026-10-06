@@ -1,7 +1,7 @@
 import { ListRow } from "../../components/ui/ListRow";
 import * as Dialog from "../../components/ui/Dialog";
 import { ScreenScrollView as ScrollView } from "../../components/ui/ScreenScrollView";
-import { useAuth } from "@clerk/expo";
+import { useAuth } from "../accounts/AccountProvider";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as Haptics from "expo-haptics";
 import {
@@ -346,15 +346,20 @@ function PairingScanCard(props: {
           )}
         </View>
         <Text className={cn("text-center text-sm", light ? "text-black/70" : "text-white/80")}>
-          Scan the code from t3 pair or desktop Connections settings
+          Scan the code from otter-code pair or desktop Connections settings
         </Text>
       </View>
     </Pressable>
   );
 }
 
+/**
+ * Managed-relay alternative to manual pairing: signed in, the account's
+ * published environments connect with a switch; signed out, one row opens the
+ * Otter account sheet.
+ */
 function T3ConnectSection() {
-  const { isLoaded, isSignedIn } = useAuth({ treatPendingAsSignedOut: false });
+  const { isLoaded, isSignedIn } = useAuth();
   const navigation = useNavigation();
   const { connectedEnvironments, onSetEnvironmentEnabled, onRemoveEnvironmentPress } =
     useRemoteConnections();

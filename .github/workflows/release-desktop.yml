@@ -33,6 +33,10 @@ on:
         required: false
       AZURE_TRUSTED_SIGNING_PUBLISHER_NAME:
         required: false
+      OTTER_MAIL_GOOGLE_CLIENT_SECRET:
+        required: false
+      T3CODE_GOOGLE_CLIENT_SECRET:
+        required: false
     inputs:
       label:
         required: true
@@ -103,6 +107,13 @@ jobs:
       T3CODE_ACCOUNTS_URL: ${{ inputs.accounts_url }}
       T3CODE_ACCOUNTS_CLI_CLIENT_ID: ${{ inputs.accounts_cli_client_id }}
       T3CODE_RELAY_URL: ${{ inputs.relay_url }}
+      # Otterware's Google OAuth clients for the Mail and Calendar modules. The
+      # CLI single-executable rebuilds the server here, so the build sees them
+      # too. Empty when unset; nothing requires them.
+      OTTER_MAIL_GOOGLE_CLIENT_ID: ${{ vars.OTTER_MAIL_GOOGLE_CLIENT_ID }}
+      OTTER_MAIL_GOOGLE_CLIENT_SECRET: ${{ secrets.OTTER_MAIL_GOOGLE_CLIENT_SECRET }}
+      T3CODE_GOOGLE_CLIENT_ID: ${{ vars.T3CODE_GOOGLE_CLIENT_ID }}
+      T3CODE_GOOGLE_CLIENT_SECRET: ${{ secrets.T3CODE_GOOGLE_CLIENT_SECRET }}
     steps:
       # This repository is public, so Git needs no credentials. checkout's
       # credential cleanup runs submodule foreach even with submodules disabled,

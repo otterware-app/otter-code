@@ -7,18 +7,34 @@ const CONNECT_LOOPBACK_CALLBACK_PATH = "/callback";
 
 const CONNECT_AUTHORIZE_PATH = "/connect";
 
+/**
+ * The CLI prints URLs against this origin and the web bundle uses it to
+ * decide whether it is the hosted deployment — the two must agree, so the
+ * default lives here.
+ */
+export const DEFAULT_HOSTED_APP_URL = "https://code.otterware.app";
 
-export const DEFAULT_HOSTED_APP_URL = "https://code.otterware.dev";
-
+/**
+ * Requested at authorize time by the hosted page and by the CLI's device
+ * authorization request; keep both sides on this single definition.
+ * `offline_access` asks Otter Accounts for the refresh token the CLI relies on.
+ */
 export const CONNECT_OAUTH_SCOPES = ["openid", "profile", "email", "offline_access"] as const;
 
 export interface ConnectAuthorizeRequest {
   readonly state: string;
   readonly challenge: string;
+  /**
+   * The hosted /connect page asks Otter Accounts to redirect the authorization code
+   * straight to `http://127.0.0.1:<port>/callback` on the waiting CLI.
+   */
   readonly loopbackPort: number;
 }
 
-/** Route through /connect because Clerk's signed-out redirect can lose OAuth query parameters. */
+/**
+ * The URL the CLI prints for a browser; PKCE values ride the fragment to stay out of server logs.
+ * The hosted page forwards the request to Otter Accounts. Headless hosts use the device grant.
+ */
 export function buildConnectAuthorizeRequestUrl(input: {
   readonly hostedAppUrl: string;
   readonly state: string;
@@ -53,12 +69,12 @@ function parseLoopbackPort(value: string): number | null {
   return port >= 1 && port <= 65535 ? port : null;
 }
 
-/** Must match the loopback redirect URI registered on the Clerk CLI OAuth app. */
+/** Must match the loopback redirect URI registered on the Otter Accounts CLI OAuth app. */
 export function connectLoopbackRedirectUri(port: number): string {
   return `http://127.0.0.1:${port}${CONNECT_LOOPBACK_CALLBACK_PATH}`;
 }
 
-export function buildConnectClerkAuthorizeUrl(input: {
+export function buildConnectAuthorizeUrl(input: {
   readonly authorizationEndpoint: string;
   readonly clientId: string;
   readonly redirectUri: string;

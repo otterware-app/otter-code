@@ -2,14 +2,14 @@ import { assert, describe, it } from "@effect/vitest";
 
 import { resolveCatalogDependencies } from "./resolve-catalog.ts";
 
-const catalog = { effect: "4.0.0-rc.115", "@clerk/backend": "3.18.1", react: "19.2.0" };
+const catalog = { effect: "4.0.0-rc.115", jose: "6.2.12", react: "19.2.0" };
 
 describe("resolveCatalogDependencies", () => {
   it("resolves bare, named and override-selector catalog specs like pnpm", () => {
     assert.deepStrictEqual(
       resolveCatalogDependencies(
         {
-          "@clerk/backend": "catalog:",
+          jose: "catalog:",
           "react-dom": "catalog:react",
           "@opencode/protocol>effect": "catalog:",
           "dbus-next>usocket": "-",
@@ -19,7 +19,7 @@ describe("resolveCatalogDependencies", () => {
         "apps/desktop",
       ),
       {
-        "@clerk/backend": "3.18.1",
+        jose: "6.2.12",
         "react-dom": "19.2.0",
         "@opencode/protocol>effect": "4.0.0-rc.115",
         "dbus-next>usocket": "-",
@@ -41,19 +41,19 @@ describe("resolveCatalogDependencies", () => {
         {
           "undici@^8": "catalog:",
           "ws@^8": "catalog:",
-          "@clerk/backend@^3": "catalog:",
+          "jose@^6": "catalog:",
           "@scope/parent@^1>undici@^8": "catalog:",
-          "parent@^1>@clerk/backend@^3": "catalog:",
+          "parent@^1>@scope/child@^3": "catalog:",
         },
-        { ...catalog, undici: "8.11.2", ws: "8.21.0" },
+        { ...catalog, undici: "8.11.2", ws: "8.21.0", "@scope/child": "3.18.1" },
         "apps/desktop",
       ),
       {
         "undici@^8": "8.11.2",
         "ws@^8": "8.21.0",
-        "@clerk/backend@^3": "3.18.1",
+        "jose@^6": "6.2.12",
         "@scope/parent@^1>undici@^8": "8.11.2",
-        "parent@^1>@clerk/backend@^3": "3.18.1",
+        "parent@^1>@scope/child@^3": "3.18.1",
       },
     );
   });

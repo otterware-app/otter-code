@@ -33,6 +33,7 @@ import { readT3ProjectFile } from "../lib/t3ProjectFileDefaults";
 import { environmentServerConfigsAtom } from "../state/server";
 import { resolveThreadRouteTarget } from "../threadRoutes";
 import { legacyProjectCwdPreferenceKey, useUiStateStore } from "../uiStateStore";
+import { useActiveProjectSpace } from "./useProjectSpace";
 import { useClientSettings } from "./useSettings";
 
 interface NewThreadWorkspaceOptions {
@@ -451,7 +452,22 @@ export function useHandleNewThread() {
         : useComposerDraftStore.getState().getDraftSession(routeTarget.draftId)
       : null,
   );
-  const projects = useProjects();
+  const allProjects = useProjects();
+  // New threads default to a project in the rail's space, and do not follow
+  // the open thread out of it. A space with no projects (an empty group, or
+  // Chats on a machine without a no-project home) leaves every project open.
+  const { projectFilter } = useActiveProjectSpace();
+  const spaceProjects = useMemo(
+    () => (projectFilter === null ? allProjects : allProjects.filter(projectFilter)),
+    [allProjects, projectFilter],
+  );
+  const projects = spaceProjects.length > 0 ? spaceProjects : allProjects;
+  const isProjectInSpace = useMemo(() => {
+    if (projectFilter === null || spaceProjects.length === 0) return undefined;
+    const keys = new Set(projects.map((project) => `${project.environmentId}:${project.id}`));
+    return (projectRef: ScopedProjectRef) =>
+      keys.has(`${projectRef.environmentId}:${projectRef.projectId}`);
+  }, [projectFilter, projects, spaceProjects.length]);
   const orderedProjects = useMemo(() => {
     return orderItemsByPreferredIds({
       items: projects,
@@ -472,6 +488,7 @@ export function useHandleNewThread() {
       ? scopeProjectRef(orderedProjects[0].environmentId, orderedProjects[0].id)
       : null,
     handleNewThread,
+    isProjectInSpace,
     routeDraftId,
     routeThreadRef,
   };

@@ -401,7 +401,7 @@ const SettingsContentStack = createV5SheetStackNavigator({
 });
 
 // The outer stack never owns visible chrome. Settings routes render inside a
-// nested stack whose native header remains mounted, while Clerk owns auth chrome.
+// nested stack whose native header remains mounted, while Otter Accounts owns auth chrome.
 // Keeping bar visibility invariant avoids iOS 26's headerless-to-headered jump.
 const SettingsSheetStack = createV5SheetStackNavigator({
   initialRouteName: "SettingsContent",

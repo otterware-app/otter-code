@@ -56,7 +56,7 @@ function confirmDeregister(environment: RelayClientEnvironmentRecord, onConfirm:
 }
 
 /**
- * The "T3 Connect" custom page inside Clerk's native user profile: every
+ * The "T3 Connect" custom page inside Account's native user profile: every
  * environment registered to the signed-in account, with account-level
  * deregistration. Mirrors the web UserButton page; connections on this device
  * are managed in Settings instead.
@@ -138,7 +138,7 @@ export function T3ConnectProfilePage() {
 
   return (
     <ScrollView
-      className="flex-1 bg-clerk-page"
+      className="flex-1 bg-background"
       contentContainerClassName="pb-8"
       contentInsetAdjustmentBehavior="automatic"
       refreshControl={
@@ -148,16 +148,16 @@ export function T3ConnectProfilePage() {
         />
       }
     >
-      <ClerkSectionHeader>Registered servers</ClerkSectionHeader>
+      <AccountSectionHeader>Registered servers</AccountSectionHeader>
 
       {environmentsState.error ? (
         <>
-          <ClerkRow
+          <AccountRow
             title="Could not load Otter Connect environments"
             subtitle={environmentsState.error}
           />
           {errorTraceId ? (
-            <ClerkButtonRow
+            <AccountButtonRow
               label="Copy trace ID"
               onPress={() => {
                 copyTextWithHaptic(errorTraceId, { target: "connection-trace-id" });
@@ -167,18 +167,18 @@ export function T3ConnectProfilePage() {
         </>
       ) : isInitialLoad ? (
         <View className="flex-row items-center gap-3 px-6 py-4">
-          <ActivityIndicator colorClassName={"accent-clerk-foreground-muted"} size="small" />
-          <Text className="text-base text-clerk-foreground-muted">Loading environments</Text>
+          <ActivityIndicator colorClassName={"accent-foreground-muted"} size="small" />
+          <Text className="text-base text-foreground-muted">Loading environments</Text>
         </View>
       ) : environments.length > 0 ? (
         environments.map((environment) => (
-          <ClerkRow
+          <AccountRow
             key={environment.environmentId}
             title={environment.label}
             subtitle={`${linkedAtLabel(environment.linkedAt)} · ${endpointLabel(environment)}`}
             accessory={
               deregisteringEnvironmentId === environment.environmentId ? (
-                <ActivityIndicator colorClassName={"accent-clerk-foreground-muted"} size="small" />
+                <ActivityIndicator colorClassName={"accent-foreground-muted"} size="small" />
               ) : (
                 <ControlPillMenu
                   actions={ENVIRONMENT_MENU_ACTIONS}
@@ -197,7 +197,7 @@ export function T3ConnectProfilePage() {
                       <SymbolView
                         name="ellipsis"
                         size={18}
-                        tintColorClassName={"accent-clerk-foreground-muted"}
+                        tintColorClassName={"accent-foreground-muted"}
                         type="monochrome"
                       />
                     </View>
@@ -208,13 +208,13 @@ export function T3ConnectProfilePage() {
           />
         ))
       ) : (
-        <ClerkRow
+        <AccountRow
           title="No servers registered"
           subtitle="Link a server from its local Settings to reach it through Otter Connect."
         />
       )}
 
-      <Text className="px-6 pt-6 text-xs leading-normal text-clerk-foreground-muted">
+      <Text className="px-6 pt-6 text-xs leading-normal text-foreground-muted">
         Connections on this device are managed in Settings.
       </Text>
     </ScrollView>
@@ -225,19 +225,16 @@ const ENVIRONMENT_MENU_ACTIONS = [
   { id: "deregister", title: "Deregister", image: "trash", attributes: { destructive: true } },
 ] satisfies MenuAction[];
 
-// Layout primitives that mirror clerk-ios ClerkKitUI's profile rows so a custom
-// page reads as one of Clerk's own screens. System font on purpose: Clerk's
-// native views do not use the app's DM Sans.
-
-function ClerkSectionHeader(props: { readonly children: string }) {
+// Account rows use the same adaptive palette as the settings screens.
+function AccountSectionHeader(props: { readonly children: string }) {
   return (
-    <Text className="min-h-4 border-b border-clerk-border px-6 pt-8 pb-4 text-xs font-medium tracking-[0.3px] text-clerk-foreground-muted uppercase">
+    <Text className="min-h-4 border-b border-border px-6 pt-8 pb-4 text-xs font-medium tracking-[0.3px] text-foreground-muted uppercase">
       {props.children}
     </Text>
   );
 }
 
-function ClerkRow(props: {
+function AccountRow(props: {
   readonly title: string;
   readonly subtitle: string;
   readonly accessory?: ReactNode;
@@ -245,13 +242,13 @@ function ClerkRow(props: {
   return (
     <View
       collapsable={false}
-      className="flex-row items-center gap-3 border-b border-clerk-border px-6 py-4"
+      className="flex-row items-center gap-3 border-b border-border px-6 py-4"
     >
       <View className="min-w-0 flex-1 gap-0.5">
-        <Text className="min-h-[22px] text-base text-clerk-foreground" numberOfLines={1}>
+        <Text className="min-h-[22px] text-base text-foreground" numberOfLines={1}>
           {props.title}
         </Text>
-        <Text className="min-h-5 text-sm text-clerk-foreground-muted" numberOfLines={2}>
+        <Text className="min-h-5 text-sm text-foreground-muted" numberOfLines={2}>
           {props.subtitle}
         </Text>
       </View>
@@ -260,14 +257,14 @@ function ClerkRow(props: {
   );
 }
 
-function ClerkButtonRow(props: { readonly label: string; readonly onPress: () => void }) {
+function AccountButtonRow(props: { readonly label: string; readonly onPress: () => void }) {
   return (
     <Pressable
       accessibilityRole="button"
       onPress={props.onPress}
-      className="border-b border-clerk-border px-6 py-4 active:opacity-60"
+      className="border-b border-border px-6 py-4 active:opacity-60"
     >
-      <Text className="text-base font-semibold text-clerk-foreground">{props.label}</Text>
+      <Text className="text-base font-semibold text-foreground">{props.label}</Text>
     </Pressable>
   );
 }

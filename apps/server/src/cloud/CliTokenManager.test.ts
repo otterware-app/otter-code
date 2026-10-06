@@ -17,10 +17,11 @@ import * as HttpClientResponse from "effect/http/HttpClientResponse";
 
 import * as CliTokenManager from "./CliTokenManager.ts";
 
-// pk_test_<base64 of "clerk.example.test$">
+// Fake Otter Accounts issuer used by the token transport tests.
 const TEST_ENV = {
-  T3CODE_CLERK_PUBLISHABLE_KEY: "pk_test_Y2xlcmsuZXhhbXBsZS50ZXN0JA==",
-  T3CODE_CLERK_CLI_OAUTH_CLIENT_ID: "oauth_client_test",
+  T3CODE_RELAY_URL: "https://relay.code.otterware.app",
+  T3CODE_ACCOUNTS_URL: "https://accounts.example.test/v1/auth",
+  T3CODE_ACCOUNTS_CLI_CLIENT_ID: "oauth_client_test",
   T3CODE_HOSTED_APP_URL: "https://hosted.example.test",
 };
 
@@ -79,7 +80,7 @@ it.effect("opens the browser on Enter and switches the active flow on H", () =>
     const opened: Array<string> = [];
 
     const result = yield* CliTokenManager.waitForLoopbackAuthorization({
-      authorizationUrl: "https://clerk.example.test/authorize",
+      authorizationUrl: "https://accounts.example.test/authorize",
       callback: Effect.never,
       terminal: makeTestTerminal(queue),
       launchBrowser: (url) =>
@@ -88,7 +89,7 @@ it.effect("opens the browser on Enter and switches the active flow on H", () =>
         }),
     });
 
-    assert.deepEqual(opened, ["https://clerk.example.test/authorize"]);
+    assert.deepEqual(opened, ["https://accounts.example.test/authorize"]);
     assert.deepEqual(result, { _tag: "HeadlessRequested" });
   }),
 );
@@ -97,16 +98,16 @@ it.effect("finishes normally when the browser callback wins", () =>
   Effect.gen(function* () {
     const queue = yield* Queue.make<Terminal.UserInput>();
     const callback = yield* Deferred.make<string>();
-    yield* Deferred.succeed(callback, "clerk-code-123");
+    yield* Deferred.succeed(callback, "account-code-123");
 
     const result = yield* CliTokenManager.waitForLoopbackAuthorization({
-      authorizationUrl: "https://clerk.example.test/authorize",
+      authorizationUrl: "https://accounts.example.test/authorize",
       callback: Deferred.await(callback),
       terminal: makeTestTerminal(queue),
       launchBrowser: () => Effect.die("browser launch should not run"),
     });
 
-    assert.deepEqual(result, { _tag: "AuthorizationCode", code: "clerk-code-123" });
+    assert.deepEqual(result, { _tag: "AuthorizationCode", code: "account-code-123" });
   }),
 );
 
@@ -145,7 +146,7 @@ const layerDeviceFlow = (server: DeviceFlowServer) =>
         const body =
           request.body._tag === "Uint8Array" ? new TextDecoder().decode(request.body.body) : "";
         server.requests.push({ url: request.url, params: new URLSearchParams(body) });
-        const reply = request.url.endsWith("/oauth/device_authorization")
+        const reply = request.url.endsWith("/device/code")
           ? { status: 200, body: DEVICE_AUTHORIZATION_BODY }
           : ((server.tokenReplies.length > 1
               ? server.tokenReplies.shift()
@@ -162,53 +163,58 @@ const layerDeviceFlow = (server: DeviceFlowServer) =>
   );
 
 const tokenRequests = (requests: ReadonlyArray<RecordedTokenRequest>) =>
-  requests.filter((request) => request.url.endsWith("/oauth/token"));
+  requests.filter((request) => request.url.endsWith("/oauth2/token"));
 
 it.layer(NodeServices.layer)("CliTokenManager.deviceAuthorizationLogin", (it) => {
-  it.effect("requests a device code, shows it, and polls until Clerk grants the token", () =>
-    Effect.gen(function* () {
-      const server: DeviceFlowServer = {
-        requests: [],
-        tokenReplies: [oauthError("authorization_pending"), tokenGranted],
-      };
-      const prompts: Array<CliTokenManager.DeviceAuthorizationPrompt> = [];
+  it.effect(
+    "requests a device code, shows it, and polls until Otter Accounts grants the token",
+    () =>
+      Effect.gen(function* () {
+        const server: DeviceFlowServer = {
+          requests: [],
+          tokenReplies: [oauthError("authorization_pending"), tokenGranted],
+        };
+        const prompts: Array<CliTokenManager.DeviceAuthorizationPrompt> = [];
 
-      const fiber = yield* CliTokenManager.deviceAuthorizationLogin((prompt) =>
-        Effect.sync(() => {
-          prompts.push(prompt);
-        }),
-      ).pipe(Effect.provide(layerDeviceFlow(server)), provideTestEnv, Effect.forkChild);
+        const fiber = yield* CliTokenManager.deviceAuthorizationLogin((prompt) =>
+          Effect.sync(() => {
+            prompts.push(prompt);
+          }),
+        ).pipe(Effect.provide(layerDeviceFlow(server)), provideTestEnv, Effect.forkChild);
 
-      yield* TestClock.adjust(Duration.seconds(10));
-      const { token, identity } = yield* Fiber.join(fiber);
+        yield* TestClock.adjust(Duration.seconds(10));
+        const { token, identity } = yield* Fiber.join(fiber);
 
-      assert.deepEqual(prompts, [
-        {
-          verificationUri: "https://accounts.example.test/device",
-          verificationUriComplete: "https://accounts.example.test/device?user_code=BCDF-GHJK",
-          userCode: "BCDF-GHJK",
-          expiresIn: Duration.seconds(600),
-        },
-      ]);
-      assert.equal(token.accessToken, "access-token-1");
-      assert.equal(token.refreshToken, "refresh-token-1");
-      assert.equal(token.identity, "theo@example.test");
-      assert.equal(identity, "theo@example.test");
+        assert.deepEqual(prompts, [
+          {
+            verificationUri: "https://accounts.example.test/device",
+            verificationUriComplete: "https://accounts.example.test/device?user_code=BCDF-GHJK",
+            userCode: "BCDF-GHJK",
+            expiresIn: Duration.seconds(600),
+          },
+        ]);
+        assert.equal(token.accessToken, "access-token-1");
+        assert.equal(token.refreshToken, "refresh-token-1");
+        assert.equal(token.identity, "theo@example.test");
+        assert.equal(identity, "theo@example.test");
 
-      const authorization = server.requests[0]!;
-      assert.equal(authorization.url, "https://clerk.example.test/oauth/device_authorization");
-      assert.equal(authorization.params.get("client_id"), "oauth_client_test");
-      assert.equal(authorization.params.get("scope"), "openid profile email offline_access");
+        const authorization = server.requests[0]!;
+        assert.equal(authorization.url, "https://accounts.example.test/v1/auth/device/code");
+        assert.equal(authorization.params.get("client_id"), "oauth_client_test");
+        assert.equal(authorization.params.get("scope"), "openid profile email offline_access");
 
-      const polls = tokenRequests(server.requests);
-      assert.lengthOf(polls, 2);
-      for (const poll of polls) {
-        assert.equal(poll.url, "https://clerk.example.test/oauth/token");
-        assert.equal(poll.params.get("grant_type"), "urn:ietf:params:oauth:grant-type:device_code");
-        assert.equal(poll.params.get("device_code"), "device-code-1");
-        assert.equal(poll.params.get("client_id"), "oauth_client_test");
-      }
-    }),
+        const polls = tokenRequests(server.requests);
+        assert.lengthOf(polls, 2);
+        for (const poll of polls) {
+          assert.equal(poll.url, "https://accounts.example.test/v1/auth/oauth2/token");
+          assert.equal(
+            poll.params.get("grant_type"),
+            "urn:ietf:params:oauth:grant-type:device_code",
+          );
+          assert.equal(poll.params.get("device_code"), "device-code-1");
+          assert.equal(poll.params.get("client_id"), "oauth_client_test");
+        }
+      }),
   );
 
   it.effect("waits the advertised interval between polls and backs off on slow_down", () =>

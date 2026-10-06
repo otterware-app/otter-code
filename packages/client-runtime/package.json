@@ -390,6 +390,10 @@
     "./device/duo-control": {
       "types": "./src/device/duoControl.ts",
       "default": "./src/device/duoControl.ts"
+    },
+    "./accounts": {
+      "types": "./src/accounts/session.ts",
+      "default": "./src/accounts/session.ts"
     }
   },
   "scripts": {

@@ -243,6 +243,13 @@ export function createMobileThemeVariables(
   const c = nativeColors(colors);
   const groupedCard = themeColorToNativeColor(groupedCardColor);
   const textSurfaces = [c.canvas, c.surface, c.surfaceRaised, c.chrome, groupedCard];
+  // Skills in a sent message wear the send color; a monochrome theme's send
+  // color is its message text (ChatGPT's), so there they take its accent.
+  const actionOnBubble = readableTextColor(c.messageAction, c.messageSurface);
+  const skillOnBubble =
+    actionOnBubble === c.messageForeground
+      ? readableTextColor(c.accent, c.messageSurface)
+      : actionOnBubble;
   return {
     "--color-screen": c.canvas,
     "--color-sheet": withAlpha(c.chrome, 0.98),
@@ -330,7 +337,7 @@ export function createMobileThemeVariables(
     "--color-user-bubble": c.messageSurface,
     "--color-user-bubble-foreground": c.messageForeground,
     "--color-user-bubble-foreground-muted": withAlpha(c.messageForeground, 0.78),
-    "--color-user-bubble-skill-foreground": readableTextColor(c.messageAction, c.messageSurface),
+    "--color-user-bubble-skill-foreground": skillOnBubble,
     "--color-backdrop": withAlpha("#000000", appearance === "dark" ? 0.48 : 0.22),
     "--color-drawer": c.sidebar,
     "--color-drawer-foreground": c.sidebarForeground,

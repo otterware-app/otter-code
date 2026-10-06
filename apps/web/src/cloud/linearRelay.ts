@@ -9,12 +9,12 @@ import * as Schema from "effect/Schema";
 import { resolveCloudPublicConfig } from "./publicConfig";
 
 /**
- * The relay's Linear account endpoints. They are account-level (Clerk
+ * The relay's Linear account endpoints. They are account-level (Otter Accounts
  * bearer), not environment-level, so they sit beside T3 Connect rather than
  * going through an environment connection.
  */
 async function relayFetch(
-  clerkToken: string,
+  accountToken: string,
   path: string,
   init: { readonly method: "GET" | "POST" | "DELETE"; readonly body?: unknown },
 ): Promise<unknown> {
@@ -23,7 +23,7 @@ async function relayFetch(
   const response = await fetch(new URL(path, relayUrl), {
     method: init.method,
     headers: {
-      authorization: `Bearer ${clerkToken}`,
+      authorization: `Bearer ${accountToken}`,
       ...(init.body === undefined ? {} : { "content-type": "application/json" }),
     },
     ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
@@ -34,20 +34,20 @@ async function relayFetch(
   return response.json();
 }
 
-export async function fetchLinearStatus(clerkToken: string) {
+export async function fetchLinearStatus(accountToken: string) {
   return Schema.decodeUnknownSync(RelayLinearStatusResponse)(
-    await relayFetch(clerkToken, "/v1/client/linear", { method: "GET" }),
+    await relayFetch(accountToken, "/v1/client/linear", { method: "GET" }),
   );
 }
 
 /** Returns the Linear consent URL to open; the relay's callback returns to Connections settings. */
 export async function startLinearAuthorization(
-  clerkToken: string,
+  accountToken: string,
   kind: RelayLinearAuthorizeKind,
   environmentId?: EnvironmentId,
 ) {
   const response = Schema.decodeUnknownSync(RelayLinearAuthorizeResponse)(
-    await relayFetch(clerkToken, "/v1/client/linear/authorize", {
+    await relayFetch(accountToken, "/v1/client/linear/authorize", {
       method: "POST",
       body: { kind, ...(environmentId ? { environmentId } : {}) },
     }),
@@ -56,18 +56,18 @@ export async function startLinearAuthorization(
 }
 
 export async function updateLinearLinkEnvironment(
-  clerkToken: string,
+  accountToken: string,
   organizationId: string,
   environmentId: EnvironmentId,
 ) {
-  await relayFetch(clerkToken, `/v1/client/linear/links/${encodeURIComponent(organizationId)}`, {
+  await relayFetch(accountToken, `/v1/client/linear/links/${encodeURIComponent(organizationId)}`, {
     method: "POST",
     body: { environmentId },
   });
 }
 
-export async function unlinkLinearAccount(clerkToken: string, organizationId: string) {
-  await relayFetch(clerkToken, `/v1/client/linear/links/${encodeURIComponent(organizationId)}`, {
+export async function unlinkLinearAccount(accountToken: string, organizationId: string) {
+  await relayFetch(accountToken, `/v1/client/linear/links/${encodeURIComponent(organizationId)}`, {
     method: "DELETE",
   });
 }

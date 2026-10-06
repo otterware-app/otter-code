@@ -45,9 +45,8 @@ vi.mock(import("@effect/atom-react"), async (original) => ({
     ),
   })) as never,
 }));
-vi.mock(import("@clerk/react"), async (original) => ({
-  ...(await original()),
-  useAuth: (() => ({ getToken: testState.getToken, isSignedIn: true })) as never,
+vi.mock("../accounts/AccountProvider", () => ({
+  useAuth: () => ({ getToken: testState.getToken, isSignedIn: true }),
 }));
 vi.mock(import("../components/ui/toast"), async (original) => {
   const actual = await original();
@@ -155,7 +154,7 @@ function setup() {
   testState.snapshot = linkedState;
   testState.renderedSnapshot = linkedState;
   testState.relayProviderKind = null;
-  testState.getToken.mockReset().mockResolvedValue("clerk-token");
+  testState.getToken.mockReset().mockResolvedValue("account-token");
   for (const command of [
     testState.link,
     testState.unlink,
@@ -200,7 +199,7 @@ describe("useCloudLinkController", () => {
       await using screen = await mountController();
       testState.getToken.mockImplementationOnce(async () => {
         testState.scopes.delete(scope);
-        return "clerk-token";
+        return "account-token";
       });
 
       expect(await screen.reconcile({ managedTunnel: false, publish: false })).toBe(false);
@@ -213,7 +212,7 @@ describe("useCloudLinkController", () => {
     await using screen = await mountController();
     testState.getToken.mockImplementationOnce(async () => {
       testState.snapshot = null;
-      return "clerk-token";
+      return "account-token";
     });
 
     expect(await screen.reconcile({ managedTunnel: true, publish: true })).toBe(false);
@@ -226,7 +225,7 @@ describe("useCloudLinkController", () => {
     testState.getToken.mockRejectedValueOnce(new Error("Cloud sign-in unavailable"));
 
     expect(await screen.reconcile({ managedTunnel: false, publish: false })).toBe(true);
-    expect(testState.unlink).toHaveBeenCalledExactlyOnceWith({ target, clerkToken: null });
+    expect(testState.unlink).toHaveBeenCalledExactlyOnceWith({ target, accountToken: null });
     expect(testState.link).not.toHaveBeenCalled();
     expect(testState.preferences).not.toHaveBeenCalled();
   });

@@ -5,12 +5,13 @@ import { scopedProjectKey, scopeProjectRef } from "@t3tools/client-runtime/envir
 import { isScratchProject } from "@t3tools/client-runtime/state/projects";
 import { FolderPlusIcon } from "lucide-react";
 import { useAtomValue } from "@effect/atom-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { openCommandPalette } from "~/commandPaletteBus";
 import { shortcutLabelForCommand } from "~/keybindings";
 import { primaryServerKeybindingsAtom } from "~/state/server";
 import { useNewThreadHandler } from "~/hooks/useHandleNewThread";
+import { useActiveProjectSpace } from "~/hooks/useProjectSpace";
 import { useScratchProject } from "~/hooks/useScratchProject";
 import { isTriagePrompt } from "~/hooks/useStartTriage";
 import { useClientSettings } from "~/hooks/useSettings";
@@ -53,18 +54,15 @@ import { resolveProjectDefaultProviderModelSelection } from "../../providerInsta
 import { resolveNewThreadModelSelection } from "@t3tools/shared/usageLimits";
 
 const ADD_PROJECT_VALUE = "add-project";
-
 interface PickerItem {
   readonly value: string;
   readonly label: string;
 }
-
 interface DraftHeroHeadlineProps {
   readonly draftId: DraftId | null;
   readonly activeProjectRef: ScopedProjectRef | null;
   readonly activeProjectTitle: string | null;
 }
-
 export function DraftHeroHeadline({
   draftId,
   activeProjectRef,
@@ -94,7 +92,7 @@ export function DraftHeroHeadline({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerQuery, setPickerQuery] = useState("");
   const pickerFilter = useComboboxFilter();
-
+  const { space, projectFilter } = useActiveProjectSpace();
   const environmentLabelById = new Map(
     environments.map((environment) => [environment.environmentId, environment.label] as const),
   );
@@ -138,9 +136,15 @@ export function DraftHeroHeadline({
   const hasResolvedProject = activeProjectTitle !== null;
   const canChooseProject = projectPickerEntries.length > 0;
   const shouldShowProjectMenu = canChooseProject;
+  // The project that hosts threads without a project is not a row: the line
+  // under the headline is the way into it. A project group offers only its
+  // own projects.
   const menuEntries = projectPickerEntries.filter(
-    ({ targetProject }) =>
-      !isScratchProject(targetProject, scratchWorkspaceRootFor(targetProject.environmentId)),
+    ({ group, targetProject }) =>
+      !isScratchProject(targetProject, scratchWorkspaceRootFor(targetProject.environmentId)) &&
+      (space.kind !== "group" ||
+        projectFilter === null ||
+        group.memberProjects.some((project) => projectFilter(project))),
   );
   const activeProject =
     activeProjectRef === null
@@ -249,7 +253,6 @@ export function DraftHeroHeadline({
     selectProject(project, deriveLogicalProjectKeyFromSettings(project, projectGroupingSettings));
     return true;
   };
-
   const projectSelector = shouldShowProjectMenu ? (
     <Combobox
       items={pickerItems}

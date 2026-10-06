@@ -10,20 +10,22 @@ different and how to keep the fork aligned with upstream.
   2026-10-02. Do not fetch its PR head or use the former V2 branch for new syncs.
 - `upstream-base` records the exact upstream `main` commit used by the fork. It must be an
   ancestor of Otter's `main`. Everything after it is Otter-owned work.
-- Keep a compact, linear stack: one commit per fork feature, with fixes folded into the owning
-  commit at each sync. The current stack is:
+- Keep a linear stack: one commit per fork feature, then one squash commit per past sync. The
+  current stack is:
   1. `chore(otter): brand fork as Otter Code`: names, IDs, domains, icons, relay values, this file,
      and `scripts/otter/`.
   2. `ci(otter): release Otter Code`: release gating and `.github/scripts/otter-adapt-upstream.sh`.
   3. `feat(otter): Linear integration`: linked issues, the Linear agent app, and issue sync.
   4. `feat(otter): scoped diff review`: commit scopes, file navigation, Viewed marks, and file counts.
   5. `feat(otter): code intelligence`: file and diff editor language services, settings, and runtime setup.
-  6. `chore(otter): adapt upstream files (generated)`: output of the adaptation script, always last.
-     Never edit it by hand. Every sync drops and regenerates it so runner labels, skipped Windows
-     jobs, and the pointer in `AGENTS.md` do not conflict with upstream edits.
-- **Changing the fork:** commit normally, or use `git commit --fixup=<feature-commit>` for a fix to
-  an existing feature. Never merge upstream into Otter's `main`. Do not accumulate dated sync
-  squash commits or `Otter-Sync` trailers; syncing changes the base, not the feature count.
+  6. `chore(otter): adapt upstream files (generated)`: output of the adaptation script, after the
+     features. Never edit it by hand. Every sync drops and regenerates it so runner labels, skipped
+     Windows jobs, and the pointer in `AGENTS.md` do not conflict with upstream edits.
+  7. `chore(otter): changes before the <date> sync (#N)`, oldest first: everything committed to
+     `main` between two syncs, squashed by that sync's PR. Keep each one as its own commit; never
+     fold them into each other or into the features.
+- **Changing the fork:** commit directly to `main`. The next sync squashes those commits into one
+  new sync commit. Never merge upstream into Otter's `main`.
 
 ### Preparing a sync
 
@@ -45,14 +47,19 @@ new_base=$(git rev-parse upstream/main)
 sync_date=$(date +%F)
 git merge-base --is-ancestor "$old_base" "$old_main"
 git merge-base --is-ancestor "$old_base" "$new_base"
+last_sync=$(git log -1 --format=%H --grep='^chore(otter): changes before the .* sync' "$old_main")
 git branch "backup/otter-before-$sync_date" "$old_main"
-git switch -c "otter/sync-$sync_date" "$old_main"
-git rebase -i --autosquash --onto "$new_base" "$old_base"
+# Commits since the last sync wait here; they become this sync's squash commit.
+git branch "otter/sync-$sync_date" "$old_main"
+git switch -c "otter/stack-$sync_date" "$last_sync"
+git rebase -i --onto "$new_base" "$old_base"
 ```
 
-In the rebase todo, drop the generated adaptation commit and fold follow-up commits into their
-owning features. Keep new features as separate commits. Resolve conflicts using upstream's current
-behavior and retain only the additional Otter functionality; drop fork changes upstream now covers.
+In the rebase todo, drop the generated adaptation commit; it is regenerated below and goes back
+between the features and the sync commits. Resolve conflicts using upstream's current behavior and
+retain only the additional Otter functionality; drop fork changes upstream now covers. Fold fixes
+that upstream changes require into the owning commit with `git commit --fixup` and
+`git rebase -i --autosquash "$new_base"`.
 
 If upstream added relay migrations, its snapshot chain and the fork's can branch from the same
 parent. Fold a merge migration into the Linear commit, recording both heads as parents without
@@ -64,21 +71,31 @@ pnpm exec drizzle-kit generate --custom --name otter_upstream_merge \
   --dialect postgresql --schema ./src/persistence/schema.ts --out ./migrations/postgres
 ```
 
-From the repository root, regenerate the adaptation commit:
+From the repository root, regenerate the adaptation commit on the last feature commit, then
+replay the sync commits on top of it:
 
 ```sh
+sync_commits=$(git rev-list --reverse --grep='^chore(otter): changes before the .* sync' "$new_base"..HEAD)
+git switch --detach "$(git rev-parse "$(echo "$sync_commits" | head -1)^")"
 .github/scripts/otter-adapt-upstream.sh
 git add -u
 git diff --cached --quiet || git commit -m "chore(otter): adapt upstream files (generated)"
+git cherry-pick $sync_commits
+git branch -f "otter/stack-$sync_date" HEAD && git switch "otter/stack-$sync_date"
 git merge-base --is-ancestor "$new_base" HEAD
 git rev-list --left-right --count "$new_base"...HEAD
 git log --oneline "$new_base"..HEAD
 git diff --check "$new_base"..HEAD
 ```
 
-The count should show zero upstream-only commits and only the fork feature commits plus generated
-adaptation on Otter's side. Run focused tests and typechecks for conflicted code and the preserved
-features before publishing.
+The count should show zero upstream-only commits, and on Otter's side only the features, the
+generated adaptation, and the sync commits. Then move the waiting commits onto the new stack:
+
+```sh
+git rebase --onto "otter/stack-$sync_date" "$last_sync" "otter/sync-$sync_date"
+```
+
+Run focused tests and typechecks for conflicted code and the preserved features before publishing.
 
 ### Publishing a prepared sync
 
@@ -91,11 +108,15 @@ git push origin "$old_main:refs/heads/backup/otter-before-$sync_date"
 git push --atomic origin \
   --force-with-lease="refs/heads/main:$old_main" \
   --force-with-lease="refs/heads/upstream-base:$old_base" \
-  HEAD:refs/heads/main "$new_base:refs/heads/upstream-base"
+  "otter/stack-$sync_date:refs/heads/main" "$new_base:refs/heads/upstream-base"
+git push origin "otter/sync-$sync_date"
+gh pr create --base main --head "otter/sync-$sync_date" \
+  --title "chore(otter): changes before the $sync_date sync"
+gh pr merge --squash
 ```
 
-A merge of a sync PR would preserve the old base in `main`'s ancestry. Publish the prepared stack
-directly; open a PR only when the maintainer requests one. Existing worktrees and feature branches
+The PR's branch is already rebased onto the new `main`, so its squash commit carries only the
+fork's own changes. Never merge a branch that still contains the old base. Existing worktrees and feature branches
 still point at the old stack: rebase only their own work onto the new `origin/main`, using their
 previous base explicitly. Do not automatically rebase or reset other active worktrees.
 

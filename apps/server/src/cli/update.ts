@@ -14,6 +14,7 @@ import {
   newestCliReleaseVersion,
   type CliReleaseChannel,
 } from "@t3tools/shared/cliRelease";
+import { isOtterwareVersion, OTTERWARE_SERVER_UPDATE_NOTICE } from "@t3tools/shared/otterware";
 import * as Console from "effect/Console";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
@@ -347,6 +348,15 @@ const runUpdate = Effect.fn("cli.update.run")(function* (input: {
   const service = yield* BootService.BootService;
 
   const currentVersion = packageJson.version;
+  // Every release this command can find is Otter Code's. An Otterware build
+  // installs only an explicit Otterware version, from a T3CODE_RELEASE_BASE_URL
+  // mirror; scripts/otterware/fleet-server.sh covers the rest.
+  if (
+    isOtterwareVersion(currentVersion) &&
+    (input.requestedVersion === undefined || !isOtterwareVersion(input.requestedVersion))
+  ) {
+    return yield* new CliUpdateError({ reason: OTTERWARE_SERVER_UPDATE_NOTICE });
+  }
   const channel = input.channel ?? cliReleaseChannelOf(currentVersion);
   if (input.requestedVersion !== undefined && !isExactServiceVersion(input.requestedVersion)) {
     return yield* new CliUpdateError({

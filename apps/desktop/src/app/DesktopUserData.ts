@@ -3,6 +3,12 @@ import * as FileSystem from "effect/FileSystem";
 import * as Path from "effect/Path";
 import * as PlatformError from "effect/PlatformError";
 import * as Schema from "effect/Schema";
+import {
+  OTTERWARE_DEV_PRODUCT_NAME,
+  OTTERWARE_DEV_SLUG,
+  OTTERWARE_PRODUCT_NAME,
+  OTTERWARE_SLUG,
+} from "@t3tools/shared/otterware";
 
 export class DesktopUserDataInitializationError extends Schema.TaggedError<DesktopUserDataInitializationError>()(
   "DesktopUserDataInitializationError",
@@ -41,8 +47,8 @@ export const resolveUserDataPath = Effect.fn("desktop.userData.resolveUserDataPa
     const fs = yield* FileSystem.FileSystem;
     const path = yield* Path.Path;
     const names = input.isDevelopment
-      ? { current: "otter-code-dev", legacy: "Otter Code (Dev)" }
-      : { current: "otter-code", legacy: "Otter Code" };
+      ? { current: OTTERWARE_DEV_SLUG, legacy: OTTERWARE_DEV_PRODUCT_NAME }
+      : { current: OTTERWARE_SLUG, legacy: OTTERWARE_PRODUCT_NAME };
     const destinationPath = path.join(input.appDataDirectory, names.current);
     const legacyPath = path.join(input.appDataDirectory, names.legacy);
     const inspect = (resourcePath: string) =>
@@ -63,7 +69,7 @@ export const resolveUserDataPath = Effect.fn("desktop.userData.resolveUserDataPa
     const legacyState = path.join(legacyPath, "Local State");
     const sourceState = (yield* inspect(legacyState))
       ? legacyState
-      : path.join(input.appDataDirectory, "otter-code", "Local State");
+      : path.join(input.appDataDirectory, OTTERWARE_SLUG, "Local State");
     if (!(yield* inspect(sourceState))) return destinationPath;
     // Windows safeStorage keys live here. Copy only these preferences, never locked databases.
     const state = yield* fs

@@ -216,14 +216,14 @@ export function WelcomeWizard({
         initialFocus={() => document.getElementById("onboarding-pairing-url") ?? true}
       >
         <WizardHeader
-          title="Set up Otter Code"
+          title="Set up Otterware"
           identity={
-            <div className="flex items-baseline gap-1.5" role="img" aria-label="Otter Code">
+            <div className="flex items-baseline" role="img" aria-label="Otterware">
               <span className="shrink-0 text-2xl font-medium tracking-tight" aria-hidden>
                 Otter
               </span>
               <span className="text-2xl font-medium tracking-tight text-muted-foreground">
-                Code
+                ware
               </span>
             </div>
           }

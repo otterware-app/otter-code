@@ -4,6 +4,8 @@ export const CLIENT_NAMES = [
   "com.t3tools.T3Code.Development.SnapShot",
   "dev.otterware.code.SnapShot",
   "dev.otterware.code.dev.SnapShot",
+  "dev.otterware.suite.SnapShot",
+  "dev.otterware.suite.dev.SnapShot",
 ];
 
 export function isWaylandSession(meta) {

@@ -17,7 +17,7 @@ describe("thread deep links", () => {
 
   it("hands hosted thread links to the desktop app, except on phones", () => {
     const link = new URL("https://code.otterware.app/env-1/linear-session%3Aabc?open=desktop");
-    expect(desktopHandoffUrl(link, MAC)).toBe("ottercode://app/env-1/linear-session%3Aabc");
+    expect(desktopHandoffUrl(link, MAC)).toBe("otterware://app/env-1/linear-session%3Aabc");
     expect(desktopHandoffUrl(link, IPHONE)).toBeNull();
     expect(desktopHandoffUrl(new URL("https://code.otterware.app/env-1/t-1"), MAC)).toBeNull();
     expect(

@@ -116,8 +116,8 @@ describe("DesktopEarlyElectronStartup", () => {
 
     assert.deepEqual(options, {
       isDevelopment: true,
-      linuxWmClass: "otter-code-dev",
-      linuxDesktopEntryName: "dev.otterware.code.dev.desktop",
+      linuxWmClass: "otterware-dev",
+      linuxDesktopEntryName: "dev.otterware.suite.dev.desktop",
       passwordStore: "gnome-libsecret",
     });
   });

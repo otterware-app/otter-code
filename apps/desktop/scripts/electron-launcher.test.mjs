@@ -76,18 +76,18 @@ describe("electron development launcher", () => {
 
   it("keeps the native Electron executable name inside the branded macOS bundle", () => {
     const paths = resolveMacLauncherPaths(
-      "/repo/apps/desktop/.electron-runtime/Otter Code (Dev).app",
-      "Otter Code (Dev)",
+      "/repo/apps/desktop/.electron-runtime/Otterware (Dev).app",
+      "Otterware (Dev)",
     );
 
-    assert.equal(paths.launcherExecutableName, "Otter Code (Dev) Launcher");
+    assert.equal(paths.launcherExecutableName, "Otterware (Dev) Launcher");
     assert.equal(
       paths.launcherBinaryPath,
-      "/repo/apps/desktop/.electron-runtime/Otter Code (Dev).app/Contents/MacOS/Otter Code (Dev) Launcher",
+      "/repo/apps/desktop/.electron-runtime/Otterware (Dev).app/Contents/MacOS/Otterware (Dev) Launcher",
     );
     assert.equal(
       paths.runtimeElectronBinaryPath,
-      "/repo/apps/desktop/.electron-runtime/Otter Code (Dev).app/Contents/MacOS/Electron",
+      "/repo/apps/desktop/.electron-runtime/Otterware (Dev).app/Contents/MacOS/Electron",
     );
 
     const script = makeDevelopmentLauncherScript({
@@ -98,32 +98,32 @@ describe("electron development launcher", () => {
     });
     assert.include(
       script,
-      "exec '/repo/apps/desktop/.electron-runtime/Otter Code (Dev).app/Contents/MacOS/Electron'",
+      "exec '/repo/apps/desktop/.electron-runtime/Otterware (Dev).app/Contents/MacOS/Electron'",
     );
     assert.notInclude(script, "node_modules/electron");
   });
 
   it("declares why the macOS app needs protected access", () => {
-    const values = resolveMacBundleInfoPlistStrings("Otter Code (Dev) Launcher");
+    const values = resolveMacBundleInfoPlistStrings("Otterware (Dev) Launcher");
 
     assert.equal(
       values.NSScreenCaptureUsageDescription,
-      "Otter Code captures the active window when you use the snapshot shortcut.",
+      "Otterware captures the active window when you use the snapshot shortcut.",
     );
     assert.equal(
       values.NSDocumentsFolderUsageDescription,
-      "Otter Code reads project files you open in the desktop app.",
+      "Otterware reads project files you open in the desktop app.",
     );
   });
 
   it("ad-hoc signs the complete development app bundle", () => {
-    assert.deepEqual(resolveMacCodeSignArguments("/runtime/Otter Code (Dev).app"), [
+    assert.deepEqual(resolveMacCodeSignArguments("/runtime/Otterware (Dev).app"), [
       "--force",
       "--deep",
       "--sign",
       "-",
       "--timestamp=none",
-      "/runtime/Otter Code (Dev).app",
+      "/runtime/Otterware (Dev).app",
     ]);
   });
 
@@ -148,7 +148,7 @@ describe("electron development launcher", () => {
     // The source icons are real repo paths, joined for the host.
     assert.match(development.sourceIconPath, /assets[\\/]otter-dev[\\/]otter-dev-macos-1024\.png$/);
     assert.equal(development.generatedIconPath, "/runtime/icon-dev.icns");
-    assert.match(production.sourceIconPath, /assets[\\/]otter[\\/]otter-macos-1024\.png$/);
+    assert.match(production.sourceIconPath, /assets[\\/]otterware[\\/]otterware-macos-1024\.png$/);
     assert.equal(production.generatedIconPath, "/runtime/icon-prod.icns");
   });
 });

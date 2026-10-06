@@ -1,7 +1,7 @@
 /**
  * The rail of spaces down the window's left edge (Otter Mail's, ChatGPT's):
  * All projects, then each project, the + that adds one, then Pull requests;
- * Usage and Settings at its foot. A project space scopes the thread sidebar
+ * the desktop app's update button, Usage and Settings at its foot. A project space scopes the thread sidebar
  * (the same `sidebarProjectScopeKey` its heading's picker sets). The rail
  * stays when the sidebar hides, and sits inside the sheet on phones.
  */
@@ -28,6 +28,7 @@ import { readPullRequestListPreferences } from "../pullRequest/pullRequestListPr
 import { useSidebar } from "../ui/sidebar";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { isSidebarUtilityPage, useNavigateToMainApp } from "./mainAppLocation";
+import { SidebarUpdatePill } from "./SidebarUpdatePill";
 
 /** A rail button: a square that lights up on hover, and stays lit where you are. */
 const RAIL_BUTTON =
@@ -198,6 +199,7 @@ export const SpaceRail = memo(function SpaceRail({ className }: { className?: st
         ) : null}
       </div>
       <div className="flex shrink-0 flex-col items-center gap-1 pt-1">
+        <SidebarUpdatePill />
         <RailButton
           label="Usage"
           selected={place === "usage"}

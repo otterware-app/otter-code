@@ -8,7 +8,7 @@ import { readEnvironmentScope } from "../../state/session";
 import { appAtomRegistry } from "../../state/atom-registry";
 import { serverEnvironment } from "../../state/server";
 import { ScreenScrollView as ScrollView } from "../../components/ui/ScreenScrollView";
-import { useAuth } from "@clerk/expo";
+import { useAuth } from "../accounts/AccountProvider";
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import * as Notifications from "expo-notifications";
 import { useNavigation } from "@react-navigation/native";
@@ -39,7 +39,7 @@ import {
   subscribeAgentAwarenessRegistrationStatus,
 } from "../agent-awareness/remoteRegistration";
 import { refreshManagedRelayEnvironments } from "../cloud/managedRelayState";
-import { hasCloudPublicConfig, resolveRelayClerkTokenOptions } from "../cloud/publicConfig";
+import { hasCloudPublicConfig } from "../cloud/publicConfig";
 import { makePermissionStatusAtom } from "../../lib/permissionStatusAtom";
 import { runtime } from "../../lib/runtime";
 import { mobilePreferencesAtom, updateMobilePreferencesAtom } from "../../state/preferences";
@@ -138,7 +138,7 @@ function ConfiguredSettingsNotificationsRouteScreen() {
       : agentAwarenessPlatform.subtitle;
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const { getToken, isLoaded, isSignedIn } = useAuth({ treatPendingAsSignedOut: false });
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const { savedConnectionsById } = useSavedRemoteConnections();
   const notificationStatus = useAtomValue(notificationStatusAtom);
   const setNotificationStatus = useAtomSet(notificationStatusAtom);
@@ -273,7 +273,7 @@ function ConfiguredSettingsNotificationsRouteScreen() {
       }
       setNotificationStatus("enabled");
     }
-    const tokenResult = await settlePromise(() => getToken(resolveRelayClerkTokenOptions()));
+    const tokenResult = await settlePromise(() => getToken());
     if (tokenResult._tag === "Failure") {
       setLiveActivityStatus("disabled");
       const error = squashAtomCommandFailure(tokenResult);
@@ -295,7 +295,7 @@ function ConfiguredSettingsNotificationsRouteScreen() {
           canConfigureEnvironment: canLinkEnvironmentToConnect,
           enabled: true,
           previousEnabled: liveActivitiesPreferenceEnabled,
-          clerkToken: tokenResult.value,
+          accountToken: tokenResult.value,
           connections,
         }),
       ),
@@ -356,7 +356,7 @@ function ConfiguredSettingsNotificationsRouteScreen() {
   async function disableLiveActivities() {
     let token: string | null = null;
     if (isSignedIn) {
-      const tokenResult = await settlePromise(() => getToken(resolveRelayClerkTokenOptions()));
+      const tokenResult = await settlePromise(() => getToken());
       if (tokenResult._tag === "Failure") {
         setLiveActivityStatus("enabled");
         reportAtomCommandResult(tokenResult, {
@@ -373,7 +373,7 @@ function ConfiguredSettingsNotificationsRouteScreen() {
           canConfigureEnvironment: canLinkEnvironmentToConnect,
           enabled: false,
           previousEnabled: liveActivitiesPreferenceEnabled,
-          clerkToken: token,
+          accountToken: token,
           connections,
         }),
       ),

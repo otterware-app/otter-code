@@ -1,5 +1,5 @@
 import { useAtomValue } from "@effect/atom-react";
-import { useAuth } from "@clerk/react";
+import { useAuth } from "../accounts/AccountProvider";
 import { findErrorTraceId } from "@t3tools/client-runtime/errors";
 import { AuthRelayReadScope, AuthRelayWriteScope, type EnvironmentId } from "@t3tools/contracts";
 import { ManagedRelay } from "@t3tools/client-runtime/relay";
@@ -25,7 +25,6 @@ import {
   updateEnvironmentPreferences as updateEnvironmentPreferencesAtom,
 } from "./linkEnvironmentAtoms";
 import { readCachedCloudLinkState, useCloudLinkState } from "./cloudLinkState";
-import { resolveRelayClerkTokenOptions } from "./publicConfig";
 import { isManagedTunnelActive } from "./t3ConnectState";
 
 export interface CloudLinkDesiredState {
@@ -118,7 +117,7 @@ export function useCloudLinkController(environmentId: EnvironmentId | null) {
         !readEnvironmentScope(environmentId, AuthRelayWriteScope)
       ) {
         reportUpdateFailure(
-          new Error("This connection needs permission to view and manage T3 Connect settings."),
+          new Error("This connection needs permission to view and manage Otter Connect settings."),
         );
         return false;
       }
@@ -127,14 +126,16 @@ export function useCloudLinkController(environmentId: EnvironmentId | null) {
     const readLinkState = () => {
       const state = readCachedCloudLinkState(target);
       if (state === null) {
-        reportUpdateFailure(new Error("Wait until the current T3 Connect settings can be read."));
+        reportUpdateFailure(
+          new Error("Wait until the current Otter Connect settings can be read."),
+        );
       }
       return state;
     };
     if (!canManageLink()) return false;
     const wantsLink = desired.managedTunnel || desired.publish;
     if (wantsLink && readLinkState() === null) return false;
-    const tokenResult = await settlePromise(() => getToken(resolveRelayClerkTokenOptions()));
+    const tokenResult = await settlePromise(() => getToken());
     if (!canManageLink()) return false;
 
     // A failed mutation may have partially applied, so refresh server state on every exit.
@@ -142,7 +143,7 @@ export function useCloudLinkController(environmentId: EnvironmentId | null) {
       // Unlink needs no relay token; failed token reads must still allow it.
       const unlinkResult = await unlinkEnvironment({
         target,
-        clerkToken: tokenResult._tag === "Success" ? (tokenResult.value ?? null) : null,
+        accountToken: tokenResult._tag === "Success" ? (tokenResult.value ?? null) : null,
       });
       refreshManagedTunnelUsage();
       if (unlinkResult._tag === "Failure") {
@@ -169,8 +170,8 @@ export function useCloudLinkController(environmentId: EnvironmentId | null) {
         reportUpdateFailure(squashAtomCommandFailure(tokenResult));
         return false;
       }
-      const clerkToken = tokenResult.value;
-      if (!clerkToken) {
+      const accountToken = tokenResult.value;
+      if (!accountToken) {
         reportUpdateFailure(new Error("Sign in to Otter Connect before enabling this."));
         return false;
       }
@@ -182,7 +183,7 @@ export function useCloudLinkController(environmentId: EnvironmentId | null) {
       ) {
         const linkResult = await linkEnvironment({
           target,
-          clerkToken,
+          accountToken,
           mode: desired.managedTunnel ? "managed" : "publish_only",
         });
         // Any link attempt can change the account's tunnel count.

@@ -5,13 +5,16 @@
  */
 import { mergeSuiteContracts, type SuiteRpcTag } from "./contract.ts";
 import { SuiteCoreContract } from "./core.ts";
+import { SuiteDriveContract } from "./drive.ts";
 
 export * from "./contract.ts";
 export * from "./core.ts";
+export * from "./drive.ts";
 export * from "./home.ts";
 
 const SuiteContracts = mergeSuiteContracts(
   SuiteCoreContract,
+  SuiteDriveContract,
   // SuiteMailContract,
 );
 

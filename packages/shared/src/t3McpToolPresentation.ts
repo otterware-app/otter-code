@@ -63,7 +63,9 @@ export type T3McpToolSummaryAction =
   | "browser"
   | "device"
   | "html-preview"
-  | "html-render";
+  | "html-render"
+  // Otterware module tools (suite/mcpToolPresentation.ts).
+  | "drive";
 
 export interface T3McpToolDefinition {
   readonly displayName: string;

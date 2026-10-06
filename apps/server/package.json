@@ -57,6 +57,7 @@
   "devDependencies": {
     "@effect/vitest": "catalog:",
     "@modelcontextprotocol/sdk": "1.29.0",
+    "@otterware/drive-contracts": "workspace:*",
     "@t3tools/contracts": "workspace:*",
     "@t3tools/shared": "workspace:*",
     "@t3tools/ssh": "workspace:*",

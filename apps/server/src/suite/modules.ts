@@ -4,8 +4,10 @@
  * capabilities report and instructions are appended in.
  */
 import { SuiteCoreModule } from "./core/SuiteCoreModule.ts";
+import { DriveModule } from "./drive/DriveModule.ts";
 
 export const SUITE_SERVER_MODULES = [
   SuiteCoreModule,
+  DriveModule,
   // MailModule,
 ] as const;

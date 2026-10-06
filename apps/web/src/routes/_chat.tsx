@@ -2,7 +2,6 @@ import { AuthPreviewOperateScope } from "@t3tools/contracts";
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 import { useAtomValue } from "@effect/atom-react";
 import { useEffect } from "react";
-
 import { isCommandPaletteOpen } from "../commandPaletteBus";
 import { ThreadRouteView } from "../components/ThreadRouteView";
 import { ThreadLinkPrompt } from "../components/promptLinks/ThreadLinkPrompt";
@@ -30,12 +29,18 @@ import { useThreadSelectionStore } from "../threadSelectionStore";
 import { stackedThreadToast, toastManager } from "~/components/ui/toast";
 import { primaryServerKeybindingsAtom } from "~/state/server";
 import { useThreadRouteTarget } from "../hooks/useThreadRouteTarget";
-
+import { useActiveProjectSpace } from "~/hooks/useProjectSpace";
 function ChatRouteGlobalShortcuts() {
   const clearSelection = useThreadSelectionStore((state) => state.clearSelection);
   const selectedThreadKeysSize = useThreadSelectionStore((state) => state.selectedThreadKeys.size);
-  const { activeDraftThread, activeThread, defaultProjectRef, handleNewThread, routeThreadRef } =
-    useHandleNewThread();
+  const {
+    activeDraftThread,
+    activeThread,
+    defaultProjectRef,
+    handleNewThread,
+    isProjectInSpace,
+    routeThreadRef,
+  } = useHandleNewThread();
   const canOperatePreview = useEnvironmentScope(
     routeThreadRef?.environmentId ?? null,
     AuthPreviewOperateScope,
@@ -46,12 +51,18 @@ function ChatRouteGlobalShortcuts() {
   const projects = useProjects();
   const primaryEnvironmentId = usePrimaryEnvironmentId();
   const { scratchEnvironmentId, startScratchThread } = useScratchProject();
-  const projectGroupCount = buildSidebarProjectSnapshots({
-    projects,
-    settings: projectGroupingSettings,
-    primaryEnvironmentId,
-    resolveEnvironmentLabel: () => null,
-  }).length;
+  const { space, projectFilter } = useActiveProjectSpace();
+  // Counted within the rail's space: a group of one project has no choice to
+  // make. A space with no projects counts every project, as new threads do.
+  const projectGroupCount = (() => {
+    const spaceProjects = projectFilter === null ? projects : projects.filter(projectFilter);
+    return buildSidebarProjectSnapshots({
+      projects: spaceProjects.length > 0 ? spaceProjects : projects,
+      settings: projectGroupingSettings,
+      primaryEnvironmentId,
+      resolveEnvironmentLabel: () => null,
+    }).length;
+  })();
   const terminalOpen = useTerminalUiStateStore((state) =>
     routeThreadRef
       ? selectThreadTerminalUiState(state.terminalUiStateByThreadKey, routeThreadRef).terminalOpen
@@ -78,11 +89,9 @@ function ChatRouteGlobalShortcuts() {
           modelPickerOpen: isModelPickerOpen(),
         },
       });
-
       if (isCommandPaletteOpen()) {
         return;
       }
-
       if (command === "thread.undo") {
         if (event.repeat || isModelPickerOpen()) return;
         if (undoLatestThreadAction()) {
@@ -91,13 +100,11 @@ function ChatRouteGlobalShortcuts() {
         }
         return;
       }
-
       if (event.key === "Escape" && selectedThreadKeysSize > 0) {
         event.preventDefault();
         clearSelection();
         return;
       }
-
       if (command === "chat.newLocal") {
         event.preventDefault();
         event.stopPropagation();
@@ -106,21 +113,28 @@ function ChatRouteGlobalShortcuts() {
           activeThread: activeThread ?? undefined,
           defaultProjectRef,
           handleNewThread,
+          isProjectInSpace,
         });
         return;
       }
-
-      if (command === "chat.newWithoutProject") {
-        const environmentId = scratchEnvironmentId(
-          activeThread?.environmentId ?? activeDraftThread?.environmentId ?? primaryEnvironmentId,
-        );
+      // In Chats, chat.new starts without a project too, unless the machine
+      // offers no such home; then it falls through to the ordinary new thread.
+      const scratchTarget =
+        command === "chat.newWithoutProject" || (command === "chat.new" && space.kind === "chats")
+          ? scratchEnvironmentId(
+              activeThread?.environmentId ??
+                activeDraftThread?.environmentId ??
+                primaryEnvironmentId,
+            )
+          : null;
+      if (command === "chat.newWithoutProject" || scratchTarget !== null) {
+        const environmentId = scratchTarget;
         if (environmentId === null) return;
         event.preventDefault();
         event.stopPropagation();
         void startScratchThread(environmentId);
         return;
       }
-
       if (command === "chat.new") {
         event.preventDefault();
         event.stopPropagation();
@@ -133,10 +147,10 @@ function ChatRouteGlobalShortcuts() {
           activeThread: activeThread ?? undefined,
           defaultProjectRef,
           handleNewThread,
+          isProjectInSpace,
         });
         return;
       }
-
       if (command === "preview.toggle") {
         event.preventDefault();
         event.stopPropagation();
@@ -154,7 +168,6 @@ function ChatRouteGlobalShortcuts() {
         dispatchPreviewAction("toggle-panel");
         return;
       }
-
       if (
         command === "preview.refresh" ||
         command === "preview.focusUrl" ||
@@ -178,7 +191,6 @@ function ChatRouteGlobalShortcuts() {
         dispatchPreviewAction(action);
       }
     };
-
     window.addEventListener("keydown", onWindowKeyDown);
     return () => {
       window.removeEventListener("keydown", onWindowKeyDown);
@@ -191,20 +203,20 @@ function ChatRouteGlobalShortcuts() {
     handleNewThread,
     keybindings,
     defaultProjectRef,
+    isProjectInSpace,
     previewOpen,
     primaryEnvironmentId,
     projectGroupCount,
     routeThreadRef,
     scratchEnvironmentId,
     selectedThreadKeysSize,
+    space.kind,
     startScratchThread,
     legacySidebarEnabled,
     terminalOpen,
   ]);
-
   return null;
 }
-
 function ChatRouteLayout() {
   // Both thread routes render here, not in their own leaf components, so the
   // draft-to-thread promotion keeps one ChatView mounted across the swap.
@@ -219,7 +231,6 @@ function ChatRouteLayout() {
     </>
   );
 }
-
 export const Route = createFileRoute("/_chat")({
   beforeLoad: async ({ context }) => {
     if (

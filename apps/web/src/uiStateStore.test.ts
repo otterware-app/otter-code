@@ -14,6 +14,7 @@ import {
   setDefaultAdvertisedEndpointKey,
   setProjectExpanded,
   setSidebarProjectScopeKey,
+  setSidebarProjectSpaceId,
   setThreadChangedFilesExpanded,
   type UiState,
 } from "./uiStateStore";
@@ -23,6 +24,7 @@ function makeUiState(overrides: Partial<UiState> = {}): UiState {
     projectExpandedById: {},
     projectOrder: [],
     sidebarProjectScopeKey: null,
+    sidebarProjectSpaceId: null,
     threadLastVisitedAtById: {},
     threadChangedFilesExpandedById: {},
     defaultAdvertisedEndpointKey: null,
@@ -156,6 +158,16 @@ describe("uiStateStore pure functions", () => {
     expect(setSidebarProjectScopeKey(scoped, null).sidebarProjectScopeKey).toBeNull();
     expect(setSidebarProjectScopeKey(scoped, "").sidebarProjectScopeKey).toBeNull();
   });
+
+  it("clears the project scope when the rail's space changes", () => {
+    const scoped = setSidebarProjectScopeKey(makeUiState(), "github.com/pingdotgg/t3code");
+    const spaced = setSidebarProjectSpaceId(scoped, "group-zentio");
+
+    expect(spaced.sidebarProjectSpaceId).toBe("group-zentio");
+    expect(spaced.sidebarProjectScopeKey).toBeNull();
+    expect(setSidebarProjectSpaceId(spaced, "group-zentio")).toBe(spaced);
+    expect(setSidebarProjectSpaceId(spaced, null).sidebarProjectSpaceId).toBeNull();
+  });
 });
 
 describe("parsePersistedState", () => {
@@ -202,6 +214,7 @@ describe("parsePersistedState", () => {
       },
       defaultAdvertisedEndpointKey: "desktop-core:lan:http",
       sidebarProjectScopeKey: null,
+      sidebarProjectSpaceId: null,
       pullRequestMergeMethod: "merge",
       threadChangedFilesExpandedById: {
         "environment:thread-1": {
@@ -324,6 +337,7 @@ describe("uiStateStore persistence", () => {
       },
       defaultAdvertisedEndpointKey: "desktop-core:lan:http",
       sidebarProjectScopeKey: null,
+      sidebarProjectSpaceId: null,
       threadChangedFilesExpansionVersion: 2,
       threadChangedFilesExpandedById: {
         "environment:thread-1": {

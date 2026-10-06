@@ -145,7 +145,8 @@ describe("electron development launcher", () => {
     const development = resolveMacLauncherIconPaths("/runtime", true);
     const production = resolveMacLauncherIconPaths("/runtime", false);
 
-    assert.match(development.sourceIconPath, /assets[\\/]otter[\\/]otter-macos-1024\.png$/);
+    // The source icons are real repo paths, joined for the host.
+    assert.match(development.sourceIconPath, /assets[\\/]otter-dev[\\/]otter-dev-macos-1024\.png$/);
     assert.equal(development.generatedIconPath, "/runtime/icon-dev.icns");
     assert.match(production.sourceIconPath, /assets[\\/]otter[\\/]otter-macos-1024\.png$/);
     assert.equal(production.generatedIconPath, "/runtime/icon-prod.icns");

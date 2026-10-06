@@ -1,7 +1,7 @@
 import { Toolbar } from "../../components/ui/Toolbar";
 import { ScreenScrollView as ScrollView } from "../../components/ui/ScreenScrollView";
 
-import { useAuth } from "@clerk/expo";
+import { useAuth } from "../accounts/AccountProvider";
 import { StackActions, useNavigation } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import { Platform, Pressable, RefreshControl, View } from "react-native";
@@ -39,7 +39,7 @@ export function ConnectOnboardingRouteScreen() {
 function ConfiguredConnectOnboardingRouteScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { isSignedIn, userId } = useAuth({ treatPendingAsSignedOut: false });
+  const { isSignedIn, userId } = useAuth();
   const { connectedEnvironments, onSetEnvironmentEnabled, onRemoveEnvironmentPress } =
     useRemoteConnections();
   const { refreshRelayEnvironments } = useConnectionController();

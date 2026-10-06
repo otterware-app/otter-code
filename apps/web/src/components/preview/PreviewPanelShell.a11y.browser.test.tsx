@@ -44,18 +44,13 @@ async function renderPanel(
             </button>
             <div key={present ? "root-controls" : "header-controls"}>
               <PanelLayoutControls
-                showTerminalControl={false}
                 showThreadPanelControl={false}
-                terminalAvailable={false}
-                terminalOpen={false}
-                terminalShortcutLabel={null}
                 threadPanelOpen={false}
                 threadPanelPresentation="inline"
                 threadPanelShortcutLabel={null}
                 rightPanelAvailable
                 rightPanelOpen={open ?? true}
                 rightPanelShortcutLabel={null}
-                onToggleTerminal={() => {}}
                 onToggleThreadPanel={() => {}}
                 onToggleRightPanel={() => {}}
               />

@@ -139,7 +139,7 @@ list text that must keep matching what the server or agents emit.
 | Releases and updates | GitHub Releases of `otterware-app/otter-code`, nightly channel                          |
 | Relay                | `https://relay.code.otterware.app` (Cloudflare Worker, deployed from `infra/relay`)     |
 | Tunnels              | `prod-<digest>.otterware.app`, one per linked machine                                   |
-| Hosted web app       | `https://code.otterware.app` (Vercel project `otter-code-web`)                          |
+| Hosted web app       | `https://code.otterware.app` (Cloudflare Worker `otter-code-web`)                       |
 | Sign-in              | Otter Accounts at `accounts.otterware.app`                                              |
 | Apple                | Team `YNJ5WLH965`, App Store app `6815697255`                                           |
 | Mobile builds        | EAS project `@clary-so/otter-code`                                                      |
@@ -157,6 +157,12 @@ Secrets live in the repository's Actions secrets and its `production` environmen
   packages with the `NPM_TOKEN` secret (an npm account that is a member of the `otterware` org),
   tagged `nightly` and also `latest`, so `npx otter-code` and `npm i -g otter-code` get the newest
   build. The token is needed because new packages have no npm trusted publisher yet.
+- **Hosted web:** the release stages a Cloudflare Worker version, then promotes it after the
+  desktop/CLI release publishes. `scripts/otter/web/` owns its routing and static assets;
+  the adaptation script keeps upstream's Vercel path separate. The `Deploy Otter Code web`
+  workflow can ship hosting fixes from `main` with an already-published release tag, without
+  rebuilding desktop or mobile. Cloudflare manages the `.app` aliases and `.dev` redirects.
+  PR previews use the separate `otter-code-web-preview` Worker and immutable version URLs.
 - **Relay:** `Deploy T3 Connect relay` runs on every push to `main`. The relay adopts the
   existing `otterware.app` zone and a PlanetScale database with a retain policy. Never run
   `alchemy destroy` against `prod`. Its PlanetScale service token (`PLANETSCALE_API_TOKEN*`)

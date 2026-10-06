@@ -76,7 +76,6 @@ const VARIANT_CONFIG = {
     scheme: "ottercode-dev",
     iosBundleIdentifier: "dev.otterware.code.dev",
     androidPackage: "dev.otterware.code.dev",
-    relyingParty: "clerk.otterware.dev",
     assets: DEVELOPMENT_ASSETS,
   },
   preview: {
@@ -84,7 +83,6 @@ const VARIANT_CONFIG = {
     scheme: "ottercode-preview",
     iosBundleIdentifier: "dev.otterware.code.preview",
     androidPackage: "dev.otterware.code.preview",
-    relyingParty: "clerk.otterware.dev",
     assets: PREVIEW_ASSETS,
   },
   production: {
@@ -92,7 +90,6 @@ const VARIANT_CONFIG = {
     scheme: "ottercode",
     iosBundleIdentifier: "dev.otterware.code",
     androidPackage: "dev.otterware.code",
-    relyingParty: "clerk.otterware.dev",
     assets: RELEASE_ASSETS,
   },
 } as const;
@@ -242,10 +239,6 @@ const config: ExpoConfig = {
     bundleIdentifier: iosBundleIdentifier,
     // Avoid Personal Team fallback: it cannot sign App Groups, Apple sign-in or push entitlements.
     appleTeamId: "YNJ5WLH965",
-    associatedDomains: [
-      `applinks:${variant.relyingParty}`,
-      `webcredentials:${variant.relyingParty}`,
-    ],
     entitlements: {
       "keychain-access-groups": [`$(AppIdentifierPrefix)${variant.iosBundleIdentifier}`],
     },
@@ -339,8 +332,6 @@ const config: ExpoConfig = {
         mode: APP_VARIANT === "development" ? "development" : "production",
       },
     ],
-    // Gate Clerk here: withoutIosPersonalTeamCapabilities runs too early to strip its entitlement.
-    ["@clerk/expo", { theme: "./clerk-theme.json", appleSignIn: !isIosPersonalTeamBuild }],
     "expo-web-browser",
     [
       "expo-quick-actions",
@@ -436,15 +427,7 @@ const config: ExpoConfig = {
     relay: {
       url: repoEnv.T3CODE_RELAY_URL ?? null,
     },
-    clerk: {
-      publishableKey: repoEnv.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? null,
-      jwtTemplate: repoEnv.EXPO_PUBLIC_CLERK_JWT_TEMPLATE ?? null,
-    },
-    // Clerk reads these exact names at prebuild. Omit unset values: manifest null becomes truthy {}.
-    EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID: repoEnv.EXPO_PUBLIC_CLERK_GOOGLE_WEB_CLIENT_ID,
-    EXPO_PUBLIC_CLERK_GOOGLE_IOS_CLIENT_ID: repoEnv.EXPO_PUBLIC_CLERK_GOOGLE_IOS_CLIENT_ID,
-    EXPO_PUBLIC_CLERK_GOOGLE_ANDROID_CLIENT_ID: repoEnv.EXPO_PUBLIC_CLERK_GOOGLE_ANDROID_CLIENT_ID,
-    EXPO_PUBLIC_CLERK_GOOGLE_IOS_URL_SCHEME: repoEnv.EXPO_PUBLIC_CLERK_GOOGLE_IOS_URL_SCHEME,
+    accounts: { url: repoEnv.EXPO_PUBLIC_ACCOUNTS_URL ?? null },
     observability: {
       tracesUrl: repoEnv.EXPO_PUBLIC_OTLP_TRACES_URL ?? "https://api.axiom.co/v1/traces",
       tracesDataset: repoEnv.EXPO_PUBLIC_OTLP_TRACES_DATASET ?? null,

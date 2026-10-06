@@ -50,8 +50,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@clerk/expo": "catalog:",
-    "@clerk/expo-native-components": "0.4.0",
     "@effect/atom-react": "catalog:",
     "@expo-google-fonts/dm-sans": "^0.4.2",
     "@expo/metro-runtime": "~58.0.14",

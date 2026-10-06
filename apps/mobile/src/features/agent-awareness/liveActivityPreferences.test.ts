@@ -83,7 +83,7 @@ describe("liveActivityPreferences", () => {
       yield* setLiveActivityUpdatesEnabled({
         enabled: false,
         previousEnabled: true,
-        clerkToken: "clerk-token",
+        accountToken: "account-token",
         connections: [connection],
         canConfigureEnvironment: () => true,
       });
@@ -92,7 +92,7 @@ describe("liveActivityPreferences", () => {
         liveActivitiesEnabled: false,
       });
       expect(linkEnvironmentToCloudWithPreference).toHaveBeenCalledWith({
-        clerkToken: "clerk-token",
+        accountToken: "account-token",
         connection,
         liveActivitiesEnabled: false,
       });
@@ -104,7 +104,7 @@ describe("liveActivityPreferences", () => {
       yield* setLiveActivityUpdatesEnabled({
         enabled: true,
         previousEnabled: false,
-        clerkToken: "clerk-token",
+        accountToken: "account-token",
         connections: [connection],
         canConfigureEnvironment: () => true,
       });
@@ -113,7 +113,7 @@ describe("liveActivityPreferences", () => {
         liveActivitiesEnabled: true,
       });
       expect(linkEnvironmentToCloudWithPreference).toHaveBeenCalledWith({
-        clerkToken: "clerk-token",
+        accountToken: "account-token",
         connection,
         liveActivitiesEnabled: true,
       });
@@ -125,7 +125,7 @@ describe("liveActivityPreferences", () => {
       yield* setLiveActivityUpdatesEnabled({
         enabled: false,
         previousEnabled: true,
-        clerkToken: null,
+        accountToken: null,
         connections: [connection],
         canConfigureEnvironment: () => true,
       });
@@ -147,14 +147,14 @@ describe("liveActivityPreferences", () => {
       yield* setLiveActivityUpdatesEnabled({
         enabled: true,
         previousEnabled: false,
-        clerkToken: "clerk-token",
+        accountToken: "account-token",
         connections: [connection, managedConnection],
         canConfigureEnvironment: () => true,
       });
 
       expect(linkEnvironmentToCloudWithPreference).toHaveBeenCalledTimes(1);
       expect(linkEnvironmentToCloudWithPreference).toHaveBeenCalledWith({
-        clerkToken: "clerk-token",
+        accountToken: "account-token",
         connection,
         liveActivitiesEnabled: true,
       });
@@ -171,7 +171,7 @@ describe("liveActivityPreferences", () => {
         setLiveActivityUpdatesEnabled({
           enabled: false,
           previousEnabled: true,
-          clerkToken: "clerk-token",
+          accountToken: "account-token",
           connections: [connection],
           canConfigureEnvironment: () => true,
         }),
@@ -185,12 +185,12 @@ describe("liveActivityPreferences", () => {
         liveActivitiesEnabled: true,
       });
       expect(linkEnvironmentToCloudWithPreference).toHaveBeenNthCalledWith(1, {
-        clerkToken: "clerk-token",
+        accountToken: "account-token",
         connection,
         liveActivitiesEnabled: false,
       });
       expect(linkEnvironmentToCloudWithPreference).toHaveBeenNthCalledWith(2, {
-        clerkToken: "clerk-token",
+        accountToken: "account-token",
         connection,
         liveActivitiesEnabled: true,
       });
@@ -207,7 +207,7 @@ describe("liveActivityPreferences", () => {
       yield* setLiveActivityUpdatesEnabled({
         enabled: true,
         previousEnabled: false,
-        clerkToken: "clerk-token",
+        accountToken: "clerk-token",
         connections: [readOnlyConnection, connection],
         canConfigureEnvironment: (environmentId) => environmentId === connection.environmentId,
       });
@@ -216,7 +216,7 @@ describe("liveActivityPreferences", () => {
         liveActivitiesEnabled: true,
       });
       expect(linkEnvironmentToCloudWithPreference).toHaveBeenCalledExactlyOnceWith({
-        clerkToken: "clerk-token",
+        accountToken: "clerk-token",
         connection,
         liveActivitiesEnabled: true,
       });
@@ -229,7 +229,7 @@ describe("liveActivityPreferences", () => {
         yield* setLiveActivityUpdatesEnabled({
           enabled,
           previousEnabled: !enabled,
-          clerkToken: "clerk-token",
+          accountToken: "clerk-token",
           connections: [connection],
           canConfigureEnvironment: () => false,
         });
@@ -257,7 +257,7 @@ describe("liveActivityPreferences", () => {
       yield* setLiveActivityUpdatesEnabled({
         enabled: false,
         previousEnabled: true,
-        clerkToken: "clerk-token",
+        accountToken: "clerk-token",
         connections: [connection],
         canConfigureEnvironment: () => canConfigureEnvironment,
       });
@@ -284,7 +284,7 @@ describe("liveActivityPreferences", () => {
         setLiveActivityUpdatesEnabled({
           enabled: false,
           previousEnabled: true,
-          clerkToken: "clerk-token",
+          accountToken: "clerk-token",
           connections: [connection],
           canConfigureEnvironment: () => canConfigureEnvironment,
         }),

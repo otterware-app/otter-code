@@ -20,6 +20,7 @@ import {
   HardDriveIcon,
   PanelsTopLeftIcon,
   KeyboardIcon,
+  LayersIcon,
   Link2Icon,
   PaletteIcon,
   PuzzleIcon,
@@ -66,12 +67,12 @@ const SnapShotIcon = createLucideIcon("snap-shot", [
 ]);
 
 const T3ConnectSidebarSignIn = lazy(() =>
-  import("../clerk/T3ConnectSidebarSignIn").then((module) => ({
+  import("../accounts/T3ConnectSidebarSignIn").then((module) => ({
     default: module.T3ConnectSidebarSignIn,
   })),
 );
 const T3ConnectSidebarAvatar = lazy(() =>
-  import("../clerk/T3ConnectSidebarSignIn").then((module) => ({
+  import("../accounts/T3ConnectSidebarSignIn").then((module) => ({
     default: module.T3ConnectSidebarAvatar,
   })),
 );
@@ -83,6 +84,7 @@ const SETTINGS_SECTION_ICONS: Readonly<
   "/settings/diagnostics": Settings2Icon,
   "/settings/appearance": PaletteIcon,
   "/settings/projects": PanelsTopLeftIcon,
+  "/settings/project-groups": LayersIcon,
   "/settings/keybindings": KeyboardIcon,
   "/settings/snap-shot": SnapShotIcon,
   "/settings/providers": BotIcon,

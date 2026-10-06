@@ -47,14 +47,16 @@ vi.mock("../../rpc/atomRegistry", () => ({
     return state.registry;
   },
 }));
-vi.mock("@clerk/react", () => ({ useAuth: () => ({ isLoaded: true, isSignedIn: false }) }));
+vi.mock("../../accounts/AccountProvider", () => ({
+  useAuth: () => ({ isLoaded: true, isSignedIn: false }),
+}));
 vi.mock("../../hooks/useTheme", () => ({ mountOnboardingTheme: () => () => {} }));
 vi.mock("../../hooks/useLocalStorage", () => ({ useLocalStorage: () => [false, () => {}] }));
 vi.mock("../../hooks/useCopyToClipboard", () => ({
   useCopyToClipboard: () => ({ copyToClipboard: vi.fn(), copied: false }),
 }));
 vi.mock("../../cloud/publicConfig", () => ({ hasCloudPublicConfig: () => false }));
-vi.mock("../clerk/useT3ConnectAuthPrompt", () => ({ useT3ConnectAuthPrompt: vi.fn() }));
+vi.mock("../accounts/useT3ConnectAuthPrompt", () => ({ useT3ConnectAuthPrompt: vi.fn() }));
 vi.mock("../../onboarding/firstRun", () => ({
   useCompleteOnboarding: () => state.completeOnboarding,
 }));

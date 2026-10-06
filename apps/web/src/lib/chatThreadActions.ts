@@ -35,6 +35,8 @@ export interface ChatThreadActionContext {
   readonly activeThread: ThreadContextLike | undefined;
   readonly defaultProjectRef: ScopedProjectRef | null;
   readonly handleNewThread: NewThreadHandler;
+  /** The rail's space; the open thread's project only carries over from inside it. */
+  readonly isProjectInSpace?: ((projectRef: ScopedProjectRef) => boolean) | undefined;
 }
 
 export function resolveNewDraftStartFromOrigin(input: {
@@ -71,14 +73,10 @@ export function hasExplicitComposerModelSelection(
 export function resolveThreadActionProjectRef(
   context: ChatThreadActionContext,
 ): ScopedProjectRef | null {
-  if (context.activeThread) {
-    return scopeProjectRef(context.activeThread.environmentId, context.activeThread.projectId);
-  }
-  if (context.activeDraftThread) {
-    return scopeProjectRef(
-      context.activeDraftThread.environmentId,
-      context.activeDraftThread.projectId,
-    );
+  const active = context.activeThread ?? context.activeDraftThread;
+  const activeProjectRef = active ? scopeProjectRef(active.environmentId, active.projectId) : null;
+  if (activeProjectRef && (context.isProjectInSpace?.(activeProjectRef) ?? true)) {
+    return activeProjectRef;
   }
   return context.defaultProjectRef;
 }

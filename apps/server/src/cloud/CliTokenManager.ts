@@ -36,11 +36,11 @@ import {
 } from "./publicConfig.ts";
 import { renderLoopbackAuthorizationCompleteHtml } from "./cliAuthHtml.ts";
 
-const CLOUD_CLI_OAUTH_TOKEN_SECRET = "cloud-cli-oauth-token";
+const CLOUD_CLI_OAUTH_TOKEN_SECRET = "otter-account-oauth-token";
 const CLOUD_CLI_OAUTH_CALLBACK_TIMEOUT = Duration.minutes(10);
 const CLOUD_CLI_OAUTH_REFRESH_EARLY_MS = Duration.toMillis(Duration.minutes(5));
 const DEVICE_CODE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code";
-// RFC 8628 defaults, used only when Clerk omits the field.
+// RFC 8628 defaults, used only when Otter Accounts omits the field.
 const DEVICE_AUTHORIZATION_DEFAULT_INTERVAL = Duration.seconds(5);
 // RFC 8628 §3.5: a slow_down response means "add 5 seconds to the interval".
 const DEVICE_AUTHORIZATION_SLOW_DOWN_INCREMENT = Duration.seconds(5);
@@ -318,14 +318,14 @@ const isTransportError = (error: unknown) =>
   HttpClientError.isHttpClientError(error) && error.reason._tag === "TransportError";
 
 /**
- * Polls Clerk's token endpoint until the user approves or denies the device
+ * Polls Otter Accounts's token endpoint until the user approves or denies the device
  * request in the browser (RFC 8628 §3.4/3.5). `authorization_pending` keeps
  * waiting, while `slow_down` and transient failures widen the interval before
  * the next tick; the caller bounds the whole loop with the device code's
  * lifetime.
  */
 const pollDeviceToken = Effect.fn("cloud.cli_token.poll_device_token")(function* (
-  metadata: Pick<CloudCliOAuthConfig, "tokenEndpoint" | "clientId">,
+  metadata: Pick<CloudCliOAuthConfig, "tokenEndpoint" | "clientId" | "resource">,
   deviceCode: string,
   initialInterval: Duration.Duration,
 ) {
@@ -334,6 +334,7 @@ const pollDeviceToken = Effect.fn("cloud.cli_token.poll_device_token")(function*
     grant_type: DEVICE_CODE_GRANT_TYPE,
     device_code: deviceCode,
     client_id: metadata.clientId,
+    resource: metadata.resource,
   };
   let interval = initialInterval;
   while (true) {
@@ -377,7 +378,7 @@ const pollDeviceToken = Effect.fn("cloud.cli_token.poll_device_token")(function*
 
 /**
  * OAuth device authorization grant for machines without a local browser
- * (SSH). Clerk issues a short user code; the user approves it on Clerk's
+ * (SSH). Otter Accounts issues a short user code; the user approves it on Otter Accounts's
  * hosted device page from any browser while this process polls the token
  * endpoint. Nothing is typed into the terminal and no redirect URI is
  * involved, so the hosted app plays no part in this flow.
@@ -389,12 +390,13 @@ export const deviceAuthorizationLogin = Effect.fn("cloud.cli_token.device_author
     const authorization = yield* HttpClientRequest.post(metadata.deviceAuthorizationEndpoint).pipe(
       HttpClientRequest.bodyUrlParams({
         client_id: metadata.clientId,
+        resource: metadata.resource,
         scope: metadata.scopes.join(" "),
       }),
       httpClient.execute,
       Effect.flatMap(HttpClientResponse.schemaBodyJson(DeviceAuthorizationResponse)),
     );
-    // Clerk's advertised lifetime and interval are authoritative.
+    // Otter Accounts's advertised lifetime and interval are authoritative.
     const expiresIn = Duration.seconds(authorization.expires_in);
     const interval =
       authorization.interval === undefined
@@ -450,6 +452,7 @@ export const make = Effect.gen(function* () {
       grant_type: "refresh_token",
       refresh_token: token.refreshToken,
       client_id: metadata.clientId,
+      resource: metadata.resource,
     });
     return refreshed.identity === undefined && token.identity !== undefined
       ? { ...refreshed, identity: token.identity }
@@ -468,7 +471,14 @@ export const make = Effect.gen(function* () {
         const request = yield* HttpServerRequest.HttpServerRequest;
         const url = new URL(request.originalUrl, metadata.redirectUri);
         const code = url.searchParams.get("code");
-        if (url.searchParams.get("state") !== state || !code) {
+        if (
+          request.method !== "GET" ||
+          url.pathname !== "/callback" ||
+          url.searchParams.get("state") !== state ||
+          url.searchParams.get("iss") !==
+            new URL(metadata.tokenEndpoint).href.replace(/\/oauth2\/token$/, "") ||
+          !code
+        ) {
           return HttpServerResponse.text("Invalid T3 Connect authorization callback.", {
             status: 400,
           });
@@ -490,10 +500,10 @@ export const make = Effect.gen(function* () {
       ),
       Layer.build,
     );
-    // The hosted /connect page establishes a Clerk session before forwarding
+    // The hosted /connect page establishes a Otter Accounts session before forwarding
     // the request to /oauth/authorize with the loopback redirect URI. Sending
     // a signed-out browser to /oauth/authorize directly loses the authorize
-    // parameters across Clerk's sign-in redirect (#5051).
+    // parameters across Otter Accounts's sign-in redirect (#5051).
     const authorizationUrl = buildConnectAuthorizeRequestUrl({
       hostedAppUrl,
       state,
@@ -520,6 +530,7 @@ export const make = Effect.gen(function* () {
       code: authorization.code,
       redirect_uri: metadata.redirectUri,
       client_id: metadata.clientId,
+      resource: metadata.resource,
       code_verifier: verifier,
     });
     return { _tag: "Authorized", token } as const;

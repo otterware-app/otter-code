@@ -139,13 +139,14 @@ describe("buildCodeHomeSnapshot", () => {
     expect(snapshot.items.map((item) => [item.kind, item.facets?.threadId])).toEqual([
       ["run-finished", "t-done"],
       ["run-failed", "t-failed"],
+      ["run-finished", "t-stale"],
     ]);
     expect(snapshot.items[0]!.agentNote).toBe("Rebased the module stack.");
     expect(snapshot.items[1]!.agentNote).toBe("Provider exited");
     expect(snapshot.agents.recentlyFinished).toBe(3);
   });
 
-  it("counts running threads, skips subagents, archived and snoozed threads", () => {
+  it("counts running threads and surfaces child approvals, skipping archived and snoozed threads", () => {
     const snapshot = snapshotOf([
       shell("t-running", { status: "running", activeRunId: "run-9" }),
       shell("t-sub", {
@@ -166,9 +167,10 @@ describe("buildCodeHomeSnapshot", () => {
         latestRunCompletedAt: hoursAgo(1),
       }),
     ]);
-    expect(snapshot.items).toEqual([]);
+    expect(snapshot.items.map((item) => item.facets?.threadId)).toEqual(["t-sub"]);
     expect(snapshot.agents.running).toBe(1);
-    expect(snapshot.activeThreadsByCodeProject.get("proj-1")).toBe(1);
+    expect(snapshot.agents.waiting).toBe(1);
+    expect(snapshot.activeThreadsByCodeProject.get("proj-1")).toBe(2);
   });
 
   it("surfaces pull requests with requested changes and remembers recent merges", () => {

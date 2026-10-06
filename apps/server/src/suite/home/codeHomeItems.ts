@@ -57,8 +57,6 @@ export function parseCodeItemId(
 }
 
 const HOUR_MS = 60 * 60 * 1000;
-/** A finished run stays on Home for this long when the user has not opened the thread. */
-export const FINISHED_UNSEEN_WINDOW_MS = 48 * HOUR_MS;
 const RECENTLY_FINISHED_MS = 24 * HOUR_MS;
 const MERGED_FACT_WINDOW_MS = 7 * 24 * HOUR_MS;
 
@@ -193,10 +191,11 @@ function pullRequestItem(
   };
 }
 
-/** Root threads a user may need to look at: not deleted, archived, snoozed, or provider subagents. */
+/** Visible root threads, plus child threads blocked on a request the user must answer. */
 function homeVisible(thread: OrchestrationV2ThreadShell, nowMs: number) {
   if (thread.deletedAt !== null || thread.archivedAt !== null) return false;
-  if (thread.lineage.relationshipToParent === "subagent") return false;
+  if (thread.lineage.relationshipToParent === "subagent" && thread.pendingRuntimeRequest === null)
+    return false;
   const snoozedUntil = millis(thread.snoozedUntil);
   return snoozedUntil === null || snoozedUntil <= nowMs;
 }
@@ -233,7 +232,7 @@ export function buildCodeHomeSnapshot(input: {
     } else if (completedMs !== null && thread.latestRunCompletedAt != null) {
       if (input.nowMs - completedMs <= RECENTLY_FINISHED_MS) agents.recentlyFinished += 1;
       const unseen = visitedMs === null || visitedMs < completedMs;
-      if (unseen && input.nowMs - completedMs <= FINISHED_UNSEEN_WINDOW_MS) {
+      if (unseen) {
         const failed = thread.status === "failed";
         if (failed || thread.status === "completed" || thread.status === "idle") {
           items.push(unseenRunItem(thread, thread.latestRunCompletedAt, failed));

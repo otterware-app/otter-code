@@ -34,7 +34,13 @@ export function useAgentEntries(environmentId: EnvironmentId | null, nowMs: numb
     const entries: AgentEntry[] = [];
     for (const shell of shells) {
       if (environmentId !== null && shell.environmentId !== environmentId) continue;
-      if (shell.archivedAt !== null || shell.lineage.relationshipToParent === "subagent") continue;
+      if (shell.archivedAt !== null) continue;
+      if (
+        shell.lineage.relationshipToParent === "subagent" &&
+        !shell.hasPendingApprovals &&
+        !shell.hasPendingUserInput
+      )
+        continue;
       if (shell.hasPendingApprovals || shell.hasPendingUserInput) {
         entries.push({ shell, state: "waiting", since: shell.updatedAt });
       } else if (threadRuntimeIsActive(shell.runtime)) {

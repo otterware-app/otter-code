@@ -108,7 +108,7 @@ const make = Effect.gen(function* () {
     ),
     Effect.withSpan("CodeHomeActivity.build"),
   );
-  const snapshot = yield* Effect.cachedWithTTL(build, CACHE_TTL);
+  const [snapshot, invalidate] = yield* Effect.cachedInvalidateWithTTL(build, CACHE_TTL);
 
   const newCommandId = crypto.randomUUIDv4.pipe(
     Effect.orDie,
@@ -153,7 +153,7 @@ const make = Effect.gen(function* () {
         return;
       }
       return yield* fail();
-    });
+    }).pipe(Effect.tap(() => invalidate));
 
   const contributor: SuiteHomeContributor = {
     module: "code",

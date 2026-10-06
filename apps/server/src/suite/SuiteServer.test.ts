@@ -85,6 +85,24 @@ const decodeHomeResult = Schema.decodeUnknownEffect(HomeCallResult);
 const decodeToolNames = Schema.decodeUnknownEffect(ToolNames);
 const decodeCallResult = Schema.decodeUnknownEffect(CallResult);
 
+const decodeProject = Schema.decodeUnknownEffect(SuiteProject);
+const decodeOverview = Schema.decodeUnknownEffect(SuiteHomeOverview);
+const decodeProjectList = Schema.decodeUnknownEffect(
+  Schema.Struct({
+    projects: Schema.Array(Schema.Struct({ project: SuiteProject })),
+  }),
+);
+const decodeToolResult = Schema.decodeUnknownEffect(
+  Schema.fromJsonString(
+    Schema.Struct({
+      result: Schema.Struct({
+        isError: Schema.optional(Schema.Boolean),
+        structuredContent: Schema.Unknown,
+      }),
+    }),
+  ),
+);
+
 const firstJson = (body: string) => body.match(/\{.*\}/s)?.[0] ?? body;
 
 it.effect("an agent in a thread lists and calls suite_capabilities over /mcp", () =>
@@ -173,48 +191,29 @@ it.effect("an agent in a thread lists and calls suite_capabilities over /mcp", (
             }),
             sessionId,
           );
-          return yield* Schema.decodeUnknownEffect(
-            Schema.fromJsonString(
-              Schema.Struct({
-                result: Schema.Struct({
-                  isError: Schema.optional(Schema.Boolean),
-                  structuredContent: Schema.Unknown,
-                }),
-              }),
-            ),
-          )(firstJson(yield* response.text));
+          return yield* decodeToolResult(firstJson(yield* response.text));
         });
       const created = yield* callTool("suite_create_project", {
         name: "Acme",
         rules: { mail: { domains: ["acme.com"] } },
       });
       expect(created.result.isError ?? false).toBe(false);
-      const project = yield* Schema.decodeUnknownEffect(SuiteProject)(
-        created.result.structuredContent,
-      );
+      const project = yield* decodeProject(created.result.structuredContent);
       expect(project.rules.mail.domains).toEqual(["acme.com"]);
       const updated = yield* callTool("suite_update_project", {
         id: project.id,
         name: "Acme rollout",
       });
-      const renamed = yield* Schema.decodeUnknownEffect(SuiteProject)(
-        updated.result.structuredContent,
-      );
+      const renamed = yield* decodeProject(updated.result.structuredContent);
       expect(renamed.name).toBe("Acme rollout");
       expect(renamed.rules).toEqual(project.rules);
       const projectOverview = yield* callTool("suite_get_project_overview", {
         projectId: project.id,
       });
-      const scoped = yield* Schema.decodeUnknownEffect(SuiteHomeOverview)(
-        projectOverview.result.structuredContent,
-      );
+      const scoped = yield* decodeOverview(projectOverview.result.structuredContent);
       expect(scoped.projects[0]?.project.id).toBe(project.id);
       const projectList = yield* callTool("suite_list_projects", {});
-      const listedProjects = yield* Schema.decodeUnknownEffect(
-        Schema.Struct({
-          projects: Schema.Array(Schema.Struct({ project: SuiteProject })),
-        }),
-      )(projectList.result.structuredContent);
+      const listedProjects = yield* decodeProjectList(projectList.result.structuredContent);
       expect(listedProjects.projects.map((entry) => entry.project.name)).toEqual(["Acme rollout"]);
 
       // Module migrations ran in suite.sqlite, beside (not inside) the main database.

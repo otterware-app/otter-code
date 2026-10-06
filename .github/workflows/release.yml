@@ -1125,6 +1125,19 @@ jobs:
               "${vercel_scope_args[@]}"
           fi
 
+          # Otter Code hosted aliases
+          if [[ "${GITHUB_REPOSITORY}" == "otterware-app/otter-code" ]]; then
+            for otter_domain in \
+              code.otterware.app latest.code.otterware.app nightly.code.otterware.app \
+              code.otterware.dev latest.code.otterware.dev nightly.code.otterware.dev; do
+              if [[ "$otter_domain" != "$channel_domain" ]]; then
+                vp dlx vercel@53.1.1 alias set "$DEPLOYMENT_URL" "$otter_domain" \
+                  --token "$VERCEL_TOKEN" \
+                  "${vercel_scope_args[@]}"
+              fi
+            done
+          fi
+
   # Same split as the web app: build a production deployment early, then
   # promote it to t3.codes once the release it links to exists. As above, the
   # project's own *.vercel.app hostname moves at build time.

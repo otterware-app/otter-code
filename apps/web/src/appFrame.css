@@ -1,0 +1,213 @@
+/*
+ * Otter Mail's window frame (AppSidebarLayout sets data-app-frame on the
+ * sidebar wrapper, from md up). The window wears the sidebar's surface: the
+ * rail of spaces runs down its left edge, and the sidebar and panes after it
+ * share one rounded content panel. In the desktop app ("window") the panel
+ * starts under the title band, so every pane's header sits on the frame, with
+ * a thin margin of frame on the right and bottom. In a browser tab ("tab")
+ * the panel runs to the page's edges, rounded only against the rail.
+ *
+ * The panes keep painting their own surfaces; the frame only recolors their
+ * title bands, and AppFramePanelEdge draws the rim and rounds the corners
+ * over them, so no pane has to know where the panel's corners fall.
+ */
+
+:root {
+  --workspace-rail-width: 52px;
+  /* The window's frame: a step off the canvas, as Otter Mail's Mac window
+     reads over its vibrancy, so the panel inside it has an edge. Themes use
+     their sidebar color. Resolved on the root so it is one color everywhere. */
+  --app-frame: #f4f4f5;
+  /* The panel's edge against the frame: the frame a little of the way to the
+     text, so it shows in every theme whatever its border role is. */
+  --panel-edge: color-mix(in srgb, var(--foreground) 5%, var(--app-frame));
+  /* The sidebar's body in the panel: halfway from the frame to the canvas, so
+     the rail stands apart from it. */
+  --sidebar-panel-surface: color-mix(in srgb, var(--app-frame) 50%, var(--background));
+  --app-frame-radius: calc(var(--radius) + 4px);
+
+  @variant dark {
+    --app-frame: #171717;
+  }
+}
+
+html[data-theme-id]:not([data-theme-id=""]) {
+  --app-frame: var(--app-theme-sidebar);
+}
+
+/* The Mac app's thin chrome (Linear's): the traffic lights sit centered in it
+   (apps/desktop DesktopWindow). Windows and Linux follow their overlay. */
+html.electron:not(.wco) {
+  --workspace-topbar-height: 43px;
+}
+
+[data-app-frame] {
+  background-color: var(--app-frame);
+}
+
+/* Where the rail's first space sits: in line with the sidebar's brand row,
+   the panel's first row (under the title band in the desktop app). */
+[data-space-rail] {
+  --space-rail-top: calc((var(--workspace-topbar-height) - 2.25rem) / 2);
+}
+
+/* The panes after the rail. The fixed sidebar is positioned inside them. */
+[data-app-frame="window"] [data-app-panel] {
+  padding: 0 0.25rem 0.25rem 0;
+}
+
+[data-app-frame] [data-slot="sidebar-container"] {
+  left: var(--workspace-rail-width);
+}
+
+/* Collapsed, the sidebar slides away under the rail. */
+[data-app-frame] [data-collapsible="offcanvas"] [data-slot="sidebar-container"] {
+  left: calc(var(--workspace-rail-width) - var(--sidebar-width));
+}
+
+[data-app-frame="window"] [data-slot="sidebar-container"] {
+  height: auto;
+  bottom: 0.25rem;
+}
+
+[data-app-frame] [data-slot="sidebar-inner"] {
+  background: var(--sidebar-panel-surface);
+}
+
+[data-app-frame="window"] [data-slot="sidebar-inner"] {
+  background: linear-gradient(
+    to bottom,
+    transparent var(--workspace-topbar-height),
+    var(--sidebar-panel-surface) var(--workspace-topbar-height)
+  );
+}
+
+/* In the desktop app each pane's title band is part of the frame. */
+[data-app-frame="window"] [data-slot="sidebar-inset"] {
+  height: auto;
+  background: linear-gradient(
+    to bottom,
+    var(--app-frame) var(--workspace-topbar-height),
+    var(--background) var(--workspace-topbar-height)
+  );
+}
+
+/* The pages' shared header (WorkspacePageHeader): pages such as Settings
+   paint the canvas behind it, so it carries the frame itself, only as far
+   down as the band (a header that wraps taller reaches into the panel). */
+[data-app-frame="window"] [data-workspace-page-header] {
+  background: linear-gradient(
+    to bottom,
+    var(--app-frame) var(--workspace-topbar-height),
+    transparent var(--workspace-topbar-height)
+  );
+}
+
+/* Themes paint the header with their toolbar color; on the frame it is the frame's. */
+[data-app-frame="window"] [data-chat-header] {
+  --toolbar-background: var(--app-frame);
+  background-color: var(--app-frame);
+}
+
+[data-app-frame="window"] [data-preview-panel-mode="inline"] {
+  background: linear-gradient(
+    to bottom,
+    var(--app-frame) var(--workspace-topbar-height),
+    var(--background) var(--workspace-topbar-height)
+  );
+}
+
+/* The right panel's tabs sit on the band, so its surfaces (the browser's
+   address bar, a file's breadcrumbs) start a step inside the panel, off its
+   rim. In a tab the band and the panel are one surface and need no gap. */
+[data-app-frame="window"] [data-preview-panel-mode="inline"] [data-right-panel-surface-content] {
+  padding-top: calc(var(--spacing) * 2.5);
+}
+
+/* The rim and the rounded corners, over the panes (AppFramePanelEdge). */
+[data-app-panel-edge] {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 30;
+}
+
+[data-app-frame="window"] [data-app-panel-edge] {
+  inset: var(--workspace-topbar-height) 0.25rem 0.25rem 0;
+}
+
+[data-app-panel-edge] > [data-rim] {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--panel-edge);
+  border-radius: var(--app-frame-radius);
+}
+
+[data-app-frame="tab"] [data-app-panel-edge] > [data-rim] {
+  border-block-width: 0;
+  border-right-width: 0;
+  border-radius: var(--app-frame-radius) 0 0 var(--app-frame-radius);
+}
+
+/* Each corner is frame-colored beyond the panel's curve. */
+[data-app-panel-edge] > [data-corner] {
+  position: absolute;
+  width: var(--app-frame-radius);
+  height: var(--app-frame-radius);
+  --corner-curve:
+    transparent calc(var(--app-frame-radius) - 0.5px),
+    var(--app-frame) calc(var(--app-frame-radius) + 0.5px);
+}
+
+[data-app-panel-edge] > [data-corner="top-left"] {
+  top: 0;
+  left: 0;
+  background: radial-gradient(circle at 100% 100%, var(--corner-curve));
+}
+
+[data-app-panel-edge] > [data-corner="top-right"] {
+  top: 0;
+  right: 0;
+  background: radial-gradient(circle at 0 100%, var(--corner-curve));
+}
+
+[data-app-panel-edge] > [data-corner="bottom-left"] {
+  bottom: 0;
+  left: 0;
+  background: radial-gradient(circle at 100% 0, var(--corner-curve));
+}
+
+[data-app-panel-edge] > [data-corner="bottom-right"] {
+  bottom: 0;
+  right: 0;
+  background: radial-gradient(circle at 0 0, var(--corner-curve));
+}
+
+[data-app-frame="tab"]
+  [data-app-panel-edge]
+  > :is([data-corner="top-right"], [data-corner="bottom-right"]) {
+  display: none;
+}
+
+/* The dev and nightly stage art sits at the top of the panel, behind the
+   brand, and fades into the sidebar's body. */
+:root [data-app-frame] [data-app-sidebar] {
+  --sidebar-stage-fade: var(--sidebar-panel-surface);
+}
+
+/* Where the sidebar's heading starts in its first row: past the pinned
+   sidebar toggle in a tab; in line with the rows below it in the desktop
+   app's panel, whose title band holds the toggle. */
+:root {
+  --sidebar-heading-start: 0px;
+}
+
+[data-app-frame="tab"] [data-app-sidebar] {
+  --sidebar-heading-start: calc(
+    var(--workspace-titlebar-content-left) - var(--sidebar-row-content-inset)
+  );
+}
+
+[data-app-frame="window"] [data-app-sidebar] {
+  --sidebar-heading-start: var(--sidebar-content-inset);
+}

@@ -398,6 +398,22 @@
     "./otterAccounts": {
       "types": "./src/otterAccounts.ts",
       "import": "./src/otterAccounts.ts"
+    },
+    "./brand": {
+      "types": "./src/brand.ts",
+      "import": "./src/brand.ts"
+    },
+    "./googleAuthCallback": {
+      "types": "./src/googleAuthCallback.ts",
+      "import": "./src/googleAuthCallback.ts"
+    },
+    "./calendar/time": {
+      "types": "./src/calendar/time.ts",
+      "import": "./src/calendar/time.ts"
+    },
+    "./calendar/recurrence": {
+      "types": "./src/calendar/recurrence.ts",
+      "import": "./src/calendar/recurrence.ts"
     }
   },
   "scripts": {

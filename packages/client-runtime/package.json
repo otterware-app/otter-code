@@ -390,6 +390,30 @@
     "./accounts": {
       "types": "./src/accounts/session.ts",
       "default": "./src/accounts/session.ts"
+    },
+    "./state/calendar": {
+      "types": "./src/state/calendar.ts",
+      "default": "./src/state/calendar.ts"
+    },
+    "./calendar/layout": {
+      "types": "./src/calendar/layout.ts",
+      "default": "./src/calendar/layout.ts"
+    },
+    "./calendar/chunks": {
+      "types": "./src/calendar/chunks.ts",
+      "default": "./src/calendar/chunks.ts"
+    },
+    "./calendar/days": {
+      "types": "./src/calendar/days.ts",
+      "default": "./src/calendar/days.ts"
+    },
+    "./calendar/format": {
+      "types": "./src/calendar/format.ts",
+      "default": "./src/calendar/format.ts"
+    },
+    "./calendar/optimistic": {
+      "types": "./src/calendar/optimistic.ts",
+      "default": "./src/calendar/optimistic.ts"
     }
   },
   "scripts": {

@@ -63,11 +63,13 @@ const resolveResourcePath = Effect.fn("desktop.assets.resolveResourcePath")(func
 
 const sourceTreeIconFileNames = {
   dev: {
-    ico: "otter-windows.ico",
-    macPng: "otter-macos-1024.png",
-    universalPng: "otter-universal-1024.png",
+    dir: "otter-dev",
+    ico: "otter-dev-windows.ico",
+    macPng: "otter-dev-macos-1024.png",
+    universalPng: "otter-dev-universal-1024.png",
   },
   prod: {
+    dir: "otter",
     ico: "otter-windows.ico",
     macPng: "otter-macos-1024.png",
     universalPng: "otter-universal-1024.png",
@@ -87,7 +89,7 @@ function resolveSourceTreeIconPath(
       : environment.platform === "darwin"
         ? fileNames.macPng
         : fileNames.universalPng;
-  return environment.path.join(environment.rootDir, "assets", "otter", fileName);
+  return environment.path.join(environment.rootDir, "assets", fileNames.dir, fileName);
 }
 
 const resolveIconPath = Effect.fn("desktop.assets.resolveIconPath")(function* (

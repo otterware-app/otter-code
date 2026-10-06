@@ -10,11 +10,13 @@ import {
   type ResolvedSettingsScope,
   type SettingsScopeSearch,
 } from "./settingsScope";
+import { CALENDAR_SETTINGS_SEARCH_ITEMS } from "../../suite/calendar/calendarSettingsSearch";
 
 export type SettingsPath =
   | "/settings/projects"
   | "/settings/project-groups"
   | "/settings/general"
+  | "/settings/calendar"
   | "/settings/appearance"
   | "/settings/keybindings"
   | "/settings/snap-shot"
@@ -92,6 +94,7 @@ export interface SettingsSearchAvailability {
 export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   "/settings/projects": "Project",
   "/settings/general": "General",
+  "/settings/calendar": "Calendar",
   "/settings/project-groups": "Project groups",
   "/settings/appearance": "Appearance",
   "/settings/keybindings": "Keybindings",
@@ -963,6 +966,7 @@ export const SETTINGS_SEARCH_ITEMS = [
     to: "/settings/archived",
     searchTerms: ["restore reopen deleted history projects"],
   },
+  ...CALENDAR_SETTINGS_SEARCH_ITEMS,
 ] as const satisfies ReadonlyArray<SettingsSearchItem>;
 
 export type SettingsSearchItemId = (typeof SETTINGS_SEARCH_ITEMS)[number]["id"];
@@ -973,6 +977,7 @@ const SETTINGS_CATEGORY_SCOPES: Readonly<Record<SettingsPath, SettingsSearchScop
   "/settings/projects": "project",
   "/settings/project-groups": null,
   "/settings/general": null,
+  "/settings/calendar": null,
   "/settings/appearance": null,
   "/settings/snap-shot": null,
   // Keybindings fan out to the selection; Providers shows the representative

@@ -223,6 +223,7 @@ import type { Project } from "../types";
 import { PullRequestGlyph } from "~/components/pullRequest/pullRequestIcons";
 import { readPullRequestListPreferences } from "~/components/pullRequest/pullRequestListPreferences";
 import { suiteCommandPaletteItems } from "~/suite/commandPaletteItems";
+import { useSuiteCommandPaletteGroups } from "~/suite/commandPaletteGroups";
 
 const EMPTY_BROWSE_ENTRIES: FilesystemBrowseResult["entries"] = [];
 
@@ -2333,7 +2334,8 @@ function OpenCommandPaletteDialog(props: {
     });
   }
 
-  const rootGroups = buildRootGroups({ actionItems, recentThreadItems });
+  const suiteGroups = useSuiteCommandPaletteGroups(deferredQuery);
+  const rootGroups = [...buildRootGroups({ actionItems, recentThreadItems }), ...suiteGroups];
   const settingsSearchItems: CommandPaletteActionItem[] = searchSettings(
     deferredQuery,
     availableSettingsSearchItems,

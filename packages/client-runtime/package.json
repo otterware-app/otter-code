@@ -535,6 +535,10 @@
       "types": "./src/pullRequestReply.ts",
       "default": "./src/pullRequestReply.ts"
     },
+    "./accounts": {
+      "types": "./src/accounts/session.ts",
+      "default": "./src/accounts/session.ts"
+    },
     "./pull-request-query": {
       "types": "./src/pullRequestQuery.ts",
       "default": "./src/pullRequestQuery.ts"

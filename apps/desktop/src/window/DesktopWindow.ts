@@ -53,6 +53,8 @@ class ContextMenuImageCopyError extends Schema.TaggedError<ContextMenuImageCopyE
 // Match --workspace-topbar-height in apps/web/src/index.css; native macOS buttons stay 14 points at any zoom.
 const MACOS_WORKSPACE_TOPBAR_HEIGHT = 52;
 const MACOS_WINDOW_BUTTON_RADIUS = 7;
+// The buttons' left inset; the renderer leaves them 82px (preload.ts).
+const MACOS_WINDOW_BUTTON_X = 14;
 
 function parseMailtoAddress(rawUrl: string): Option.Option<string> {
   let url: URL;
@@ -72,7 +74,7 @@ function parseMailtoAddress(rawUrl: string): Option.Option<string> {
 function syncMacosWindowButtons(window: Electron.BrowserWindow): void {
   if (window.isDestroyed() || window.isFullScreen()) return;
   window.setWindowButtonPosition({
-    x: 16,
+    x: MACOS_WINDOW_BUTTON_X,
     y: Math.round(
       (MACOS_WORKSPACE_TOPBAR_HEIGHT * window.webContents.getZoomFactor()) / 2 -
         MACOS_WINDOW_BUTTON_RADIUS,
@@ -270,8 +272,8 @@ function getWindowTitleBarOptions(
     return {
       titleBarStyle: "hiddenInset",
       trafficLightPosition: {
-        x: 16,
-        y: MACOS_WORKSPACE_TOPBAR_HEIGHT / 2 - MACOS_WINDOW_BUTTON_RADIUS,
+        x: MACOS_WINDOW_BUTTON_X,
+        y: Math.round(MACOS_WORKSPACE_TOPBAR_HEIGHT / 2 - MACOS_WINDOW_BUTTON_RADIUS),
       },
     };
   }

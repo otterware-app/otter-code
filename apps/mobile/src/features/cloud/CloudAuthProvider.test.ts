@@ -11,13 +11,9 @@ import { setAgentAwarenessRelayTokenProvider } from "../agent-awareness/remoteRe
 import { requestConnectOnboarding } from "./connectOnboarding";
 import { restoreCloudComposerDrafts } from "../../state/use-composer-drafts";
 
-vi.mock("@clerk/expo", () => ({
-  ClerkProvider: vi.fn(),
+vi.mock("../accounts/AccountProvider", () => ({
+  AccountProvider: vi.fn(),
   useAuth: vi.fn(),
-}));
-
-vi.mock("@clerk/expo/token-cache", () => ({
-  tokenCache: {},
 }));
 
 vi.mock("../../lib/runtime", () => ({
@@ -44,10 +40,9 @@ vi.mock("../../state/use-composer-drafts", () => ({
 
 vi.mock("./publicConfig", () => ({
   resolveCloudPublicConfig: vi.fn(() => ({
-    clerk: { publishableKey: null },
+    accounts: { url: null },
     relay: { url: null },
   })),
-  resolveRelayClerkTokenOptions: vi.fn(),
 }));
 
 vi.mock("../agent-awareness/remoteRegistration", () => ({

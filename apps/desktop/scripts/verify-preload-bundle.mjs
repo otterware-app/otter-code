@@ -7,12 +7,14 @@ import * as NodeVM from "node:vm";
 import { parse } from "acorn";
 
 const expectedDesktopBridgeApis = [
+  "getAccountSession",
+  "setAccountSession",
+  "authorizeAccount",
   "getClientPlatform",
   "getLocalEnvironmentBootstraps",
   "getPathForFile",
   "pickFolder",
 ];
-const clerkPasskeysGlobal = "__clerk_internal_electron_passkeys";
 const preloadExecutionTimeoutMs = 1_000;
 const desktopPackage = JSON.parse(
   NodeFS.readFileSync(new URL("../package.json", import.meta.url), "utf8"),
@@ -112,6 +114,8 @@ const executeBundle = (source, sandboxModules) => {
     {
       document,
       process: sandboxProcess,
+      window: { addEventListener: () => {} },
+      document: { readyState: "loading" },
       require: requireSandboxModule,
       window,
     },
@@ -143,7 +147,6 @@ export const verifyPreloadBundle = (source) => {
     (api) => typeof desktopBridge?.[api] !== "function",
   );
   if (!exposedGlobals.has("desktopBridge")) missingApis.unshift("desktopBridge exposure");
-  if (!exposedGlobals.has(clerkPasskeysGlobal)) missingApis.push(`${clerkPasskeysGlobal} exposure`);
 
   if (missingApis.length > 0) {
     throw new Error(`Desktop preload bundle is missing executable APIs: ${missingApis.join(", ")}`);

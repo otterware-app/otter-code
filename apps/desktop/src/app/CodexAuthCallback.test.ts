@@ -57,7 +57,7 @@ describe("desktop Codex callback helper", () => {
     const input = {
       authorizationUrl,
       returnUrl:
-        "https://code.otterware.dev/settings/providers?environmentId=remote-one&instanceId=work",
+        "https://code.otterware.app/settings/providers?environmentId=remote-one&instanceId=work",
       environmentId: EnvironmentId.make("remote-one"),
       instanceId: ProviderInstanceId.make("work"),
       flowId: "flow-one",

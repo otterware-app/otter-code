@@ -1,28 +1,23 @@
 /**
  * The rail of spaces down the window's left edge (Otter Mail's, ChatGPT's):
- * All projects, then each project, the + that adds one, then Pull requests;
- * the desktop app's update button, Usage and Settings at its foot. A project space scopes the thread sidebar
- * (the same `sidebarProjectScopeKey` its heading's picker sets). The rail
- * stays when the sidebar hides, and sits inside the sheet on phones.
+ * All projects, Chats, then each project group (made in Settings), then Pull
+ * requests; the desktop app's update button, Usage and Settings at its foot.
+ * A space scopes the thread sidebar and the projects new threads are offered
+ * in. The rail stays when the sidebar hides, and sits inside the sheet on
+ * phones.
  */
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { ChartNoAxesColumnIcon, LayersIcon, PlusIcon, SettingsIcon } from "lucide-react";
-import { memo, useMemo, type ReactNode } from "react";
+import { ChartNoAxesColumnIcon, LayersIcon, MessagesSquareIcon, SettingsIcon } from "lucide-react";
+import { memo, type ReactNode } from "react";
 
-import { openCommandPalette } from "../../commandPaletteBus";
-import { useClientSettings, useLegacySidebarEnabled } from "../../hooks/useSettings";
-import { getProjectOrderKey, selectProjectGroupingSettings } from "../../logicalProject";
+import { useLegacySidebarEnabled } from "../../hooks/useSettings";
+import { useProjectGroups } from "../../hooks/useProjectSpace";
 import { cn } from "../../lib/utils";
-import { buildSidebarProjectSnapshots } from "../../sidebarProjectGrouping";
-import { useProjects } from "../../state/entities";
-import {
-  useEnvironmentIdentities,
-  usePrimaryEnvironmentId,
-  usePullRequestsSupported,
-} from "../../state/environments";
-import { legacyProjectCwdPreferenceKey, useUiStateStore } from "../../uiStateStore";
-import { ProjectFavicon } from "../ProjectFavicon";
-import { orderItemsByPreferredIds } from "../Sidebar.logic";
+import { deriveProjectIdentity } from "../../projectIdentity";
+import { CHATS_SPACE_ID, resolveProjectSpace } from "../../projectSpaces";
+import { usePullRequestsSupported } from "../../state/environments";
+import { useUiStateStore } from "../../uiStateStore";
+import { ProjectMonogram } from "../ProjectMonogram";
 import { PullRequestGlyph } from "../pullRequest/pullRequestIcons";
 import { readPullRequestListPreferences } from "../pullRequest/pullRequestListPreferences";
 import { useSidebar } from "../ui/sidebar";
@@ -78,37 +73,6 @@ function RailDivider() {
   return <span aria-hidden className="my-1 h-px w-5 shrink-0 bg-sidebar-border" />;
 }
 
-/**
- * The project spaces, in the user's manual project order: a rail keeps its
- * places, so it never re-sorts by activity the way the thread list can.
- */
-function useRailProjectGroups() {
-  const projects = useProjects();
-  const projectOrder = useUiStateStore((store) => store.projectOrder);
-  const projectGroupingSettings = useClientSettings(selectProjectGroupingSettings);
-  const primaryEnvironmentId = usePrimaryEnvironmentId();
-  const environments = useEnvironmentIdentities();
-  return useMemo(() => {
-    const labelById = new Map(
-      environments.map((environment) => [environment.environmentId, environment.label] as const),
-    );
-    return buildSidebarProjectSnapshots({
-      projects: orderItemsByPreferredIds({
-        items: projects,
-        preferredIds: projectOrder,
-        getId: getProjectOrderKey,
-        getPreferenceIds: (project) => [
-          getProjectOrderKey(project),
-          legacyProjectCwdPreferenceKey(project.workspaceRoot),
-        ],
-      }),
-      settings: projectGroupingSettings,
-      primaryEnvironmentId,
-      resolveEnvironmentLabel: (environmentId) => labelById.get(environmentId) ?? null,
-    });
-  }, [environments, primaryEnvironmentId, projectGroupingSettings, projectOrder, projects]);
-}
-
 export const SpaceRail = memo(function SpaceRail({ className }: { className?: string }) {
   const navigate = useNavigate();
   const navigateToMainApp = useNavigateToMainApp();
@@ -117,17 +81,19 @@ export const SpaceRail = memo(function SpaceRail({ className }: { className?: st
   const pullRequestsSupported = usePullRequestsSupported();
   // The legacy sidebar groups threads by project itself and ignores the scope.
   const legacySidebarEnabled = useLegacySidebarEnabled();
-  const projectGroups = useRailProjectGroups();
-  const scopeKey = useUiStateStore((store) => store.sidebarProjectScopeKey);
-  const setScopeKey = useUiStateStore((store) => store.setSidebarProjectScopeKey);
+  const { groups } = useProjectGroups();
+  const storedSpaceId = useUiStateStore((store) => store.sidebarProjectSpaceId);
+  const setSpaceId = useUiStateStore((store) => store.setSidebarProjectSpaceId);
+  // A deleted group's id resolves to All projects, so that one lights up.
+  const spaceId = resolveProjectSpace(storedSpaceId, groups).id;
 
   const leaveSheet = () => {
     if (isMobile) setOpenMobile(false);
   };
   // A space's threads show in the sidebar, so choosing one brings it back,
   // and leaves a utility page for the thread it was opened over.
-  const selectSpace = (projectKey: string | null) => {
-    setScopeKey(projectKey);
+  const selectSpace = (nextSpaceId: string | null) => {
+    setSpaceId(nextSpaceId);
     if (!isMobile && !open) void setOpen(true);
     if (place !== "threads") void navigateToMainApp();
   };
@@ -153,35 +119,37 @@ export const SpaceRail = memo(function SpaceRail({ className }: { className?: st
           <>
             <RailButton
               label="All projects"
-              selected={threadsShowing && scopeKey === null}
+              selected={threadsShowing && spaceId === null}
               onClick={() => selectSpace(null)}
             >
               <LayersIcon className="size-5" />
             </RailButton>
-            {projectGroups.map((group) => (
-              <RailButton
-                key={group.projectKey}
-                label={group.displayName}
-                selected={threadsShowing && scopeKey === group.projectKey}
-                onClick={() => selectSpace(group.projectKey)}
-              >
-                {/* Wrapped so the button's color can't override a project's own icon color. */}
-                <span className="flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-md">
-                  <ProjectFavicon project={group} className="size-5" />
-                </span>
-              </RailButton>
-            ))}
+            <RailButton
+              label="Chats"
+              selected={threadsShowing && spaceId === CHATS_SPACE_ID}
+              onClick={() => selectSpace(CHATS_SPACE_ID)}
+            >
+              <MessagesSquareIcon className="size-5" />
+            </RailButton>
+            {groups.map((group) => {
+              const identity = deriveProjectIdentity(group.name);
+              return (
+                <RailButton
+                  key={group.id}
+                  label={group.name}
+                  selected={threadsShowing && spaceId === group.id}
+                  onClick={() => selectSpace(group.id)}
+                >
+                  <ProjectMonogram
+                    text={identity.monogram}
+                    color={identity.color}
+                    className="size-6"
+                  />
+                </RailButton>
+              );
+            })}
           </>
         )}
-        <RailButton
-          label="Add project"
-          onClick={() => {
-            leaveSheet();
-            openCommandPalette({ open: "add-project" });
-          }}
-        >
-          <PlusIcon className="size-4.5" />
-        </RailButton>
         {pullRequestsSupported ? (
           <>
             <RailDivider />

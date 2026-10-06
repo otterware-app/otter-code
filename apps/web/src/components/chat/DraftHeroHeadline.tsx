@@ -11,6 +11,7 @@ import { openCommandPalette } from "~/commandPaletteBus";
 import { shortcutLabelForCommand } from "~/keybindings";
 import { projectIconColorClassName } from "~/projectIconColors";
 import { primaryServerKeybindingsAtom } from "~/state/server";
+import { useActiveProjectSpace } from "~/hooks/useProjectSpace";
 import { useScratchProject } from "~/hooks/useScratchProject";
 import { useClientSettings } from "~/hooks/useSettings";
 import { hasExplicitComposerModelSelection } from "~/lib/chatThreadActions";
@@ -70,6 +71,7 @@ export function DraftHeroHeadline({
   const openAddProject = useCallback(() => openCommandPalette({ open: "add-project" }), []);
   const { scratchEnvironmentId, scratchWorkspaceRootFor, openScratchProject } = useScratchProject();
   const keybindings = useAtomValue(primaryServerKeybindingsAtom);
+  const { space, projectFilter } = useActiveProjectSpace();
 
   const environmentLabelById = useMemo(
     () =>
@@ -146,10 +148,14 @@ export function DraftHeroHeadline({
   const canChooseProject = projectPickerEntries.length > 0;
   const shouldShowProjectMenu = canChooseProject;
   // The project that hosts threads without a project appears once, as the
-  // "No project" item, not as a project row.
+  // "No project" item, not as a project row. A project group offers only its
+  // own projects.
   const menuEntries = projectPickerEntries.filter(
-    ({ targetProject }) =>
-      !isScratchProject(targetProject, scratchWorkspaceRootFor(targetProject.environmentId)),
+    ({ group, targetProject }) =>
+      !isScratchProject(targetProject, scratchWorkspaceRootFor(targetProject.environmentId)) &&
+      (space.kind !== "group" ||
+        projectFilter === null ||
+        group.memberProjects.some((project) => projectFilter(project))),
   );
   const activeProject =
     activeProjectRef === null

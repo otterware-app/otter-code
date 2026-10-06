@@ -6,11 +6,8 @@ import {
 import { isHostedStaticApp } from "../hostedPairing";
 import { hasCloudPublicConfig, resolveCloudPublicConfig } from "./publicConfig";
 
-export function hasConnectCliAuthConfig() {
-  return hasCloudPublicConfig();
-}
 export function connectCliAuthRoutesEnabled() {
-  return isHostedStaticApp() && hasConnectCliAuthConfig();
+  return isHostedStaticApp() && hasCloudPublicConfig();
 }
 
 export function buildConnectCliAuthorizeUrl(request: ConnectAuthorizeRequest): string | null {

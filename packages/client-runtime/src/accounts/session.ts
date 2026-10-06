@@ -11,7 +11,7 @@ const decodeTokenResponse = Schema.decodeUnknownSync(TokenResponse);
 const decodeUser = Schema.decodeUnknownSync(OtterAccountUser);
 const decodeSession = Schema.decodeUnknownSync(Schema.fromJsonString(OtterAccountSession));
 
-export class AccountRequestError extends Error {
+class AccountRequestError extends Error {
   readonly status: number;
   readonly code: string;
   constructor(status: number, code: string) {

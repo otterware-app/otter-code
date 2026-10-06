@@ -141,9 +141,21 @@ if (action === "stage" || action === "stage-preview") {
   const versionId = required("WEB_VERSION_ID");
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(versionId))
     throw new Error("Invalid Worker version ID");
-  wrangler(["versions", "deploy", `${versionId}@100%`, "--yes"]);
-  wrangler(["triggers", "deploy"]);
-  await verify("https://code.otterware.app");
+  const temporary = await NodeFSP.mkdtemp(NodePath.join(NodeOS.tmpdir(), "otter-code-promote-"));
+  try {
+    const configuration = JSON.parse(await NodeFSP.readFile(NodePath.join(root, config), "utf8"));
+    // Promotion runs in a fresh release job. Assets are already in the staged
+    // Worker version; synchronizing its domains must not require a local build.
+    delete configuration.assets;
+    configuration.main = NodePath.join(root, "scripts/otter/web/worker.mjs");
+    const promotionConfig = NodePath.join(temporary, "wrangler.json");
+    await NodeFSP.writeFile(promotionConfig, JSON.stringify(configuration));
+    wrangler(["versions", "deploy", `${versionId}@100%`, "--yes"], {}, promotionConfig);
+    wrangler(["triggers", "deploy"], {}, promotionConfig);
+    await verify("https://code.otterware.app");
+  } finally {
+    await NodeFSP.rm(temporary, { recursive: true, force: true });
+  }
 } else {
   throw new Error("Usage: node scripts/otter/web-hosting.mjs <stage|stage-preview|promote>");
 }

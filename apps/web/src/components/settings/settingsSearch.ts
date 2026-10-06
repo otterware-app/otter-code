@@ -17,6 +17,7 @@ import type { ResolvedSettingsScope } from "./settingsScope";
 
 export type SettingsPath =
   | "/settings/projects"
+  | "/settings/project-groups"
   | "/settings/general"
   | "/settings/diagnostics"
   | "/settings/voice"
@@ -90,6 +91,7 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   "/settings/diagnostics": "Diagnostics",
   "/settings/projects": "Projects",
   "/settings/general": "General",
+  "/settings/project-groups": "Project groups",
   "/settings/appearance": "Appearance",
   "/settings/chat": "Chat",
   "/settings/diffs": "Diffs & pull requests",
@@ -144,7 +146,12 @@ export const SETTINGS_NAV_GROUPS: ReadonlyArray<{
   },
   {
     heading: "Code",
-    paths: ["/settings/projects", "/settings/source-control", "/settings/worktrees"],
+    paths: [
+      "/settings/projects",
+      "/settings/project-groups",
+      "/settings/source-control",
+      "/settings/worktrees",
+    ],
   },
   {
     heading: "Connections",
@@ -1073,6 +1080,12 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["pull request merge squash rebase last selected"],
   },
   {
+    id: "project-groups",
+    title: "Project groups",
+    to: "/settings/project-groups",
+    searchTerms: ["rail spaces workspaces organize group projects repositories"],
+  },
+  {
     id: "browser-extensions",
     title: "Browser extensions",
     to: "/settings/extensions",
@@ -1351,6 +1364,7 @@ const SEARCH_ITEMS_BY_ID = new Map(SETTINGS_SEARCH_ITEMS.map((item) => [item.id,
 const SETTINGS_CATEGORY_SCOPES: Readonly<Record<SettingsPath, SettingsSearchScope | null>> = {
   "/settings/diagnostics": "environment",
   "/settings/projects": "project",
+  "/settings/project-groups": null,
   "/settings/general": null,
   "/settings/voice": null,
   "/settings/appearance": null,

@@ -1,0 +1,35 @@
+name: Promote Otter Code web
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_url:
+        description: Ready Otter Code Vercel deployment URL
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: otter-web-promote
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    if: github.repository == 'otterware-app/otter-code' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      DEPLOYMENT_URL: ${{ inputs.deployment_url }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout: scripts/otter
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: node scripts/otter/promote-web.mjs

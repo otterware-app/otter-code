@@ -1091,6 +1091,11 @@ jobs:
         run: |
           set -euo pipefail
 
+          if [[ "${GITHUB_REPOSITORY}" == "otterware-app/otter-code" ]]; then
+            node scripts/otter/promote-web.mjs
+            exit 0
+          fi
+
           if [[ -z "$DEPLOYMENT_URL" ]]; then
             echo "Build hosted web app did not report a deployment URL." >&2
             exit 1
@@ -1123,19 +1128,6 @@ jobs:
             vp dlx vercel@53.1.1 alias set "$DEPLOYMENT_URL" "$router_domain" \
               --token "$VERCEL_TOKEN" \
               "${vercel_scope_args[@]}"
-          fi
-
-          # Otter Code hosted aliases
-          if [[ "${GITHUB_REPOSITORY}" == "otterware-app/otter-code" ]]; then
-            for otter_domain in \
-              code.otterware.app latest.code.otterware.app nightly.code.otterware.app \
-              code.otterware.dev latest.code.otterware.dev nightly.code.otterware.dev; do
-              if [[ "$otter_domain" != "$channel_domain" ]]; then
-                vp dlx vercel@53.1.1 alias set "$DEPLOYMENT_URL" "$otter_domain" \
-                  --token "$VERCEL_TOKEN" \
-                  "${vercel_scope_args[@]}"
-              fi
-            done
           fi
 
   # Same split as the web app: build a production deployment early, then

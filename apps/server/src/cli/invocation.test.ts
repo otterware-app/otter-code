@@ -111,17 +111,17 @@ it.effect("keeps a user-installed Node reachable when the command runs under sud
       );
     const npx = "/home/theo/.npm/_npx/abc/node_modules/t3/dist/bin.mjs";
     // sudo's secure_path already has a system Node.
-    expect(yield* command("/usr/bin/node", npx)).toBe("sudo npx t3 browser setup");
+    expect(yield* command("/usr/bin/node", npx)).toBe("sudo npx otter-code browser setup");
     // nvm, fnm, and tarball installs are dropped by sudo's PATH reset.
     expect(yield* command("/home/theo/.nvm/versions/node/v24/bin/node", npx)).toBe(
-      'sudo env "PATH=$PATH" npx t3 browser setup',
+      'sudo env "PATH=$PATH" npx otter-code browser setup',
     );
     expect(
       yield* command(
         "/home/theo/.local/node/bin/node",
         "/home/theo/.local/lib/node_modules/t3/dist/bin.mjs",
       ),
-    ).toBe('sudo env "PATH=$PATH" t3 browser setup');
+    ).toBe('sudo env "PATH=$PATH" otter-code browser setup');
   }),
 );
 

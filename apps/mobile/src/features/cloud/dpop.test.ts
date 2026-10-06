@@ -101,7 +101,7 @@ describe("mobile DPoP", () => {
       const connect = yield* createDpopProof({
         method: "POST",
         url: "https://relay.example.test/v1/environments/env-1/connect",
-        accessToken: "clerk-token",
+        accessToken: "account-token",
         proofKey,
       });
       const bootstrap = yield* createDpopProof({
@@ -118,7 +118,7 @@ describe("mobile DPoP", () => {
           method: "POST",
           url: "https://relay.example.test/v1/environments/env-1/connect",
           expectedThumbprint: proofKey.thumbprint,
-          expectedAccessToken: "clerk-token",
+          expectedAccessToken: "account-token",
           nowEpochSeconds: proofIat(connect.proof),
         }),
       ).toMatchObject({ ok: true, thumbprint: proofKey.thumbprint });
@@ -140,7 +140,7 @@ describe("mobile DPoP", () => {
       const proof = yield* createDpopProof({
         method: "POST",
         url: "https://relay.example.test/v1/environments/env-1/connect?debug=1#ignored",
-        accessToken: "clerk-token",
+        accessToken: "account-token",
         proofKey,
       });
 
@@ -153,7 +153,7 @@ describe("mobile DPoP", () => {
           method: "POST",
           url: "https://relay.example.test/v1/environments/env-1/connect?debug=1#ignored",
           expectedThumbprint: proofKey.thumbprint,
-          expectedAccessToken: "clerk-token",
+          expectedAccessToken: "account-token",
           nowEpochSeconds: proofIat(proof.proof),
         }),
       ).toMatchObject({ ok: true });

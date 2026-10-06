@@ -38,6 +38,7 @@ function layerElectronApp(
     metadata: Effect.die("unexpected metadata read"),
     name: Effect.succeed("Otter Code"),
     systemLocale: Effect.succeed("en-US"),
+    requestSingleInstanceLock: Effect.succeed(true),
     whenReady: Effect.void,
     quit: Effect.void,
     exit: () => Effect.void,

@@ -9,6 +9,7 @@ import type {
   SuiteHomeActionError,
   SuiteHomeItem,
   SuiteHomeItemModule,
+  SuiteTodayEvent,
 } from "@t3tools/contracts/suite";
 import * as Context from "effect/Context";
 import type * as Effect from "effect/Effect";
@@ -16,11 +17,17 @@ import type * as Layer from "effect/Layer";
 
 import type { SuiteMigration } from "./SuiteMigrations.ts";
 
-/** Feeds Home's "needs you" list. Registered through a module's `homeContributor`. */
+/**
+ * Feeds Home. Registered through a module's `homeContributor`. Home calls it on
+ * every overview (clients poll while Home is open), so reads must be cheap:
+ * serve from the module's own tables or a short cache, never a network call.
+ */
 export interface SuiteHomeContributor {
   readonly module: SuiteHomeItemModule;
   /** Items that currently need the user, newest or most urgent first. Handles its own failures. */
   readonly needsYou: Effect.Effect<ReadonlyArray<SuiteHomeItem>>;
+  /** Today's events for Home's calendar strip (the calendar module). Handles its own failures. */
+  readonly today?: Effect.Effect<ReadonlyArray<SuiteTodayEvent>>;
   readonly performAction?: (
     itemId: string,
     actionId: string,

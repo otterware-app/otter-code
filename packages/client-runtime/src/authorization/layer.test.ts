@@ -196,7 +196,7 @@ const makeHarness = Effect.fn("TestRemoteAuthorization.makeHarness")(function* (
         Layer.succeed(ManagedRelay.ManagedRelayClient, relay),
         Layer.succeed(ClientCapabilities.CloudSession, {
           identity: Ref.get(session),
-          accountToken: input.accountToken ?? Effect.succeed("clerk-session"),
+          accountToken: input.accountToken ?? Effect.succeed("account-session"),
         }),
         Layer.succeed(ClientCapabilities.RelayDeviceIdentity, {
           deviceId: Effect.succeedSome("device-1"),
@@ -659,7 +659,7 @@ describe("RemoteEnvironmentAuthorization", () => {
         expect(yield* Ref.get(harness.relayInputs)).toEqual([
           {
             environmentId: ENVIRONMENT_ID,
-            accountToken: "clerk-session",
+            accountToken: "account-session",
             scopes: [RelayEnvironmentConnectScope],
             deviceId: "device-1",
           },
@@ -1021,7 +1021,7 @@ describe("RemoteEnvironmentAuthorization", () => {
             yield* Deferred.succeed(started, undefined);
             return yield* Effect.never;
           }
-          return "clerk-session";
+          return "account-session";
         }),
         responses: [Response.json(DESCRIPTOR), accessToken("fresh-token")],
       });

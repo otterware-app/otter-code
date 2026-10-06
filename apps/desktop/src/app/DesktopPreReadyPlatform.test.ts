@@ -155,7 +155,7 @@ describe("DesktopPreReadyPlatform", () => {
   });
 
   it.effect(
-    "acquires a synchronous pre-ready layer before an asynchronous Clerk-shaped layer",
+    "acquires a synchronous pre-ready layer before an asynchronous Otter account-shaped layer",
     () =>
       Effect.gen(function* () {
         class ProtocolSetup extends Context.Service<ProtocolSetup, { readonly ready: true }>()(

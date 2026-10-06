@@ -117,7 +117,7 @@ function accountToken(expiresAtSeconds: number): string {
 describe("createManagedRelayQueryManager", () => {
   afterEach(resetRegistry);
 
-  it.effect("deregisters an environment through the current Clerk session", () =>
+  it.effect("deregisters an environment through the current Otter account session", () =>
     Effect.gen(function* () {
       const unlinkEnvironment = vi.fn(() => Effect.succeed({ ok: true }));
       setSession();
@@ -154,35 +154,37 @@ describe("createManagedRelayQueryManager", () => {
     }),
   );
 
-  it.effect("deduplicates concurrent Clerk token reads and reuses the token until JWT expiry", () =>
-    Effect.gen(function* () {
-      const token = accountToken(4_102_444_800);
-      let resolveToken!: (value: string) => void;
-      const readAccountToken = vi.fn(
-        () =>
-          new Promise<string>((resolve) => {
-            resolveToken = resolve;
-          }),
-      );
-      const session = createManagedRelaySession({
-        accountId: "account-1",
-        readAccountToken,
-      });
+  it.effect(
+    "deduplicates concurrent Otter account token reads and reuses the token until JWT expiry",
+    () =>
+      Effect.gen(function* () {
+        const token = accountToken(4_102_444_800);
+        let resolveToken!: (value: string) => void;
+        const readAccountToken = vi.fn(
+          () =>
+            new Promise<string>((resolve) => {
+              resolveToken = resolve;
+            }),
+        );
+        const session = createManagedRelaySession({
+          accountId: "account-1",
+          readAccountToken,
+        });
 
-      const readsFiber = yield* Effect.all(
-        [session.readAccountToken(), session.readAccountToken()],
-        {
-          concurrency: "unbounded",
-        },
-      ).pipe(Effect.forkChild);
-      yield* Effect.yieldNow;
-      expect(readAccountToken).toHaveBeenCalledTimes(1);
+        const readsFiber = yield* Effect.all(
+          [session.readAccountToken(), session.readAccountToken()],
+          {
+            concurrency: "unbounded",
+          },
+        ).pipe(Effect.forkChild);
+        yield* Effect.yieldNow;
+        expect(readAccountToken).toHaveBeenCalledTimes(1);
 
-      resolveToken(token);
-      expect(yield* Fiber.join(readsFiber)).toEqual([token, token]);
-      expect(yield* session.readAccountToken()).toBe(token);
-      expect(readAccountToken).toHaveBeenCalledTimes(1);
-    }),
+        resolveToken(token);
+        expect(yield* Fiber.join(readsFiber)).toEqual([token, token]);
+        expect(yield* session.readAccountToken()).toBe(token);
+        expect(readAccountToken).toHaveBeenCalledTimes(1);
+      }),
   );
 
   it.effect("updates the token provider without replacing a same-account session", () =>
@@ -267,7 +269,7 @@ describe("createManagedRelayQueryManager", () => {
     }),
   );
 
-  it("shares one Clerk token read across concurrent relay list and status queries", async () => {
+  it("shares one Otter account token read across concurrent relay list and status queries", async () => {
     const secondEnvironment = {
       ...environment,
       environmentId: EnvironmentId.make("environment-2"),

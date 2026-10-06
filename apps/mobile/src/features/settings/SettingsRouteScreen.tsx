@@ -15,7 +15,7 @@ import {
   ScreenScrollView as ScrollView,
   ScreenScrollViewBottomInset,
 } from "../../components/ui/ScreenScrollView";
-import { useAuth, useUser } from "@clerk/expo";
+import { useAuth } from "../accounts/AccountProvider";
 import { useNavigation, useNavigationState } from "@react-navigation/native";
 import { use, useMemo } from "react";
 import { Platform, View } from "react-native";
@@ -85,14 +85,14 @@ function ConfiguredSettingsRouteScreen() {
   const listSurface = use(SettingsSidebarContext) ? "bg-drawer" : "bg-screen";
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  const { isLoaded, isSignedIn } = useAuth({ treatPendingAsSignedOut: false });
-  const { user } = useUser();
+  const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useAuth();
   const { savedConnectionsById } = useSavedRemoteConnections();
   const accountLabel = !isLoaded
     ? "Checking"
     : !isSignedIn
       ? "Sign in"
-      : (user?.primaryEmailAddress?.emailAddress ?? "Signed in");
+      : (user?.email ?? "Signed in");
 
   return (
     <View collapsable={false} className="flex-1">

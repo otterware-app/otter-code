@@ -379,9 +379,9 @@ const main = Command.make(
             [
               "xcodebuild",
               "-workspace",
-              path.join(mobile, "ios/T3CodeDev.xcworkspace"),
+              path.join(mobile, "ios/OtterCodeDev.xcworkspace"),
               "-scheme",
-              "T3CodeDev",
+              "OtterCodeDev",
               "-configuration",
               "Debug",
               "-destination",
@@ -398,7 +398,7 @@ const main = Command.make(
               "simctl",
               "install",
               device,
-              path.join(output, "Build/Products/Debug-iphonesimulator/T3CodeDev.app"),
+              path.join(output, "Build/Products/Debug-iphonesimulator/OtterCodeDev.app"),
             ],
             true,
           );

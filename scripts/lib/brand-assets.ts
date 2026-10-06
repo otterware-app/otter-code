@@ -1,7 +1,7 @@
 export const BRAND_ASSET_PATHS = {
-  developmentIconComposerProject: "assets/otter/app-icon.icon",
-  developmentIosIconPng: "assets/otter/otter-ios-1024.png",
-  developmentUniversalIconPng: "assets/otter/otter-universal-1024.png",
+  developmentIconComposerProject: "assets/otter-dev/app-icon.icon",
+  developmentIosIconPng: "assets/otter-dev/otter-dev-ios-1024.png",
+  developmentUniversalIconPng: "assets/otter-dev/otter-dev-universal-1024.png",
 
   productionIconComposerProject: "assets/otter/app-icon.icon",
   productionIosIconPng: "assets/otter/otter-ios-1024.png",
@@ -13,22 +13,22 @@ export const BRAND_ASSET_PATHS = {
   productionWebFavicon32Png: "assets/otter/otter-web-favicon-32x32.png",
   productionWebAppleTouchIconPng: "assets/otter/otter-web-apple-touch-180.png",
 
-  nightlyIconComposerProject: "assets/otter/app-icon.icon",
-  nightlyIosIconPng: "assets/otter/otter-ios-1024.png",
-  nightlyMacIconPng: "assets/otter/otter-macos-1024.png",
-  nightlyLinuxIconPng: "assets/otter/otter-universal-1024.png",
-  nightlyWindowsIconIco: "assets/otter/otter-windows.ico",
-  nightlyWebFaviconIco: "assets/otter/otter-web-favicon.ico",
-  nightlyWebFavicon16Png: "assets/otter/otter-web-favicon-16x16.png",
-  nightlyWebFavicon32Png: "assets/otter/otter-web-favicon-32x32.png",
-  nightlyWebAppleTouchIconPng: "assets/otter/otter-web-apple-touch-180.png",
+  nightlyIconComposerProject: "assets/otter-nightly/app-icon.icon",
+  nightlyIosIconPng: "assets/otter-nightly/otter-nightly-ios-1024.png",
+  nightlyMacIconPng: "assets/otter-nightly/otter-nightly-macos-1024.png",
+  nightlyLinuxIconPng: "assets/otter-nightly/otter-nightly-universal-1024.png",
+  nightlyWindowsIconIco: "assets/otter-nightly/otter-nightly-windows.ico",
+  nightlyWebFaviconIco: "assets/otter-nightly/otter-nightly-web-favicon.ico",
+  nightlyWebFavicon16Png: "assets/otter-nightly/otter-nightly-web-favicon-16x16.png",
+  nightlyWebFavicon32Png: "assets/otter-nightly/otter-nightly-web-favicon-32x32.png",
+  nightlyWebAppleTouchIconPng: "assets/otter-nightly/otter-nightly-web-apple-touch-180.png",
 
-  developmentDesktopIconPng: "assets/otter/otter-macos-1024.png",
-  developmentWindowsIconIco: "assets/otter/otter-windows.ico",
-  developmentWebFaviconIco: "assets/otter/otter-web-favicon.ico",
-  developmentWebFavicon16Png: "assets/otter/otter-web-favicon-16x16.png",
-  developmentWebFavicon32Png: "assets/otter/otter-web-favicon-32x32.png",
-  developmentWebAppleTouchIconPng: "assets/otter/otter-web-apple-touch-180.png",
+  developmentDesktopIconPng: "assets/otter-dev/otter-dev-macos-1024.png",
+  developmentWindowsIconIco: "assets/otter-dev/otter-dev-windows.ico",
+  developmentWebFaviconIco: "assets/otter-dev/otter-dev-web-favicon.ico",
+  developmentWebFavicon16Png: "assets/otter-dev/otter-dev-web-favicon-16x16.png",
+  developmentWebFavicon32Png: "assets/otter-dev/otter-dev-web-favicon-32x32.png",
+  developmentWebAppleTouchIconPng: "assets/otter-dev/otter-dev-web-apple-touch-180.png",
 } as const;
 
 export type WebAssetBrand = "development" | "nightly" | "production";

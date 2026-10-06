@@ -382,10 +382,9 @@ export function AppSidebarLayout({ children }: { children: ReactNode }) {
         <ProjectProjectionRetention />
         {/* Above the panel, so the sidebar slides away under it. */}
         {frame ? <SpaceRail className="relative z-20 bg-(--app-frame)" /> : null}
-        <div
-          className={cn("relative flex min-h-0 min-w-0 flex-1", frame && "isolate")}
-          data-app-panel=""
-        >
+        {/* No stacking context here: the desktop's browser webviews are drawn at the
+            app root, and the panes' floating controls must stack with them. */}
+        <div className="relative flex min-h-0 min-w-0 flex-1" data-app-panel="">
           <Sidebar
             side="left"
             collapsible="offcanvas"

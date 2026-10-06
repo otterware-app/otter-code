@@ -117,6 +117,13 @@ html.electron:not(.wco) {
   );
 }
 
+/* The right panel's tabs sit on the band, so its surfaces (the browser's
+   address bar, a file's breadcrumbs) start a step inside the panel, off its
+   rim. In a tab the band and the panel are one surface and need no gap. */
+[data-app-frame="window"] [data-preview-panel-mode="inline"] [data-right-panel-surface-content] {
+  padding-top: calc(var(--spacing) * 2.5);
+}
+
 /* The rim and the rounded corners, over the panes (AppFramePanelEdge). */
 [data-app-panel-edge] {
   position: absolute;

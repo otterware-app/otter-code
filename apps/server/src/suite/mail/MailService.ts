@@ -74,6 +74,7 @@ type CoreStatus =
   | { readonly type: "failed"; readonly message: string };
 
 interface Client {
+  readonly clientId: string;
   readonly queue: Queue.Queue<SuiteMailEvent, Cause.Done>;
   readonly subscribedAt: number;
 }
@@ -97,6 +98,7 @@ export const make = Effect.gen(function* () {
     ? yield* secretStore.value.getOrCreateRandom(SEAL_KEY_SECRET, 32)
     : yield* crypto.randomBytes(32);
   const clients = new Map<string, Client>();
+  const requestOwners = new Map<number, string>();
   let status: CoreStatus = { type: "idle" };
   let unread: number | null = null;
   let starting: Promise<void> | null = null;
@@ -107,8 +109,9 @@ export const make = Effect.gen(function* () {
 
   /** The client a request goes to: the one that caused it, else the newest. */
   const clientFor = (clientId: string | null) =>
-    (clientId === null ? undefined : clients.get(clientId)) ??
-    [...clients.values()].toSorted((a, b) => b.subscribedAt - a.subscribedAt)[0];
+    clientId === null
+      ? [...clients.values()].toSorted((a, b) => b.subscribedAt - a.subscribedAt)[0]
+      : clients.get(clientId);
 
   const onPush = (push: MailWorkerPush) => {
     switch (push.type) {
@@ -138,6 +141,7 @@ export const make = Effect.gen(function* () {
           );
           return;
         }
+        requestOwners.set(push.id, client.clientId);
         Queue.offerUnsafe(client.queue, {
           type: "request",
           id: push.id,
@@ -176,6 +180,7 @@ export const make = Effect.gen(function* () {
     },
     onPush,
     onExit: (error) => {
+      requestOwners.clear();
       starting = null;
       status = { type: "failed", message: error.message };
       toAll({ type: "failed", message: error.message });
@@ -222,14 +227,20 @@ export const make = Effect.gen(function* () {
         "invoke",
         { clientId, channel, params: decodeMailBytes(params) },
         { needsCore: true, channel },
-      ).pipe(Effect.map(encodeMailBytes)),
+      ).pipe(Effect.map((value) => encodeMailBytes(value ?? null))),
     events: (clientId) =>
       Stream.callback<SuiteMailEvent>((queue) =>
         Effect.gen(function* () {
-          clients.set(clientId, { queue, subscribedAt: yield* Clock.currentTimeMillis });
+          clients.set(clientId, { clientId, queue, subscribedAt: yield* Clock.currentTimeMillis });
           yield* Effect.addFinalizer(() =>
             Effect.sync(() => {
-              if (clients.get(clientId)?.queue === queue) clients.delete(clientId);
+              if (clients.get(clientId)?.queue !== queue) return;
+              clients.delete(clientId);
+              for (const [id, owner] of requestOwners) {
+                if (owner !== clientId) continue;
+                requestOwners.delete(id);
+                host.reply(id, undefined, "The Mail window closed before answering.");
+              }
             }),
           );
           if (status.type === "ready") {
@@ -244,7 +255,8 @@ export const make = Effect.gen(function* () {
       ),
     reply: ({ clientId, id, result, error }) =>
       Effect.sync(() => {
-        if (!clients.has(clientId)) return;
+        if (!clients.has(clientId) || requestOwners.get(id) !== clientId) return;
+        requestOwners.delete(id);
         host.reply(id, result === undefined ? undefined : decodeMailBytes(result), error);
       }),
     listTools: call("tools", undefined, { needsCore: false }),

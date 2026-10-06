@@ -3,22 +3,21 @@
  * The worker's line to the server's main thread, shared by the worker entry,
  * the Platform and the shims that stand in for Mail's Electron main process.
  * Asks that need a person (open a URL, pick files) go to the client whose
- * invoke caused them, tracked with AsyncLocalStorage across core's awaits.
+ * invoke caused them, tracked with NodeAsyncHooks.AsyncLocalStorage across core's awaits.
  */
-import { AsyncLocalStorage } from "node:async_hooks";
-import { parentPort, workerData } from "node:worker_threads";
+import * as NodeAsyncHooks from "node:async_hooks";
+import * as NodeWorkerThreads from "node:worker_threads";
 
 import type { FromMailWorker, MailClientRequestKind, MailWorkerData } from "./protocol.ts";
 
-export const mailWorkerData = workerData as MailWorkerData;
+export const mailWorkerData = NodeWorkerThreads.workerData as MailWorkerData;
 
 export function post(message: FromMailWorker): void {
-  // oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker port has none
-  parentPort?.postMessage(message);
+  NodeWorkerThreads.parentPort?.postMessage(message);
 }
 
 /** The client whose request core is serving now (null in background work). */
-export const currentClient = new AsyncLocalStorage<string>();
+export const currentClient = new NodeAsyncHooks.AsyncLocalStorage<string>();
 
 let nextRequestId = 1;
 const pending = new Map<

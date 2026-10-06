@@ -1,0 +1,29 @@
+<!doctype html>
+<!-- Otter Mail's renderer inside Otterware's /mail page (src/suite/mail/frame/entry.ts). -->
+<html lang="en" data-otterware-mail-frame="">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mail</title>
+    <script>
+      // Paint in the parent's appearance before anything loads (no white flash in dark mode).
+      try {
+        if (window.parent.document.documentElement.classList.contains("dark")) {
+          document.documentElement.classList.add("dark");
+        }
+      } catch {}
+    </script>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--canvas, transparent);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/suite/mail/frame/entry.ts"></script>
+  </body>
+</html>

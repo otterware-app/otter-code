@@ -9,7 +9,7 @@
  * the access the thread's runtime mode grants.
  */
 import * as NodeCrypto from "node:crypto";
-import * as NodeFS from "node:fs/promises";
+import * as NodeFSP from "node:fs/promises";
 import * as NodePath from "node:path";
 
 import { agentTools, runAgentTool, type AgentTool, type ToolCaller } from "@otter-mail/core";
@@ -29,31 +29,35 @@ const EXCLUDED = new Set([...calendarTools, ...themeTools].map((tool) => tool.na
 const files: NonNullable<ToolCaller["files"]> = {
   async save(name, bytes) {
     const dir = NodePath.join(mailWorkerData.home, "agent-attachments", NodeCrypto.randomUUID());
-    await NodeFS.mkdir(dir, { recursive: true });
+    await NodeFSP.mkdir(dir, { recursive: true });
     const file = NodePath.join(dir, NodePath.basename(name) || "attachment");
-    await NodeFS.writeFile(file, bytes, { mode: 0o600 });
+    await NodeFSP.writeFile(file, bytes, { mode: 0o600 });
     return file;
   },
   async read(path) {
-    return { name: NodePath.basename(path), bytes: new Uint8Array(await NodeFS.readFile(path)) };
+    return { name: NodePath.basename(path), bytes: new Uint8Array(await NodeFSP.readFile(path)) };
   },
 };
 
-const callers = new Map<string, ToolCaller>();
+const callers = new Map<
+  string,
+  { caller: ToolCaller; state: { access: MailToolCaller["access"] } }
+>();
 
 function callerFor(caller: MailToolCaller): ToolCaller {
-  const key = `${caller.key}\u0000${caller.access}`;
-  let toolCaller = callers.get(key);
-  if (!toolCaller) {
-    toolCaller = {
+  let entry = callers.get(caller.key);
+  if (!entry) {
+    const state = { access: caller.access };
+    const toolCaller: ToolCaller = {
       mode: () => "full-access",
       turn: () => null,
-      access: () => caller.access,
+      access: () => state.access,
       files,
     };
-    callers.set(key, toolCaller);
+    callers.set(caller.key, (entry = { caller: toolCaller, state }));
   }
-  return toolCaller;
+  entry.state.access = caller.access;
+  return entry.caller;
 }
 
 const describe = (tool: AgentTool): MailToolDescriptor => ({

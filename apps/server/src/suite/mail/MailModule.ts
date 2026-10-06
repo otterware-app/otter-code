@@ -8,6 +8,7 @@ import { SUITE_MAIL_METHODS, SuiteMailRpcGroup } from "@t3tools/contracts/suite"
 import * as Effect from "effect/Effect";
 
 import { defineSuiteServerModule } from "../SuiteModule.ts";
+import { MAIL_INSTRUCTIONS } from "./mailInstructions.ts";
 import { homeContributor } from "./MailHome.ts";
 import * as MailService from "./MailService.ts";
 import * as MailToolkit from "./MailToolkit.ts";
@@ -29,10 +30,6 @@ export const MailModule = defineSuiteServerModule({
   layer: MailService.layer,
   rpcHandlers,
   mcpToolkit: MailToolkit.layer,
-  agentInstructions: `## Mail
-
-The user's mail (Gmail and IMAP mailboxes, in Otterware's Mail) is yours through the \`mail_*\` tools: \`mail_list_accounts\`, \`mail_search_mail\`, \`mail_list_threads\`, \`mail_get_thread\`, \`mail_get_attachment\`, \`mail_update_threads\` (archive, label, mark read), \`mail_save_draft\`, \`mail_send_email\` and the rest. Use them for anything about the user's mail rather than a mail CLI. Calendar events belong to the Calendar module's tools.
-Mail projects gather the conversations, documents, links and notes of one piece of work (\`mail_list_projects\`, \`mail_create_project\`, \`mail_add_to_project\`, \`mail_update_project\`); views are saved label filters across mailboxes (\`mail_list_views\`, \`mail_save_view\`).
-Prepare mail with \`mail_save_draft\` unless the user asked you to send it. Never send an email, or delete mail for good, unless the user explicitly asks for it in this conversation. Threads without full access can only make changes that can be undone.`,
+  agentInstructions: MAIL_INSTRUCTIONS,
   homeContributor,
 });

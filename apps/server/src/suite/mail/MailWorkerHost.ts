@@ -1,4 +1,4 @@
-// @effect-diagnostics nodeBuiltinImport:off -- Owns a worker_threads Worker; MailService wraps it in Effect.
+// @effect-diagnostics nodeBuiltinImport:off -- Owns a worker_threads NodeWorkerThreads.Worker; MailService wraps it in Effect.
 /**
  * The server side of Mail's worker thread (`worker/protocol.ts`): calls with
  * answers, and a listener for everything core pushes. A worker that dies
@@ -6,7 +6,7 @@
  */
 import * as NodePath from "node:path";
 import * as NodeURL from "node:url";
-import { Worker } from "node:worker_threads";
+import * as NodeWorkerThreads from "node:worker_threads";
 
 import type {
   FromMailWorker,
@@ -36,7 +36,7 @@ export async function resolveMailWorkerScript(): Promise<string> {
 }
 
 export class MailWorkerHost {
-  private worker: Worker | null = null;
+  private worker: NodeWorkerThreads.Worker | null = null;
   private nextId = 1;
   private readonly pending = new Map<
     number,
@@ -62,14 +62,18 @@ export class MailWorkerHost {
 
   private scriptPath: Promise<string> | null = null;
 
-  private async ensureWorker(): Promise<Worker> {
+  private async ensureWorker(): Promise<NodeWorkerThreads.Worker> {
     if (this.worker) return this.worker;
     const path = await (this.scriptPath ??= this.script().catch((error: unknown) => {
       this.scriptPath = null;
       throw error;
     }));
     if (this.worker) return this.worker;
-    const worker = new Worker(path, { workerData: this.data, name: "otter-mail" });
+    const worker = new NodeWorkerThreads.Worker(path, {
+      workerData: this.data,
+      name: "otter-mail",
+      resourceLimits: { maxOldGenerationSizeMb: 384, maxYoungGenerationSizeMb: 32, stackSizeMb: 4 },
+    });
     worker.on("message", (message: FromMailWorker) => {
       if (message.type !== "result") {
         this.onPush(message);
@@ -124,7 +128,7 @@ export class MailWorkerHost {
     await worker?.terminate();
   }
 
-  private post(worker: Worker, message: ToMailWorker): void {
+  private post(worker: NodeWorkerThreads.Worker, message: ToMailWorker): void {
     // oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker port has none
     worker.postMessage(message);
   }

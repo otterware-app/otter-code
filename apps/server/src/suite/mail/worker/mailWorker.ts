@@ -6,8 +6,8 @@
  * starts on the first call that needs it. Core logs every IPC call with
  * console.log; those become debug lines in the server's log.
  */
-import * as NodeFS from "node:fs/promises";
-import { parentPort } from "node:worker_threads";
+import * as NodeFSP from "node:fs/promises";
+import * as NodeWorkerThreads from "node:worker_threads";
 
 import { handle, registeredHandlers, startCore, syncAllAccounts } from "@otter-mail/core";
 
@@ -51,7 +51,7 @@ let started: Promise<{ channels: ReadonlyArray<string> }> | null = null;
 /** Starts core once; the demo puts its fake Gmail in front of this worker's fetch first. */
 function start(): Promise<{ channels: ReadonlyArray<string> }> {
   return (started ??= (async () => {
-    await NodeFS.mkdir(mailWorkerData.home, { recursive: true, mode: 0o700 });
+    await NodeFSP.mkdir(mailWorkerData.home, { recursive: true, mode: 0o700 });
     if (mailWorkerData.demo) await installFakeGmail(nodeFiles);
     await startCore(
       nodePlatform({
@@ -106,7 +106,7 @@ const calls: {
   },
 };
 
-parentPort?.on("message", (message: ToMailWorker) => {
+NodeWorkerThreads.parentPort?.on("message", (message: ToMailWorker) => {
   if (message.type === "reply") {
     settleClientRequest(message.id, message.result, message.error);
     return;

@@ -22,14 +22,14 @@
  * relative imports the desktop services make (each needs a shim), or a
  * renderer channel that neither core nor the Otterware frame answers.
  */
-import { spawnSync } from "node:child_process";
-import * as fs from "node:fs";
-import * as os from "node:os";
-import * as path from "node:path";
+import * as NodeChildProcess from "node:child_process";
+import * as NodeFS from "node:fs";
+import * as NodeOS from "node:os";
+import * as NodePath from "node:path";
 
-const ROOT = path.resolve(import.meta.dirname, "../..");
-const VENDOR = path.join(ROOT, "vendor/otter-mail");
-const CONTRACT_FILE = path.join(import.meta.dirname, "otter-mail-contract.json");
+const ROOT = NodePath.resolve(import.meta.dirname, "../..");
+const VENDOR = NodePath.join(ROOT, "vendor/otter-mail");
+const CONTRACT_FILE = NodePath.join(import.meta.dirname, "otter-mail-contract.json");
 const DEFAULT_REPO = "https://github.com/otterware-app/otter-mail.git";
 
 /** Upstream paths vendored verbatim; directories recurse. */
@@ -88,6 +88,7 @@ export const REQUIRED_EXPORTS: Readonly<Record<string, ReadonlyArray<string>>> =
     "logger",
     "SignInCancelledError",
   ],
+  "packages/core/src/services/agent/instructions.ts": ["TOOL_INSTRUCTIONS"],
   "packages/core/src/services/agent/tools/calendar.ts": ["calendarTools"],
   "packages/core/src/services/agent/tools/themes.ts": ["themeTools"],
   "apps/web/src/web/demo/gmail.ts": ["installFakeGmail", "demoGoogleAuth", "DEMO_RELAY_URL"],
@@ -125,8 +126,8 @@ const CONTRACT_DECLARATIONS = [
 const GUARD_ONLY_FILES = ["apps/desktop/src/backend-protocol.ts"];
 
 /** Where the Otterware side answers the renderer's channels that core has no handler for. */
-const FRAME_CHANNELS_FILE = path.join(ROOT, "apps/web/src/suite/mail/frame/frameChannels.ts");
-const WORKER_DIR = path.join(ROOT, "apps/server/src/suite/mail/worker");
+const FRAME_CHANNELS_FILE = NodePath.join(ROOT, "apps/web/src/suite/mail/frame/frameChannels.ts");
+const WORKER_DIR = NodePath.join(ROOT, "apps/server/src/suite/mail/worker");
 
 interface Options {
   readonly repo: string;
@@ -151,7 +152,7 @@ function parseArgs(argv: ReadonlyArray<string>): Options {
 }
 
 function git(args: ReadonlyArray<string>, options: { cwd?: string; input?: Buffer } = {}): Buffer {
-  const result = spawnSync("git", args, {
+  const result = NodeChildProcess.spawnSync("git", args, {
     cwd: options.cwd,
     input: options.input,
     maxBuffer: 512 * 1024 * 1024,
@@ -164,7 +165,7 @@ function git(args: ReadonlyArray<string>, options: { cwd?: string; input?: Buffe
 
 /** A git dir holding the upstream commits, and the commit to vendor. */
 function resolveSource(options: Options): { gitDir: string; sha: string } {
-  const local = fs.existsSync(options.repo) && fs.statSync(options.repo).isDirectory();
+  const local = NodeFS.existsSync(options.repo) && NodeFS.statSync(options.repo).isDirectory();
   if (local) {
     const gitDir = git(["rev-parse", "--absolute-git-dir"], { cwd: options.repo })
       .toString()
@@ -175,9 +176,9 @@ function resolveSource(options: Options): { gitDir: string; sha: string } {
       .trim();
     return { gitDir, sha };
   }
-  const gitDir = path.join(os.homedir(), ".cache/otterware/otter-mail.git");
-  if (!fs.existsSync(gitDir)) {
-    fs.mkdirSync(path.dirname(gitDir), { recursive: true });
+  const gitDir = NodePath.join(NodeOS.homedir(), ".cache/otterware/otter-mail.git");
+  if (!NodeFS.existsSync(gitDir)) {
+    NodeFS.mkdirSync(NodePath.dirname(gitDir), { recursive: true });
     git(["clone", "--quiet", "--bare", options.repo, gitDir]);
   } else {
     git([
@@ -225,7 +226,7 @@ type Manifest = {
 /** The root web app's React, which the frame shares (Vite dedupes it). */
 function otterCodeReactVersions(): Record<string, string> {
   const web = JSON.parse(
-    fs.readFileSync(path.join(ROOT, "apps/web/package.json"), "utf8"),
+    NodeFS.readFileSync(NodePath.join(ROOT, "apps/web/package.json"), "utf8"),
   ) as Manifest;
   const pick = (name: string) => web.dependencies?.[name] ?? web.devDependencies?.[name];
   return Object.fromEntries(
@@ -351,7 +352,7 @@ export function handledChannels(sources: Iterable<string>): Set<string> {
 
 type Contract = { upstream: string; declarations: Record<string, string> };
 
-async function runGuards(
+export async function runGuards(
   files: ReadonlyMap<string, Buffer>,
   extra: ReadonlyMap<string, string>,
   sha: string,
@@ -389,8 +390,8 @@ async function runGuards(
     if (declaration === null) failures.push(`${relative} no longer declares ${kind} ${name}.`);
     else declarations[`${relative}#${name}`] = declaration;
   }
-  const recorded: Contract | null = fs.existsSync(CONTRACT_FILE)
-    ? (JSON.parse(fs.readFileSync(CONTRACT_FILE, "utf8")) as Contract)
+  const recorded: Contract | null = NodeFS.existsSync(CONTRACT_FILE)
+    ? (JSON.parse(NodeFS.readFileSync(CONTRACT_FILE, "utf8")) as Contract)
     : null;
   if (!acceptContract) {
     for (const [key, declaration] of Object.entries(declarations)) {
@@ -409,11 +410,10 @@ async function runGuards(
   const coreSources = [...files]
     .filter(([relative]) => /^packages\/core\/src\/.*\.ts$/.test(relative))
     .map(([, bytes]) => bytes.toString());
-  const workerSources = fs.existsSync(WORKER_DIR)
-    ? fs
-        .readdirSync(WORKER_DIR)
+  const workerSources = NodeFS.existsSync(WORKER_DIR)
+    ? NodeFS.readdirSync(WORKER_DIR)
         .filter((name) => name.endsWith(".ts") && !name.endsWith(".test.ts"))
-        .map((name) => fs.readFileSync(path.join(WORKER_DIR, name), "utf8"))
+        .map((name) => NodeFS.readFileSync(NodePath.join(WORKER_DIR, name), "utf8"))
     : [];
   const handled = handledChannels([...coreSources, ...workerSources]);
   const frame = (await import(FRAME_CHANNELS_FILE)) as {
@@ -436,13 +436,16 @@ async function runGuards(
 function listVendored(): Map<string, Buffer> {
   const out = new Map<string, Buffer>();
   const walk = (dir: string) => {
-    if (!fs.existsSync(dir)) return;
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      const full = path.join(dir, entry.name);
+    if (!NodeFS.existsSync(dir)) return;
+    for (const entry of NodeFS.readdirSync(dir, { withFileTypes: true })) {
+      const full = NodePath.join(dir, entry.name);
       if (entry.isDirectory()) {
         if (entry.name !== "node_modules") walk(full);
       } else {
-        out.set(path.relative(VENDOR, full).split(path.sep).join("/"), fs.readFileSync(full));
+        out.set(
+          NodePath.relative(VENDOR, full).split(NodePath.sep).join("/"),
+          NodeFS.readFileSync(full),
+        );
       }
     }
   };
@@ -487,13 +490,13 @@ async function main(): Promise<void> {
     return;
   }
   for (const [relative, bytes] of changed) {
-    const target = path.join(VENDOR, relative);
-    fs.mkdirSync(path.dirname(target), { recursive: true });
-    fs.writeFileSync(target, bytes);
+    const target = NodePath.join(VENDOR, relative);
+    NodeFS.mkdirSync(NodePath.dirname(target), { recursive: true });
+    NodeFS.writeFileSync(target, bytes);
   }
-  for (const relative of removed) fs.rmSync(path.join(VENDOR, relative));
-  if (options.acceptContract || !fs.existsSync(CONTRACT_FILE)) {
-    fs.writeFileSync(CONTRACT_FILE, `${JSON.stringify(contract, null, 2)}\n`);
+  for (const relative of removed) NodeFS.rmSync(NodePath.join(VENDOR, relative));
+  if (options.acceptContract || !NodeFS.existsSync(CONTRACT_FILE)) {
+    NodeFS.writeFileSync(CONTRACT_FILE, `${JSON.stringify(contract, null, 2)}\n`);
   }
   if (manifestsChanged) {
     console.log(

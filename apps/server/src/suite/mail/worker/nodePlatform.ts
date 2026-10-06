@@ -7,10 +7,11 @@
  * what needs a person (opening the consent page, picking files) asked of the
  * client that caused it. Pushes go to every client over `suite.mail.events`.
  */
-import { AsyncLocalStorage } from "node:async_hooks";
-import * as NodeFS from "node:fs/promises";
+import * as NodeAsyncHooks from "node:async_hooks";
+import * as NodeFSP from "node:fs/promises";
+import * as NodeOS from "node:os";
 import * as NodePath from "node:path";
-import { DatabaseSync } from "node:sqlite";
+import * as NodeSqlite from "node:sqlite";
 
 import type {
   AsyncContext,
@@ -36,10 +37,10 @@ const home = () => mailWorkerData.home;
 
 /** Writes through a temp file, so a crash never leaves half a file. */
 async function writeFileAtomic(file: string, data: Uint8Array | string): Promise<void> {
-  await NodeFS.mkdir(NodePath.dirname(file), { recursive: true });
+  await NodeFSP.mkdir(NodePath.dirname(file), { recursive: true });
   const tmp = `${file}.${process.pid}.${Math.random().toString(36).slice(2)}.tmp`;
-  await NodeFS.writeFile(tmp, data, { mode: 0o600 });
-  await NodeFS.rename(tmp, file);
+  await NodeFSP.writeFile(tmp, data, { mode: 0o600 });
+  await NodeFSP.rename(tmp, file);
 }
 
 /** Mail's relative paths stay inside its home. */
@@ -56,7 +57,7 @@ const SECRETS_FILE = "secrets.json";
 
 async function readSecrets(): Promise<Record<string, string>> {
   try {
-    return JSON.parse(await NodeFS.readFile(resolveInHome(SECRETS_FILE), "utf8")) as Record<
+    return JSON.parse(await NodeFSP.readFile(resolveInHome(SECRETS_FILE), "utf8")) as Record<
       string,
       string
     >;
@@ -68,19 +69,19 @@ async function readSecrets(): Promise<Record<string, string>> {
 export const nodeFiles: Platform["files"] = {
   async read(file) {
     try {
-      return new Uint8Array(await NodeFS.readFile(resolveInHome(file)));
+      return new Uint8Array(await NodeFSP.readFile(resolveInHome(file)));
     } catch {
       return null;
     }
   },
   write: (file, data) => writeFileAtomic(resolveInHome(file), data),
-  remove: (file) => NodeFS.rm(resolveInHome(file), { force: true }),
+  remove: (file) => NodeFSP.rm(resolveInHome(file), { force: true }),
   async list(dir) {
     const full = resolveInHome(dir);
-    const names = await NodeFS.readdir(full).catch(() => [] as string[]);
+    const names = await NodeFSP.readdir(full).catch(() => [] as string[]);
     const files = await Promise.all(
       names.map(async (name) => {
-        const stat = await NodeFS.stat(NodePath.join(full, name)).catch(() => null);
+        const stat = await NodeFSP.stat(NodePath.join(full, name)).catch(() => null);
         return stat?.isFile() ? { name, size: stat.size, modifiedAt: stat.mtimeMs } : null;
       }),
     );
@@ -107,7 +108,7 @@ export const nodeSecrets: Platform["secrets"] = {
 };
 
 function openDatabase(): SqlDatabase {
-  const db = new DatabaseSync(resolveInHome("mail-cache.db"));
+  const db = new NodeSqlite.DatabaseSync(resolveInHome("mail-cache.db"));
   db.exec("PRAGMA journal_mode = WAL;");
   db.exec("PRAGMA busy_timeout = 5000;");
   return db as unknown as SqlDatabase;
@@ -119,7 +120,8 @@ async function withGoogleConfigured<T>(run: () => Promise<T>): Promise<T> {
     return await run();
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    if (message.includes("has no Google OAuth client")) throw new Error(GOOGLE_NOT_CONFIGURED);
+    if (message.includes("has no Google OAuth client"))
+      throw new Error(GOOGLE_NOT_CONFIGURED, { cause: error });
     throw error;
   }
 }
@@ -149,7 +151,8 @@ export function nodePlatform(options: {
     kind: "desktop",
     appVersion: __OTTER_MAIL_VERSION__,
     supportDiagnostics: async () => ({
-      environment: `Otterware server (Node ${process.version}, ${process.platform} ${process.arch})`,
+      // oxlint-disable-next-line t3code/no-global-process-runtime -- This plain worker owns its Node runtime, outside Effect.
+      environment: `Otterware server (Node ${process.version}, ${NodeOS.platform()} ${NodeOS.arch()})`,
     }),
     log: (level, scope, message, data) =>
       post({
@@ -185,7 +188,7 @@ export function nodePlatform(options: {
       return () => resumeListeners.delete(listener);
     },
     asyncContext<T>(): AsyncContext<T> {
-      const storage = new AsyncLocalStorage<T>();
+      const storage = new NodeAsyncHooks.AsyncLocalStorage<T>();
       return { run: (value, fn) => storage.run(value, fn), get: () => storage.getStore() };
     },
     offlineDownloads: true,

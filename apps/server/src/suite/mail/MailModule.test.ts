@@ -3,6 +3,10 @@ import * as NodeServices from "@effect/platform-node/NodeServices";
 import { expect, it } from "@effect/vitest";
 import { ProviderInstanceId, ThreadId } from "@t3tools/contracts";
 import * as Effect from "effect/Effect";
+import * as Deferred from "effect/Deferred";
+import * as Fiber from "effect/Fiber";
+import * as Stream from "effect/Stream";
+import { encodeMailBytes, type SuiteMailEvent } from "@t3tools/contracts/suite";
 import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
 import { HttpBody, HttpClient, HttpRouter } from "effect/http";
@@ -77,6 +81,9 @@ const ToolCall = Schema.fromJsonString(
     }),
   }),
 );
+const encodeMailJson = Schema.encodeUnknownSync(Schema.toCodecJson(Schema.Unknown));
+const decodeToolsList = Schema.decodeUnknownEffect(ToolsList);
+const decodeToolCall = Schema.decodeUnknownEffect(ToolCall);
 const firstJson = (body: string) => body.match(/\{.*\}/s)?.[0] ?? body;
 
 it("gives threads without full access Mail's undoable tools only", () => {
@@ -131,8 +138,7 @@ it.effect(
           `{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}`,
           sessionId,
         );
-        const tools = (yield* Schema.decodeUnknownEffect(ToolsList)(firstJson(yield* list.text)))
-          .result.tools;
+        const tools = (yield* decodeToolsList(firstJson(yield* list.text))).result.tools;
         const byName = new Map(tools.map((tool) => [tool.name, tool]));
         expect(byName.get("mail_search_mail")?.annotations?.readOnlyHint).toBe(true);
         expect(byName.get("mail_send_email")?.annotations?.destructiveHint).toBe(true);
@@ -153,7 +159,7 @@ it.effect(
             sessionId,
           ).pipe(
             Effect.flatMap((response) => response.text),
-            Effect.flatMap((text) => Schema.decodeUnknownEffect(ToolCall)(firstJson(text))),
+            Effect.flatMap((text) => decodeToolCall(firstJson(text))),
           );
         const accounts = yield* call(3, "mail_list_accounts", {});
         expect(accounts.result.isError ?? false).toBe(false);
@@ -163,15 +169,57 @@ it.effect(
         expect(send.result.isError).toBe(true);
 
         const mail = yield* MailService.pipe(Effect.provideContext(suiteContext));
+        const accountsReply = yield* mail.invoke({
+          clientId: "test",
+          channel: "gmail:listAccounts",
+        });
+        expect(() => encodeMailJson(accountsReply)).not.toThrow();
+        // A worker request goes only to its invoking frame; another frame cannot answer it.
+        const requested = yield* Deferred.make<Extract<SuiteMailEvent, { type: "request" }>>();
+        const ready = yield* Deferred.make<void>();
+        yield* mail.events("picker").pipe(
+          Stream.runForEach((event) =>
+            event.type === "ready"
+              ? Deferred.succeed(ready, undefined)
+              : event.type === "request"
+                ? Deferred.succeed(requested, event)
+                : Effect.void,
+          ),
+          Effect.forkScoped,
+        );
+        yield* Deferred.await(ready);
+        const otherReady = yield* Deferred.make<void>();
+        yield* mail.events("other").pipe(
+          Stream.runForEach((event) =>
+            event.type === "ready" ? Deferred.succeed(otherReady, undefined) : Effect.void,
+          ),
+          Effect.forkScoped,
+        );
+        yield* Deferred.await(otherReady);
+        const picking = yield* mail
+          .invoke({ clientId: "picker", channel: "gmail:pickAttachments" })
+          .pipe(Effect.forkScoped);
+        const request = yield* Deferred.await(requested);
+        yield* mail.reply({ clientId: "other", id: request.id, result: [] });
+        yield* mail.reply({
+          clientId: "picker",
+          id: request.id,
+          result: encodeMailBytes([
+            { name: "note.txt", mimeType: "text/plain", bytes: new Uint8Array([104, 105]) },
+          ]),
+        });
+        expect(yield* Fiber.join(picking)).toEqual({
+          attachments: [{ name: "note.txt", mimeType: "text/plain", size: 2, base64: "aGk=" }],
+        });
         // Listing the inbox waits for the fake Gmail to fill it, as opening Mail would.
         yield* mail.invoke({
           clientId: "test",
           channel: "gmail:listMessages",
           params: { accountId: "demo@otter.example", labelIds: ["INBOX"] },
         });
-        const [contributor] = (yield* SuiteHomeContributors.pipe(
+        const contributor = (yield* SuiteHomeContributors.pipe(
           Effect.provideContext(suiteContext),
-        )).filter((entry) => entry.module === "mail");
+        )).find((entry) => entry.module === "mail");
         const items = yield* contributor!.needsYou;
         const reply = items.find(
           (item) => item.kind === "mail.reply" && item.id.includes("demo@otter.example"),

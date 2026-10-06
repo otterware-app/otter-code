@@ -153,10 +153,13 @@ const isEncodedBytes = (value: object): value is EncodedMailBytes =>
 /** Replaces every `Uint8Array` in `value` with `{ $bytes: base64 }`, for the JSON transport. */
 export function encodeMailBytes(value: unknown): unknown {
   if (value instanceof Uint8Array) return { $bytes: bytesToBase64(value) };
-  if (Array.isArray(value)) return value.map(encodeMailBytes);
+  if (Array.isArray(value))
+    return value.map((entry) => (entry === undefined ? null : encodeMailBytes(entry)));
   if (value !== null && typeof value === "object") {
     return Object.fromEntries(
-      Object.entries(value).map(([key, entry]) => [key, encodeMailBytes(entry)]),
+      Object.entries(value)
+        .filter(([, entry]) => entry !== undefined)
+        .map(([key, entry]) => [key, encodeMailBytes(entry)]),
     );
   }
   return value;

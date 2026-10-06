@@ -43,6 +43,16 @@ in a new thread's model picker to add or remove them. A regular click returns to
 single model. Choose a base branch and send. Each selection starts a separate thread
 and worktree while you stay in the new thread composer. This requires a Git project.
 
+## Switch projects
+
+On web and desktop, the rail down the window's left edge holds **All projects**, then
+each of your projects, **+** to add one, and **Pull requests**. Pick a project to list
+only its threads in the sidebar. The sidebar's heading names the project; click it to
+search every project by name. **Usage** and **Settings** sit at the foot of the rail.
+In a narrow browser window, the rail runs down the edge of the sidebar. With
+**Sidebar (legacy)** on, which groups threads by project itself, the rail holds no
+projects.
+
 ## Pin and reorder threads
 
 Pin a thread from its menu to keep it above your active work.

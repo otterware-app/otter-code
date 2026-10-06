@@ -68,4 +68,7 @@ Things to know:
 - The machine must be online with Otter Connect on when you delegate or reply. If it is not, Otter
   replies in Linear with the reason. Delegate the issue again once the machine is back.
 - Progress made while the machine's Otter Code server is restarting doesn't appear in Linear.
+- If Linear stops accepting the Otter agent, delegated issues still start threads, but nothing
+  appears in Linear and **Settings → Connections → Linear** asks a workspace admin to choose
+  **Install agent** again.
 - Issues delegated by Linear automations, rather than by a person, are not supported.

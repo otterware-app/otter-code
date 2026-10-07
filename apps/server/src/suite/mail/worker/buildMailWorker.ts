@@ -122,6 +122,12 @@ export async function buildMailWorker(outFile: string): Promise<ReadonlyArray<st
       {
         name: "otterware-mail-worker",
         resolveId(source, importer) {
+          // Zod is a shipped server dependency, also used by Drive. Keep the
+          // worker on the server bundle's disk-backed boundary so desktop's
+          // emitted-artifact check does not find it inlined in this sibling.
+          if (source === "zod" || source.startsWith("zod/")) {
+            return { id: source, external: true };
+          }
           if (isUnusedMailDatabaseDriver(source, importer)) {
             return { id: source, external: true };
           }

@@ -90,6 +90,7 @@ describe("selectCliRuntimeExternalDependencies", () => {
         "playwright-core",
         "pyright",
         "typescript-tsserver",
+        "zod",
       ],
     );
   });

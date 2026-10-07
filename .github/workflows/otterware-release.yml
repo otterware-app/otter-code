@@ -151,7 +151,7 @@ jobs:
           vp exec --filter t3 -- tsc -p src/suite/mail/worker/tsconfig.json
 
       - name: Verify integrated modules and shared data home
-        run: vp test run apps/server/src/suite/SuiteServer.test.ts apps/server/src/suite/calendar/CalendarModule.test.ts apps/server/src/suite/mail/MailModule.test.ts apps/server/src/suite/StateDirGuard.test.ts apps/desktop/src/app/OtterwarePaths.test.ts --maxWorkers=1
+        run: vp test run apps/server/src/suite/SuiteServer.test.ts apps/server/src/suite/calendar/CalendarModule.test.ts apps/server/src/suite/mail/MailModule.test.ts apps/server/src/suite/StateDirGuard.test.ts apps/desktop/src/app/OtterwarePaths.test.ts apps/desktop/src/suite/mail/DesktopFrame.test.ts apps/web/src/suite/mail/mailGoogleAuth.test.ts apps/web/src/suite/calendar/upstreamShims/commandPaletteLogic.test.ts --maxWorkers=1
 
       - uses: ./.github/actions/setup-apt-mirrors
 

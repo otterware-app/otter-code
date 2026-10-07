@@ -1,6 +1,16 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 import { receiveMailGoogleAuth, type MailGoogleAuthPrompt } from "./mailGoogleAuth";
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
 const redirectUri = "http://127.0.0.1:42813";
 const state = "m".repeat(22);
 const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
@@ -71,7 +81,7 @@ describe("Mail's client Google sign-in", () => {
 
   it("opens the normal sign-in link when the native loopback port is already occupied", async () => {
     const h = harness();
-    const opened = Promise.withResolvers<void>();
+    const opened = deferred<void>();
     h.openBrowser.mockImplementation(async () => opened.resolve());
     const pending = receiveMailGoogleAuth({
       ...h.options,
@@ -89,7 +99,7 @@ describe("Mail's client Google sign-in", () => {
     "cancels the native listener and prompt on timeout, ignoring a late %s",
     async (late) => {
       const h = harness();
-      const native = Promise.withResolvers<string>();
+      const native = deferred<string>();
       const cancelNative = vi.fn(async () => {});
       const pending = receiveMailGoogleAuth({
         ...h.options,

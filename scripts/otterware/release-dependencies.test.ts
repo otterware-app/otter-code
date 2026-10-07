@@ -1,3 +1,4 @@
+// @effect-diagnostics nodeBuiltinImport:off -- Reads workflow files in a plain Node regression test.
 import * as NodeFS from "node:fs";
 import * as NodeURL from "node:url";
 import { expect, it } from "vite-plus/test";

@@ -10,11 +10,13 @@ import { type CommandPaletteGroup, toPaletteGroups } from "./commandPaletteLogic
 export function CommandPaletteResults({
   groups,
   isActionsOnly = false,
+  query = "",
   ...props
 }: Omit<ComponentProps<typeof PaletteResults>, "groups" | "isActionsOnly"> & {
   readonly groups: ReadonlyArray<CommandPaletteGroup>;
   readonly isActionsOnly?: boolean;
+  readonly query?: string;
 }) {
-  const paletteGroups = useMemo(() => toPaletteGroups(groups), [groups]);
+  const paletteGroups = useMemo(() => toPaletteGroups(groups, query), [groups, query]);
   return <PaletteResults {...props} groups={paletteGroups} isActionsOnly={isActionsOnly} />;
 }

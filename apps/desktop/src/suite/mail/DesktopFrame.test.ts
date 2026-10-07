@@ -6,10 +6,10 @@ import * as Layer from "effect/Layer";
 import { vi } from "vite-plus/test";
 
 const { handle } = vi.hoisted(() => ({ handle: vi.fn() }));
-vi.mock("../../../../desktop/node_modules/electron/index.js", () => ({
+vi.mock("electron", () => ({
   protocol: { handle, unhandle: vi.fn() },
 }));
-import { ElectronProtocol, layer } from "../../../../desktop/src/electron/ElectronProtocol.ts";
+import { ElectronProtocol, layer } from "../../electron/ElectronProtocol.ts";
 
 describe("Mail frame in the desktop protocol", () => {
   it.effect("serves the second HTML entry as HTML, preserving a same-origin frame", () =>

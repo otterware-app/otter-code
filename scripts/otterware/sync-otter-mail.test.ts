@@ -1,3 +1,4 @@
+// @effect-diagnostics nodeBuiltinImport:off -- Exercises the synchronous vendor guard outside an Effect runtime.
 import * as NodeFS from "node:fs";
 import * as NodePath from "node:path";
 import { expect, it } from "vite-plus/test";

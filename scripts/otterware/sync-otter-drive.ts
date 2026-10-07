@@ -1,3 +1,4 @@
+// @effect-diagnostics nodeBuiltinImport:off globalConsole:off globalDate:off -- Plain Node CLI, matching the other vendor sync scripts.
 /**
  * Vendors Otter Drive's wire contracts (`@otterware/contracts`, private and
  * source-only upstream) into `vendor/otter-drive/`, so the Drive module's API

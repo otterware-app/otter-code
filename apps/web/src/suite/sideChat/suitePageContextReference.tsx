@@ -24,7 +24,8 @@ export const SUITE_PAGE_CONTEXT_KIND = "suite-page";
 export function suitePageContextLabel(context: SuitePageContext): string {
   const moduleLabel =
     SUITE_WEB_MODULES.find((module) => module.id === context.module)?.label ?? context.module;
-  const focus = context.refs[0]?.label ?? context.title;
+  const focus =
+    context.title !== moduleLabel ? context.title : (context.refs[0]?.label ?? context.title);
   return focus && focus !== moduleLabel ? `${moduleLabel} · ${focus}` : moduleLabel;
 }
 

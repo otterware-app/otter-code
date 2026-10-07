@@ -195,6 +195,9 @@ it.effect("an agent in a thread lists and calls suite_capabilities over /mcp", (
       expect(homeResult.result.isError ?? false).toBe(false);
       expect(homeResult.result.structuredContent.contributors).toEqual([
         { module: "code", ok: false, itemCount: 0 },
+        { module: "calendar", ok: true, itemCount: 0 },
+        { module: "drive", ok: true, itemCount: 0 },
+        { module: "mail", ok: true, itemCount: 0 },
       ]);
 
       const callTool = (name: string, args: unknown) =>

@@ -9,9 +9,9 @@
  * for its exit before starting an update trial, `node --watch` (dev-runner)
  * waits for exit before restarting, and a server clears the file on shutdown.
  * A file left by a crash names a dead pid (or a reused pid with nothing on the
- * recorded port) and is ignored. Two servers racing through startup before
- * either has written the file are not covered; the file is written only once
- * a server is serving.
+ * recorded port) and is ignored. An atomic directory lock covers simultaneous
+ * Otterware startup before either server has written its runtime file.
+ * Existing plain Otter Code releases must remain stopped while Otterware runs.
  */
 import * as NetService from "@t3tools/shared/Net";
 import { lock } from "proper-lockfile";

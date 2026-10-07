@@ -139,6 +139,19 @@ jobs:
       - name: Align package versions to release version
         run: node scripts/update-release-package-versions.ts "${{ needs.preflight.outputs.version }}"
 
+      - name: Final integrated typecheck
+        env:
+          GOMAXPROCS: "2"
+          GOMEMLIMIT: 3GiB
+        run: |
+          set -euo pipefail
+          for package in @t3tools/contracts @t3tools/shared @t3tools/client-runtime t3 @t3tools/web @t3tools/desktop @t3tools/scripts; do
+            vp run --filter="$package" typecheck
+          done
+
+      - name: Verify integrated modules and shared data home
+        run: vp test run apps/server/src/suite/SuiteServer.test.ts apps/server/src/suite/StateDirGuard.test.ts apps/desktop/src/app/OtterwarePaths.test.ts --maxWorkers=1
+
       - uses: ./.github/actions/setup-apt-mirrors
 
       - name: Install browser secret helper build libraries

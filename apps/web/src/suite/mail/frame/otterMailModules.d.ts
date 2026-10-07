@@ -1,7 +1,7 @@
 /**
  * Otter Mail's renderer modules, vendored in vendor/otter-mail/apps/web and
- * resolved by apps/web/vite/otterMailFrame.ts. This boundary is excluded
- * from Otter Code's main web TypeScript program.
+ * resolved by apps/web/vite/otterMailFrame.ts. These declarations keep the
+ * vendor renderer behind its adapter boundary in the web TypeScript program.
  */
 declare module "otter-mail:renderer" {}
 

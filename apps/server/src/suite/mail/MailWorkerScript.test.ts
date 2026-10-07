@@ -1,3 +1,4 @@
+// @effect-diagnostics nodeBuiltinImport:off -- Probes Node SEA paths without an Effect runtime.
 import * as NodePath from "node:path";
 import * as NodeSea from "node:sea";
 import * as NodeURL from "node:url";

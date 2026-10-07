@@ -85,3 +85,24 @@ handler object, `SuiteServer.layerRpcHandlers`), `auth/RpcAuthorization.ts`
 (`.merge(SuiteRpcGroup)`), `t3McpToolPresentation.ts`, and in the web app `SpaceRail.tsx`,
 `mainAppLocation.ts`, `AppSidebarLayout.tsx`, `CommandPalette.tsx` and `_chat.index.tsx` (the
 first load of `/` lands on Home).
+
+## Daily maintenance and previews
+
+The app scheduler runs daily upstream maintenance at 07:00 UTC. Each run uses a clean isolated
+worktree from `origin/otterware`, incorporates Otter Code's `origin/main`, and refreshes Mail,
+Calendar and Drive through `scripts/otterware/sync-otter-{mail,calendar,drive}.ts`. It checks
+Accounts compatibility and the module adapters, then validates before pushing only `otterware`.
+Contract guards stop a sync when a watched upstream interface changes. Vendor code stays verbatim;
+changes to its behavior belong in suite adapters or the Calendar manifest's explicit patch.
+
+Check the pinned vendor trees with `sync-otter-calendar.ts --check`,
+`sync-otter-mail.ts --check --ref $(cat vendor/otter-mail/UPSTREAM)` and
+`sync-otter-drive.ts --check`. For a local Mail checkout, pass `--repo` explicitly. Only run
+typechecks after integrating changes, sequentially; Mail's server worker has its own tsconfig.
+
+Push a tag named `otterware-build-*` from the desired branch commit to run
+`.github/workflows/otterware-release.yml`. It typechecks the integrated packages and Mail worker,
+verifies module integration and shared-home compatibility, then builds Linux x64 and macOS arm64
+artifacts and a draft release. It does not publish an Otter Code update or switch a running server.
+Fleet runtime installation and switching use `scripts/otterware/fleet-server.sh`; mutations are
+serialized, and switching uses the existing launcher's backup and rollback path.

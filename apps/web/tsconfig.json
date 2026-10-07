@@ -25,7 +25,6 @@
       }
     ]
   },
-  "exclude": ["src/suite/mail/frame"],
   "include": [
     "../../packages/shared/src/otterAccounts.ts",
     "src",

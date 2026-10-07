@@ -81,13 +81,10 @@ export const installDriveView = Effect.acquireRelease(
             owned.failed = null;
             publish();
           });
-          for (const name of [
-            "did-stop-loading",
-            "did-navigate",
-            "did-navigate-in-page",
-            "page-title-updated",
-          ] as const)
-            wc.on(name, publish);
+          wc.on("did-stop-loading", publish);
+          wc.on("did-navigate", publish);
+          wc.on("did-navigate-in-page", publish);
+          wc.on("page-title-updated", publish);
           wc.on("did-fail-load", (_event, code, description, _url, mainFrame) => {
             if (!mainFrame || code === -3) return;
             owned.failed = description;

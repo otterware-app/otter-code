@@ -103,6 +103,7 @@ const decodeToolResult = Schema.decodeUnknownEffect(
     }),
   ),
 );
+const encodeWireMessage = Schema.encodeUnknownEffect(Schema.fromJsonString(Schema.Unknown));
 
 const firstJson = (body: string) => body.match(/\{.*\}/s)?.[0] ?? body;
 
@@ -161,6 +162,9 @@ it.effect("an agent in a thread lists and calls suite_capabilities over /mcp", (
       // Module toolkits join through the registry, e.g. Drive's.
       expect(names).toEqual(
         expect.arrayContaining([
+          "calendar_list_events",
+          "mail_list_accounts",
+          "mail_search_mail",
           "drive_list_folders",
           "drive_list_documents",
           "drive_get_document",
@@ -185,6 +189,9 @@ it.effect("an agent in a thread lists and calls suite_capabilities over /mcp", (
       expect(called.result.isError ?? false).toBe(false);
       expect(called.result.structuredContent.modules).toContain("core");
       expect(called.result.structuredContent.modules).toContain("home");
+      expect(called.result.structuredContent.modules).toEqual(
+        expect.arrayContaining(["mail", "calendar", "drive"]),
+      );
 
       // Home answers even when Code's projections cannot be read (stubbed here).
       const home = yield* post(
@@ -203,7 +210,7 @@ it.effect("an agent in a thread lists and calls suite_capabilities over /mcp", (
       const callTool = (name: string, args: unknown) =>
         Effect.gen(function* () {
           const response = yield* post(
-            JSON.stringify({
+            yield* encodeWireMessage({
               jsonrpc: "2.0",
               id: 5,
               method: "tools/call",

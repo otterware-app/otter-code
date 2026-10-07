@@ -11,6 +11,7 @@ import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
 import { HttpBody, HttpClient, HttpRouter } from "effect/http";
 
+import * as ServerSecretStore from "../../auth/ServerSecretStore.ts";
 import * as ServerConfig from "../../config.ts";
 import * as DeviceService from "../../device/DeviceService.ts";
 import * as ServerEnvironment from "../../environment/ServerEnvironment.ts";
@@ -20,6 +21,7 @@ import * as McpSessionRegistry from "../../mcp/McpSessionRegistry.ts";
 import * as PreviewAutomationBroker from "../../mcp/PreviewAutomationBroker.ts";
 import * as Orchestrator from "../../orchestration-v2/Orchestrator.ts";
 import * as ProjectionStore from "../../orchestration-v2/ProjectionStore.ts";
+import * as ProjectStore from "../../orchestration-v2/ProjectStore.ts";
 import * as ProviderAdapterRegistry from "../../orchestration-v2/ProviderAdapterRegistry.ts";
 import * as ThreadManagementService from "../../orchestration-v2/ThreadManagementService.ts";
 import * as PreviewBrowser from "../../preview/PreviewBrowser.ts";
@@ -41,6 +43,7 @@ process.env.OTTER_MAIL_FAKE_DEMO = "1";
 const layerStubServices = Layer.mergeAll(
   Layer.mock(Orchestrator.OrchestratorV2)({}),
   Layer.mock(ProjectionStore.ProjectionStoreV2)({}),
+  Layer.mock(ProjectStore.ProjectStoreV2)({}),
   Layer.mock(DeviceService.DeviceService)({}),
   Layer.mock(ThreadManagementService.ThreadManagementService)({
     getThreadShell: () => Effect.succeed({ runtimeMode: "approval-required" } as never),
@@ -108,6 +111,7 @@ it.effect(
             }),
           ),
           Layer.provideMerge(SuiteServer.layer),
+          Layer.provide(ServerSecretStore.layer),
           Layer.provide(PreviewAutomationBroker.layer),
           Layer.provide(PreviewBrowser.layer),
           Layer.provide(layerStubServices),

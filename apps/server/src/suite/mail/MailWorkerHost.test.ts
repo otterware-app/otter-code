@@ -1,3 +1,4 @@
+// @effect-diagnostics nodeBuiltinImport:off -- Exercises the plain Node worker host outside an Effect runtime.
 import * as NodeFSP from "node:fs/promises";
 import * as NodeOS from "node:os";
 import * as NodePath from "node:path";

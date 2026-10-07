@@ -47,6 +47,7 @@ export type SuiteMailInvokeInput = typeof SuiteMailInvokeInput.Type;
 /** What core asks of the client that caused it (Mail's desktop asks its main process). */
 export const SuiteMailClientRequestKind = Schema.Literals([
   "openExternal",
+  "googleAuth",
   "pickFiles",
   "openFile",
   "saveFile",
@@ -71,6 +72,8 @@ export const SuiteMailEvent = Schema.Union([
     kind: SuiteMailClientRequestKind,
     params: Schema.optional(Schema.Unknown),
   }),
+  /** The pending ask ended on the server (completed, cancelled, or timed out). */
+  Schema.Struct({ type: Schema.Literal("requestCancelled"), id: Schema.Number }),
   /** A new-mail notification. */
   Schema.Struct({
     type: Schema.Literal("notify"),

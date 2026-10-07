@@ -3,7 +3,7 @@
  * Otter Mail core's Platform on an Otterware server, modelled on Mail's
  * desktop one (apps/desktop/src/platform.ts): files and the mail cache
  * (node:sqlite, WAL) under `<stateDir>/mail`, secrets sealed with the
- * server's key, Google sign-in through Mail's own loopback PKCE flow, and
+ * server's key, Mail's PKCE flow with the client's loopback callback forwarded here, and
  * what needs a person (opening the consent page, picking files) asked of the
  * client that caused it. Pushes go to every client over `suite.mail.events`.
  */
@@ -26,6 +26,7 @@ import { connectMailSocket } from "otter-mail-desktop/mail-socket";
 import { todoistSignIn } from "otter-mail-desktop/todoist-oauth";
 
 import { sealText, unsealText } from "./seal.ts";
+import { runGoogleSignIn } from "./googleAuthRemote.ts";
 import { mailWorkerData, post, requestClient } from "./workerLink.ts";
 
 declare const __OTTER_MAIL_VERSION__: string;
@@ -126,14 +127,15 @@ async function withGoogleConfigured<T>(run: () => Promise<T>): Promise<T> {
   }
 }
 
-/** Mail's loopback Google sign-in, failing clearly where the build has no OAuth client. */
+/** Mail owns PKCE and tokens; the adapter captures the callback on the client machine. */
 export const serverGoogleAuth: GoogleAuth = {
   ...googleAuth,
   addAccount: (loginHint?: string): Promise<GmailAccount> =>
-    withGoogleConfigured(() => googleAuth.addAccount(loginHint)),
+    runGoogleSignIn(() => withGoogleConfigured(() => googleAuth.addAccount(loginHint))),
   ...(googleAuth.signInForIdToken
     ? {
-        signInForIdToken: () => withGoogleConfigured(() => googleAuth.signInForIdToken!()),
+        signInForIdToken: () =>
+          runGoogleSignIn(() => withGoogleConfigured(() => googleAuth.signInForIdToken!())),
       }
     : {}),
 };

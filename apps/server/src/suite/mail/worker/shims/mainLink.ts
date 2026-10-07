@@ -8,6 +8,7 @@
 import type { PickedFile } from "@otter-mail/core";
 
 import { sealText, unsealText } from "../seal.ts";
+import { receiveRemoteGoogleCallback } from "../googleAuthRemote.ts";
 import { mailWorkerData, requestClient } from "../workerLink.ts";
 
 /** Mail's `MainRequests` (apps/desktop/src/backend-protocol.ts); the sync guard watches its shape. */
@@ -25,6 +26,14 @@ export async function requestMain<K extends keyof MainRequests>(
   params: MainRequests[K]["params"],
 ): Promise<MainRequests[K]["result"]> {
   switch (kind) {
+    case "openExternal": {
+      const { url } = params as MainRequests["openExternal"]["params"];
+      if (URL.canParse(url) && new URL(url).origin === "https://accounts.google.com") {
+        await receiveRemoteGoogleCallback(url);
+        return undefined as never;
+      }
+      return requestClient(kind, params);
+    }
     case "seal":
       return sealText(
         mailWorkerData.sealKey,

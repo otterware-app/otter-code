@@ -72,7 +72,12 @@ export interface MailWorkerCalls {
 export type MailWorkerCall = keyof MailWorkerCalls;
 
 /** What core asks of a client (Mail's desktop asks its main process). */
-export type MailClientRequestKind = "openExternal" | "pickFiles" | "openFile" | "saveFile";
+export type MailClientRequestKind =
+  | "openExternal"
+  | "googleAuth"
+  | "pickFiles"
+  | "openFile"
+  | "saveFile";
 
 export type ToMailWorker =
   | {
@@ -97,6 +102,7 @@ export type FromMailWorker =
       readonly error?: string;
     }
   | { readonly type: "event"; readonly channel: string; readonly params?: unknown }
+  | { readonly type: "requestCancelled"; readonly id: number }
   | {
       readonly type: "request";
       readonly id: number;

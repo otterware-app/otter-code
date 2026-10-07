@@ -22,15 +22,31 @@ export const currentClient = new NodeAsyncHooks.AsyncLocalStorage<string>();
 let nextRequestId = 1;
 const pending = new Map<
   number,
-  { resolve: (value: unknown) => void; reject: (error: Error) => void }
+  { resolve: (value: unknown) => void; reject: (error: Error) => void; cleanup: () => void }
 >();
 
 /** Asks a client (the one that caused this, else the server picks one) and waits for its answer. */
-export function requestClient<T>(kind: MailClientRequestKind, params?: unknown): Promise<T> {
+export function requestClient<T>(
+  kind: MailClientRequestKind,
+  params?: unknown,
+  signal?: AbortSignal,
+): Promise<T> {
+  if (signal?.aborted) return Promise.reject(new Error("Google sign-in ended."));
   const id = nextRequestId++;
-  post({ type: "request", id, clientId: currentClient.getStore() ?? null, kind, params });
   return new Promise<T>((resolve, reject) => {
-    pending.set(id, { resolve: resolve as (value: unknown) => void, reject });
+    const abort = () => {
+      pending.delete(id);
+      signal?.removeEventListener("abort", abort);
+      post({ type: "requestCancelled", id });
+      reject(new Error("Google sign-in ended."));
+    };
+    pending.set(id, {
+      resolve: resolve as (value: unknown) => void,
+      reject,
+      cleanup: () => signal?.removeEventListener("abort", abort),
+    });
+    signal?.addEventListener("abort", abort, { once: true });
+    post({ type: "request", id, clientId: currentClient.getStore() ?? null, kind, params });
   });
 }
 
@@ -38,6 +54,7 @@ export function requestClient<T>(kind: MailClientRequestKind, params?: unknown):
 export function settleClientRequest(id: number, result: unknown, error: string | undefined): void {
   const request = pending.get(id);
   pending.delete(id);
+  request?.cleanup();
   if (error !== undefined) request?.reject(new Error(error));
   else request?.resolve(result);
 }

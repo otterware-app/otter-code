@@ -150,6 +150,13 @@ export const make = Effect.gen(function* () {
         });
         return;
       }
+      case "requestCancelled": {
+        const owner = requestOwners.get(push.id);
+        requestOwners.delete(push.id);
+        const client = owner === undefined ? undefined : clients.get(owner);
+        if (client) Queue.offerUnsafe(client.queue, { type: "requestCancelled", id: push.id });
+        return;
+      }
       case "log": {
         const annotations = {
           scope: push.scope,

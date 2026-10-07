@@ -203,7 +203,6 @@ describe("ElectronProtocol", () => {
           yield* protocol.registerDesktopProtocol({
             scheme: "t3code-dev",
             targetOrigin: new URL("http://127.0.0.1:5733/"),
-            clerkFrontendApiHostname: undefined,
           });
           const fiber = yield* Effect.forkChild(
             Effect.promise(() =>

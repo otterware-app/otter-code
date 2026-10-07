@@ -72,6 +72,42 @@ const buildDefines = () => ({
   ),
 });
 
+/** Only database drivers from auth adapters Mail's client never calls may stay external. */
+export function isUnusedMailDatabaseDriver(source: string, importer: string | undefined): boolean {
+  const file = importer?.replaceAll("\\", "/") ?? "";
+  if (source === "pg" || source === "mysql2/promise") {
+    return /\/node_modules\/(?:@better-auth\/kysely-adapter\/dist\/|better-auth\/dist\/db\/)/.test(
+      file,
+    );
+  }
+  if (source === "pg-native") {
+    return file.endsWith("/node_modules/pg/lib/native/client.js");
+  }
+  if (source === "@prisma/client") {
+    return file.includes("/node_modules/@better-auth/prisma-adapter/dist/");
+  }
+  if (source === "mongodb") {
+    return file.includes("/node_modules/@better-auth/mongo-adapter/dist/");
+  }
+  return false;
+}
+
+export function mailWorkerBuildOnLog(
+  level: "warn" | "info" | "debug",
+  log: { readonly code?: string; readonly message: string },
+  handler: (
+    level: "error" | "warn" | "info" | "debug",
+    log: { readonly code?: string; readonly message: string },
+  ) => void,
+): void {
+  if (log.code === "UNRESOLVED_IMPORT") {
+    handler("error", log);
+    return;
+  }
+  if (log.code === "EVAL") return;
+  handler(level, log);
+}
+
 /** Bundles the worker to `outFile`; answers the files it read, for the dev cache. */
 export async function buildMailWorker(outFile: string): Promise<ReadonlyArray<string>> {
   const { Rolldown } = await import("vite-plus/pack");
@@ -80,15 +116,15 @@ export async function buildMailWorker(outFile: string): Promise<ReadonlyArray<st
     platform: "node",
     resolve: { extensionAlias: { ".js": [".ts", ".tsx", ".js"] } },
     transform: { define: buildDefines() },
-    // A few of better-auth's database adapters import optional drivers Mail never uses.
-    onLog(level, log, handler) {
-      if (log.code === "UNRESOLVED_IMPORT" || log.code === "EVAL") return;
-      handler(level, log);
-    },
+    // Unknown missing imports must fail the build, rather than ship a broken worker.
+    onLog: mailWorkerBuildOnLog,
     plugins: [
       {
         name: "otterware-mail-worker",
         resolveId(source, importer) {
+          if (isUnusedMailDatabaseDriver(source, importer)) {
+            return { id: source, external: true };
+          }
           if (source.startsWith("otter-mail-desktop/")) {
             return NodePath.join(
               DESKTOP_SERVICES,

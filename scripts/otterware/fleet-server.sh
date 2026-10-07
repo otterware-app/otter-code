@@ -29,7 +29,7 @@
 # Either way it refuses while a server started by hand runs on the home, while
 # an update is pending, or when the unit serves another home.
 #
-# Needs bash, coreutils, tar, curl, systemctl --user. No Node.
+# Needs bash, coreutils, tar, curl, flock, systemctl --user. No Node.
 set -euo pipefail
 
 SERVICE_UNIT="otter-code.service"
@@ -51,6 +51,14 @@ die() {
   exit 1
 }
 log() { echo "fleet-server: $*"; }
+
+# Keep the lock file in place: unlinking it would let another writer lock a new inode.
+lock_mutation() {
+  command -v flock >/dev/null || die "flock is required for fleet mutations"
+  mkdir -p "$BASE_DIR/runtime"
+  exec 9>"$BASE_DIR/runtime/fleet-server.lock"
+  flock --exclusive 9 || die "could not lock fleet operations for $BASE_DIR"
+}
 
 product_of() {
   if [[ "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+-otterware\.[0-9]{8}\.[0-9]+$ ]]; then
@@ -225,7 +233,7 @@ cmd_install() {
   mkdir -p "$VERSIONS_DIR"
   staging="$(mktemp -d "$VERSIONS_DIR/.staging-XXXXXX")"
   if ! tar -xzf "$archive" -C "$staging" --strip-components=1 ||
-    ! found="$("$staging/t3" --version 2>/dev/null)" ||
+    ! found="$("$staging/t3" --version 9>&- 2>/dev/null)" ||
     [[ ! "$found" =~ v${version//./\\.}[[:space:]]*$ ]]; then
     rm -rf "$staging"
     die "the archive did not unpack to a working t3 $version"
@@ -317,7 +325,7 @@ switch_backward() {
   done
   sync "$backup" 2>/dev/null || true
   log "database snapshot in $backup"
-  if T3CODE_HOME="$BASE_DIR" "$VERSIONS_DIR/$target/t3" service install --allow-downgrade &&
+  if T3CODE_HOME="$BASE_DIR" "$VERSIONS_DIR/$target/t3" service install --allow-downgrade 9>&- &&
     wait_for_version "$target"; then
     rm -rf "$backup"
     log "now serving $target ($(product_of "$target"))"
@@ -333,7 +341,7 @@ switch_backward() {
       rm -f "$DB_PATH$suffix"
     fi
   done
-  T3CODE_HOME="$BASE_DIR" "$VERSIONS_DIR/$active/t3" service install --allow-downgrade ||
+  T3CODE_HOME="$BASE_DIR" "$VERSIONS_DIR/$active/t3" service install --allow-downgrade 9>&- ||
     die "could not reinstall $active; the snapshot is kept in $backup"
   wait_for_version "$active" || die "$active is installed again but not answering; snapshot kept in $backup"
   rm -rf "$backup"
@@ -379,7 +387,7 @@ cmd_use() {
   fi
 
   local preflight
-  preflight="$("$VERSIONS_DIR/$target/t3" __service-preflight --database-path "$DB_PATH" --launcher-protocol "$LAUNCHER_PROTOCOL")" ||
+  preflight="$("$VERSIONS_DIR/$target/t3" __service-preflight --database-path "$DB_PATH" --launcher-protocol "$LAUNCHER_PROTOCOL" 9>&-)" ||
     die "$target failed its service preflight"
   [[ "$preflight" == *'"status":"ready"'* ]] || die "$target is not ready for this service: $preflight"
 
@@ -394,14 +402,17 @@ cmd_use() {
 case "${1:-}" in
   status) cmd_status ;;
   install)
+    lock_mutation
     shift
     cmd_install "$@"
     ;;
   use-otterware)
+    lock_mutation
     shift
     cmd_use otterware "$@"
     ;;
   use-otter-code)
+    lock_mutation
     shift
     cmd_use otter-code "$@"
     ;;

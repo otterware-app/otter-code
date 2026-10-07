@@ -107,9 +107,9 @@ function readInitialRoutePath(): string | null {
 const initialRoutePath = readInitialRoutePath();
 let suiteLandingConsumed = false;
 
-/** True once, when the app was opened on `/`; call from the `/` route's `beforeLoad`. */
+/** True once after opening the app or pairing; call from the `/` route's `beforeLoad`. */
 export function consumeSuiteLanding(): boolean {
   if (suiteLandingConsumed) return false;
   suiteLandingConsumed = true;
-  return initialRoutePath === "/" || initialRoutePath === "";
+  return initialRoutePath === "/" || initialRoutePath === "" || initialRoutePath === "/pair";
 }

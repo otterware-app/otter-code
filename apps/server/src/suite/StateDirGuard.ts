@@ -14,7 +14,9 @@
  * a server is serving.
  */
 import * as NetService from "@t3tools/shared/Net";
+import { lock } from "proper-lockfile";
 import * as Effect from "effect/Effect";
+import * as FileSystem from "effect/FileSystem";
 import * as Option from "effect/Option";
 import * as Schedule from "effect/Schedule";
 import * as Schema from "effect/Schema";
@@ -41,6 +43,7 @@ export class StateDirInUseError extends Schema.TaggedError<StateDirInUseError>()
   { pid: Schema.Int, stateDir: Schema.String },
 ) {
   override get message(): string {
+    if (this.pid === 0) return `Another Otterware server is starting or using ${this.stateDir}. Quit it first.`;
     return `Another Otter Code/Otterware server (pid ${this.pid}) is using ${this.stateDir}. Quit it first.`;
   }
 }
@@ -79,6 +82,33 @@ const findOtherServer = Effect.fn("StateDirGuard.findOtherServer")(function* (
   const net = yield* NetService.NetService;
   const listening = yield* net.hasListenerOnHost(state.value.port, probeHost(state.value));
   return listening ? state : Option.none();
+});
+
+/** Held from before database initialization until the server's scope closes. */
+export const acquireWriterLock = Effect.fn("StateDirGuard.acquireWriterLock")(function* (
+  input: Pick<StateDirGuardInput, "stateDir">,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  yield* fs.makeDirectory(input.stateDir, { recursive: true });
+  yield* Effect.acquireRelease(
+    Effect.tryPromise({
+      try: () => lock(input.stateDir, {
+        // Resolve symlinked homes before choosing the lock directory.
+        realpath: true,
+        stale: 10_000,
+        update: 2_000,
+        retries: 0,
+      }),
+      catch: () => new StateDirInUseError({ pid: 0, stateDir: input.stateDir }),
+    }).pipe(Effect.tapError((error) =>
+      encodeMarkerDetail({ pid: error.pid, stateDir: error.stateDir }).pipe(
+        Effect.flatMap((detail) => Effect.sync(() => process.stderr.write(`${STATE_DIR_IN_USE_MARKER} ${detail}\n`))),
+      ),
+    )),
+    (release) => Effect.promise(() => release()).pipe(Effect.ignore),
+  );
+  // The target directory itself is the lock key; proper-lockfile creates a
+  // sibling directory atomically and maintains its mtime while we own it.
 });
 
 /** Fails with `StateDirInUseError` while another live server owns `stateDir`. */

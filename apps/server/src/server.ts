@@ -723,6 +723,7 @@ const layerMakeServer = Layer.unwrap(
 
     yield* fixPath();
     yield* StateDirGuard.ensureSoleWriter(config);
+    yield* StateDirGuard.acquireWriterLock(config);
 
     const layerHttpListening = Layer.effectDiscard(
       Effect.gen(function* () {

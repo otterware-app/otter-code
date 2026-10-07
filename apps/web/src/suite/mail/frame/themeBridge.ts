@@ -79,6 +79,28 @@ const MAPPED_VARIABLES: ReadonlyArray<readonly [string, string]> = [
 
 const STYLE_ID = "otterware-mail-theme";
 
+// Mail keeps its mailbox, view and settings controls in its own rail. Inside
+// Otterware they become a toolbar above the inbox, beside the shared app rail.
+// This adapter stylesheet leaves upstream Mail and every action intact.
+const MAIL_TOOLBAR_CSS = `
+:root { --workspace-rail-width: 0px; }
+[data-mail-layout] { flex-direction: column; }
+nav[aria-label="Spaces"] {
+  width: 100%; flex-direction: row; height: 48px; padding: 0 8px;
+  gap: 8px; border-bottom: 1px solid var(--border);
+}
+nav[aria-label="Spaces"] > [aria-hidden],
+nav[aria-label="Spaces"] > span { display: none; }
+nav[aria-label="Spaces"] > [data-tour="mailbox"] {
+  flex: 1; min-width: 0; flex-direction: row; margin-top: 0;
+  overflow-x: auto; padding: 4px 0;
+}
+nav[aria-label="Spaces"] [data-tour="mailbox"] > span[aria-hidden] {
+  width: 1px; height: 20px; margin: 0 4px; flex-shrink: 0;
+}
+`;
+
+
 export interface ParentAppearance {
   readonly dark: boolean;
   readonly themeId: string;
@@ -98,7 +120,7 @@ export function readParentAppearance(parent: Document): ParentAppearance {
   // Mail's own tokens are scoped to :root and its sidebar ([data-app-sidebar]); both take the parent's.
   const css = `:root,\n[data-app-sidebar] {\n${declarations.join("\n")}\n}\n${
     fontSize ? `html { font-size: ${fontSize} !important; }\n` : ""
-  }`;
+  }${MAIL_TOOLBAR_CSS}`;
   return { dark: root.classList.contains("dark"), themeId: root.dataset.themeId ?? "t3-chat", css };
 }
 

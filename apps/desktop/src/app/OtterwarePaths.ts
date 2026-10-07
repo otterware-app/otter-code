@@ -14,8 +14,6 @@ export const LEGACY_CLIENT_STATE_FILES = [
   "desktop-settings.json",
   "client-settings.json",
   "saved-environments.json",
-  "connection-catalog.json",
-  "otter-account-session.bin",
 ] as const;
 
 const MIGRATION_MARKER_FILE = ".migrated-from-otter-code";
@@ -28,9 +26,9 @@ const nonBlank = (value: Option.Option<string>) =>
 
 /**
  * Resolves where desktop-only state lives. `OTTERWARE_HOME` wins. Without it,
- * development and an explicit `T3CODE_HOME` (dev-runner, tests, isolated
- * installs) keep everything in that self-contained home as before; only the
- * default shared home splits desktop files into `~/.otterware/userdata`.
+ * development keeps everything in its isolated backend home. Production
+ * always splits desktop files into `~/.otterware/userdata`, even when
+ * `T3CODE_HOME` explicitly selects the shared server home.
  */
 export function resolveOtterwareClientStateDir(input: {
   readonly homeDirectory: string;
@@ -42,7 +40,7 @@ export function resolveOtterwareClientStateDir(input: {
 }): string {
   const configured = nonBlank(input.otterwareHome);
   if (Option.isSome(configured)) return input.joinPath(configured.value, "userdata");
-  if (input.isDevelopment || Option.isSome(nonBlank(input.t3Home))) return input.backendStateDir;
+  if (input.isDevelopment) return input.backendStateDir;
   return input.joinPath(input.homeDirectory, ".otterware", "userdata");
 }
 

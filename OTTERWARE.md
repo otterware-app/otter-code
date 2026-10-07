@@ -20,9 +20,12 @@ changes what plain Otter Code reads:
 - Migrations are namespaced per module (`suite_migrations(module, id)`) and run at startup before
   any module starts ([`SuiteMigrations.ts`](apps/server/src/suite/SuiteMigrations.ts)). Ids are
   per module; never renumber a shipped one.
-- One writer per data home: a server refuses to start while `server-runtime.json` names another
+- One writer per data home: Otterware holds an atomic directory lock from before database
+  initialization until shutdown, and refuses to start while `server-runtime.json` names another
   live server that is listening ([`StateDirGuard.ts`](apps/server/src/suite/StateDirGuard.ts)).
-  Two servers on one database would run agent work twice. The desktop app recognises the refusal
+  Two servers on one database would run agent work twice. Existing plain Otter Code releases
+  do not participate in this lock: quit them before starting Otterware and keep them stopped
+  while Otterware serves the home. The desktop app recognises the refusal
   and asks the user to quit the other app instead of restarting the backend in a loop.
 - The desktop app keeps its own files (settings, connections, account session, logs) in
   `~/.otterware/userdata` (`OTTERWARE_HOME`), while its bundled backend uses the shared Otter Code

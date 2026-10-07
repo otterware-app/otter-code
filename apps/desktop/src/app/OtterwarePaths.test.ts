@@ -60,7 +60,7 @@ describe("resolveOtterwareClientStateDir", () => {
     );
   });
 
-  it("keeps an explicit T3CODE_HOME self-contained", () => {
+  it("keeps desktop state separate when T3CODE_HOME explicitly selects the backend", () => {
     assert.equal(
       resolveOtterwareClientStateDir({
         ...base,
@@ -69,7 +69,7 @@ describe("resolveOtterwareClientStateDir", () => {
         otterwareHome: Option.none(),
         isDevelopment: false,
       }),
-      "/data/otter/userdata",
+      "/home/u/.otterware/userdata",
     );
   });
 
@@ -156,16 +156,15 @@ describe("migrateLegacyClientState", () => {
         yield* fs.writeFileString(joinPath(legacy, "connection-catalog.json"), "catalog");
         yield* fs.writeFileString(joinPath(legacy, "otter-account-session.bin"), "session");
         yield* fs.writeFileString(joinPath(legacy, "desktop-settings.json"), "legacy-settings");
+        yield* fs.writeFileString(joinPath(legacy, "client-settings.json"), "legacy-client-settings");
         yield* fs.writeFileString(joinPath(legacy, "statev2.sqlite"), "db");
         yield* fs.writeFileString(joinPath(client, "desktop-settings.json"), "client-settings");
 
         const input = { clientStateDir: client, legacyStateDir: legacy, joinPath };
         const copied = yield* migrateLegacyClientState(input);
-        assert.deepEqual(copied, ["connection-catalog.json", "otter-account-session.bin"]);
-        assert.equal(
-          yield* fs.readFileString(joinPath(client, "connection-catalog.json")),
-          "catalog",
-        );
+        assert.deepEqual(copied, ["client-settings.json"]);
+        assert.equal(yield* fs.exists(joinPath(client, "connection-catalog.json")), false);
+        assert.equal(yield* fs.exists(joinPath(client, "otter-account-session.bin")), false);
         assert.equal(
           yield* fs.readFileString(joinPath(client, "desktop-settings.json")),
           "client-settings",
@@ -173,10 +172,10 @@ describe("migrateLegacyClientState", () => {
         assert.equal(yield* fs.exists(joinPath(client, "statev2.sqlite")), false);
         assert.equal(yield* fs.exists(joinPath(legacy, "otter-account-session.bin")), true);
 
-        // A later sign-out in Otterware must not be undone by another copy.
-        yield* fs.remove(joinPath(client, "otter-account-session.bin"));
+        // A later preferences reset must not be undone by another copy.
+        yield* fs.remove(joinPath(client, "client-settings.json"));
         assert.deepEqual(yield* migrateLegacyClientState(input), []);
-        assert.equal(yield* fs.exists(joinPath(client, "otter-account-session.bin")), false);
+        assert.equal(yield* fs.exists(joinPath(client, "client-settings.json")), false);
       }),
     ).pipe(Effect.provide(NodeServices.layer)),
   );

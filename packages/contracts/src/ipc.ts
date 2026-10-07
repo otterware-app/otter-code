@@ -13,6 +13,7 @@ import { AdvertisedEndpoint } from "./remoteAccess.ts";
 import { ExecutionEnvironmentDescriptor } from "./environment.ts";
 import { type ClientSettings, type QuitConfirmationMode, SnapShotShortcut } from "./settings.ts";
 import type { EditorId } from "./editor.ts";
+import type { PreviewForwardedShortcut } from "./keybindings.ts";
 
 import type {
   DesktopAppActivationRequest,
@@ -1069,6 +1070,11 @@ export const DesktopPreviewAnnotationThemeInputSchema = Schema.Struct({
   theme: DesktopPreviewAnnotationThemeSchema,
 });
 
+export const DesktopPreviewAnnotationSendEnabledInputSchema = Schema.Struct({
+  tabId: DesktopPreviewTabIdSchema,
+  enabled: Schema.Boolean,
+});
+
 export const DesktopPreviewArtifactInputSchema = Schema.Struct({
   path: Schema.String.check(Schema.isTrimmed()).check(Schema.isNonEmpty()),
 });
@@ -1247,6 +1253,7 @@ export interface DesktopBridge {
 export const DESKTOP_PREVIEW_RECORDING_CAPTURE_TRIGGER = "__t3DesktopPreviewRecordingCapture";
 
 export interface DesktopPreviewBridge {
+  setForwardedShortcuts?: (shortcuts: ReadonlyArray<PreviewForwardedShortcut>) => Promise<void>;
   createTab: (tabId: string, defaults?: DesktopPreviewTabDefaults) => Promise<void>;
   closeTab: (tabId: string) => Promise<void>;
   registerWebview: (tabId: string, webContentsId: number) => Promise<void>;
@@ -1297,6 +1304,8 @@ export interface DesktopPreviewBridge {
     readonly targetProfileId: string;
   }) => Promise<BrowserImportResult>;
   setAnnotationTheme: (theme: DesktopPreviewAnnotationTheme) => Promise<void>;
+  /** Keep an open annotation picker's send shortcut in sync with its thread grant. */
+  setAnnotationSendEnabled: (tabId: string, enabled: boolean) => Promise<void>;
   /**
    * Activate the in-page element picker for the given tab. Resolves with
    * the picked annotation and its attach/send intent, or `null` when the

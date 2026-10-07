@@ -65,4 +65,5 @@ export * from "./rpc.ts";
 export * from "./suite/calendarVendor/root.ts";
 export * from "./worktreeSetup.ts";
 export * from "./secretRequest.ts";
+export * from "./clientRpcPermissions.ts";
 export * from "./language.ts";

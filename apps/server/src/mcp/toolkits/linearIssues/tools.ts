@@ -1,6 +1,7 @@
 import {
   LinearIssueStateType,
   McpCapabilityUnavailableError,
+  OrchestratorMcpFailure,
   ThreadLinearIssueLinkSource,
   TrimmedNonEmptyString,
 } from "@t3tools/contracts";
@@ -10,8 +11,13 @@ import * as Toolkit from "effect/ai/Toolkit";
 
 import * as McpInvocationContext from "../../McpInvocationContext.ts";
 import { OrchestratorV2 } from "../../../orchestration-v2/Orchestrator.ts";
+import * as ThreadManagementService from "../../../orchestration-v2/ThreadManagementService.ts";
 
-const dependencies = [McpInvocationContext.McpInvocationContext, OrchestratorV2];
+const dependencies = [
+  McpInvocationContext.McpInvocationContext,
+  OrchestratorV2,
+  ThreadManagementService.ThreadManagementService,
+];
 
 export const LinearIssueTargetInput = Schema.Struct({
   issue: TrimmedNonEmptyString.annotate({
@@ -59,6 +65,7 @@ export class LinearIssueLinkFailedError extends Schema.TaggedError<LinearIssueLi
 }
 
 export const LinearIssueToolError = Schema.Union([
+  OrchestratorMcpFailure,
   McpCapabilityUnavailableError,
   LinearIssueReferenceInvalidError,
   LinearIssueThreadNotFoundError,

@@ -16,6 +16,7 @@ import { Route as PairRouteImport } from './routes/pair'
 import { Route as MailRouteImport } from './routes/mail'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as DriveRouteImport } from './routes/drive'
+import { Route as ConnectAgentRouteImport } from './routes/connect-agent'
 import { Route as ConnectRouteImport } from './routes/connect'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as ChatRouteImport } from './routes/_chat'
@@ -84,6 +85,11 @@ const HomeRoute = HomeRouteImport.update({
 const DriveRoute = DriveRouteImport.update({
   id: '/drive',
   path: '/drive',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConnectAgentRoute = ConnectAgentRouteImport.update({
+  id: '/connect-agent',
+  path: '/connect-agent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConnectRoute = ConnectRouteImport.update({
@@ -263,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/': typeof ChatIndexRoute
   '/calendar': typeof CalendarRoute
   '/connect': typeof ConnectRoute
+  '/connect-agent': typeof ConnectAgentRoute
   '/drive': typeof DriveRoute
   '/home': typeof HomeRouteWithChildren
   '/mail': typeof MailRoute
@@ -304,6 +311,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/calendar': typeof CalendarRoute
   '/connect': typeof ConnectRoute
+  '/connect-agent': typeof ConnectAgentRoute
   '/drive': typeof DriveRoute
   '/mail': typeof MailRoute
   '/pair': typeof PairRoute
@@ -347,6 +355,7 @@ export interface FileRoutesById {
   '/_chat': typeof ChatRouteWithChildren
   '/calendar': typeof CalendarRoute
   '/connect': typeof ConnectRoute
+  '/connect-agent': typeof ConnectAgentRoute
   '/drive': typeof DriveRoute
   '/home': typeof HomeRouteWithChildren
   '/mail': typeof MailRoute
@@ -392,6 +401,7 @@ export interface FileRouteTypes {
     | '/'
     | '/calendar'
     | '/connect'
+    | '/connect-agent'
     | '/drive'
     | '/home'
     | '/mail'
@@ -433,6 +443,7 @@ export interface FileRouteTypes {
   to:
     | '/calendar'
     | '/connect'
+    | '/connect-agent'
     | '/drive'
     | '/mail'
     | '/pair'
@@ -475,6 +486,7 @@ export interface FileRouteTypes {
     | '/_chat'
     | '/calendar'
     | '/connect'
+    | '/connect-agent'
     | '/drive'
     | '/home'
     | '/mail'
@@ -519,6 +531,7 @@ export interface RootRouteChildren {
   ChatRoute: typeof ChatRouteWithChildren
   CalendarRoute: typeof CalendarRoute
   ConnectRoute: typeof ConnectRoute
+  ConnectAgentRoute: typeof ConnectAgentRoute
   DriveRoute: typeof DriveRoute
   HomeRoute: typeof HomeRouteWithChildren
   MailRoute: typeof MailRoute
@@ -580,6 +593,13 @@ declare module '@tanstack/react-router' {
       path: '/drive'
       fullPath: '/drive'
       preLoaderRoute: typeof DriveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/connect-agent': {
+      id: '/connect-agent'
+      path: '/connect-agent'
+      fullPath: '/connect-agent'
+      preLoaderRoute: typeof ConnectAgentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/connect': {
@@ -909,6 +929,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChatRoute: ChatRouteWithChildren,
   CalendarRoute: CalendarRoute,
   ConnectRoute: ConnectRoute,
+  ConnectAgentRoute: ConnectAgentRoute,
   DriveRoute: DriveRoute,
   HomeRoute: HomeRouteWithChildren,
   MailRoute: MailRoute,

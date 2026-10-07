@@ -7,7 +7,7 @@ import type {
   LanguageResult,
 } from "@t3tools/contracts";
 import { getFiletypeFromFileName } from "@pierre/diffs";
-import type { Editor } from "@pierre/diffs/editor";
+import type { Editor } from "@pierre/diffs/edit";
 import { ArrowLeft, ArrowRight, X } from "lucide-react";
 import { squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";
 import { projectEnvironment } from "~/state/projects";
@@ -55,8 +55,8 @@ export interface FileCodeNavigation {
 }
 
 type FileEditor = Pick<
-  Editor<unknown>,
-  "getFile" | "getText" | "getState" | "setSelections" | "applyEdits" | "setMarkers" | "focus"
+  Editor<"file", unknown, undefined>,
+  "getFile" | "getText" | "getViewState" | "setSelections" | "applyEdits" | "setMarkers" | "focus"
 >;
 interface Props extends FileCodeNavigation {
   editor: FileEditor;
@@ -141,7 +141,7 @@ export default function FileCodeIntelligence(props: Props) {
       return document;
     };
     const cursor = () => {
-      const selection = editor.getState().selections?.at(-1);
+      const selection = editor.getViewState().selections?.at(-1);
       return selection
         ? languagePosition(selection.direction === -1 ? selection.start : selection.end)
         : undefined;
@@ -563,7 +563,7 @@ export default function FileCodeIntelligence(props: Props) {
     </Button>
   );
   const selectLocation = (item: CodeLocation) => {
-    const selection = editor.getState().selections?.at(-1);
+    const selection = editor.getViewState().selections?.at(-1);
     const point = selection
       ? languagePosition(selection.direction === -1 ? selection.start : selection.end)
       : { line: 1, column: 1 };

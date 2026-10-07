@@ -81,7 +81,8 @@ These upstream lines are the whole integration; keep them when resolving rebase 
 handler object, `SuiteServer.layerRpcHandlers`), `auth/RpcAuthorization.ts`
 (`SUITE_RPC_REQUIRED_SCOPES`), `mcp/McpHttpServer.ts` (`SuiteServer.layerMcpToolkits`),
 `mcp/McpInvocationContext.ts` and `mcp/McpSessionRegistry.ts` (`suite` capability),
-`provider/RuntimeInstructions.ts` (module instructions), `packages/contracts/src/rpc.ts`
+`provider/RuntimeInstructions.ts` (module instructions),
+`observability/RpcInstrumentation.ts` (`SUITE_RPC_AGGREGATES` for module RPC labels), `packages/contracts/src/rpc.ts`
 (`.merge(SuiteRpcGroup)`), `t3McpToolPresentation.ts`, and in the web app `SpaceRail.tsx`,
 `mainAppLocation.ts`, `AppSidebarLayout.tsx`, `CommandPalette.tsx` and `_chat.index.tsx` (the
 first load of `/` lands on Home).

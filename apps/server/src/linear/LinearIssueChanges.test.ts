@@ -1,3 +1,4 @@
+// @effect-diagnostics nodeBuiltinImport:off - signs relay JWTs with a real ed25519 key pair.
 import * as NodeCrypto from "node:crypto";
 
 import { assert, describe, it } from "@effect/vitest";

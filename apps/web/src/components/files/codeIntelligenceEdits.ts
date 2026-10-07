@@ -1,5 +1,5 @@
 import type { CodeDiagnostic, LanguageRequest, LanguageResult } from "@t3tools/contracts";
-import type { Position, Range, TextEdit } from "@pierre/diffs/editor";
+import type { Position, Range, TextEdit } from "@pierre/diffs/edit";
 
 export type CodePosition = NonNullable<LanguageRequest["position"]>;
 export type Completion = Extract<LanguageResult, { _tag: "completions" }>["items"][number];

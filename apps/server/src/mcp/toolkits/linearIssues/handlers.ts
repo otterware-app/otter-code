@@ -10,6 +10,7 @@ import * as Effect from "effect/Effect";
 
 import { OrchestratorV2 } from "../../../orchestration-v2/Orchestrator.ts";
 import * as McpInvocationContext from "../../McpInvocationContext.ts";
+import * as McpToolAccess from "../../McpToolAccess.ts";
 import {
   LinearIssueLinkFailedError,
   LinearIssueNoCallingThreadError,
@@ -52,8 +53,8 @@ const make = Effect.gen(function* () {
       ? Effect.failCause(cause as Cause.Cause<never>)
       : Effect.fail(new LinearIssueLinkFailedError({ cause }));
 
-  return LinearIssuesToolkit.of({
-    link_linear_issue: (input) =>
+  return {
+    link_linear_issue: McpToolAccess.actsAsCaller((input) =>
       Effect.gen(function* () {
         const thread = yield* requireThread();
         const target = yield* resolve(input);
@@ -72,7 +73,8 @@ const make = Effect.gen(function* () {
           .pipe(Effect.catchCause(dispatchFailure));
         return { identifier: target.identifier, alreadyLinked: false };
       }),
-    unlink_linear_issue: (input) =>
+    ),
+    unlink_linear_issue: McpToolAccess.actsAsCaller((input) =>
       Effect.gen(function* () {
         const thread = yield* requireThread();
         const target = yield* resolve(input);
@@ -89,7 +91,8 @@ const make = Effect.gen(function* () {
           .pipe(Effect.catchCause(dispatchFailure));
         return { identifier: target.identifier, wasLinked: true };
       }),
-    list_thread_linear_issues: () =>
+    ),
+    list_thread_linear_issues: McpToolAccess.readsAsCaller(() =>
       Effect.gen(function* () {
         const thread = yield* requireThread();
         return {
@@ -103,7 +106,8 @@ const make = Effect.gen(function* () {
           })),
         };
       }),
-  });
+    ),
+  } satisfies McpToolAccess.Handlers<typeof LinearIssuesToolkit.tools>;
 });
 
-export const layer = LinearIssuesToolkit.toLayer(make);
+export const layer = McpToolAccess.toLayer(LinearIssuesToolkit, make);

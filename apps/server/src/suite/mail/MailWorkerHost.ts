@@ -5,6 +5,7 @@
  * fails its open calls and is started again on the next call.
  */
 import * as NodePath from "node:path";
+import * as NodeSea from "node:sea";
 import * as NodeURL from "node:url";
 import * as NodeWorkerThreads from "node:worker_threads";
 
@@ -20,6 +21,10 @@ export type MailWorkerPush = Exclude<FromMailWorker, { readonly type: "result" }
 
 /** Where the worker bundle comes from: beside the built server, or built on demand in dev. */
 export async function resolveMailWorkerScript(): Promise<string> {
+  // A SEA has no file-backed module URL; the archive stages the worker beside its executable.
+  if (NodeSea.isSea()) {
+    return NodePath.join(NodePath.dirname(process.execPath), "otter-mail-worker.mjs");
+  }
   const here = NodeURL.fileURLToPath(import.meta.url);
   if (!here.endsWith(".ts")) {
     // The bundled server: `vp run build:bundle` writes the worker into the same dist folder.

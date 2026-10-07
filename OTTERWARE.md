@@ -110,3 +110,5 @@ serialized, and switching uses the existing launcher's backup and rollback path.
 The server declares Zod 4 as a production dependency because its bundled Drive contracts import
 it as a runtime external. Keep that version compatible with the vendored Drive package; Cursor's
 separate Zod 3 dependency does not provide Drive's schema API.
+The server build maps Drive's bare Zod import to a `createRequire` adapter, so the fleet
+single-executable can load the same staged dependency without a file-backed ESM import.

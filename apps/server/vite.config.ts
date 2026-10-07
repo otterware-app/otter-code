@@ -14,10 +14,11 @@ import { WeightedShardSequencer } from "./src/testUtils/weightedShardSequencer.t
 //
 // Inverted here — bundle everything except the packages that genuinely cannot be
 // inlined. See scripts/lib/cli-external-packages.ts for what earns an exemption.
+import { shouldBundleCliDependency } from "../../scripts/lib/cli-external-packages.ts";
 import {
-  isExternalCliDependency,
-  shouldBundleCliDependency,
-} from "../../scripts/lib/cli-external-packages.ts";
+  DRIVE_RUNTIME_ALIASES,
+  SERVER_RUNTIME_DEPENDENCY_OPTIONS,
+} from "../../scripts/lib/drive-runtime-packaging.ts";
 
 export { shouldBundleCliDependency };
 
@@ -98,6 +99,7 @@ export default mergeConfig(
         : {}),
       // Its UMD entry hides relative require calls inside a factory. Bundle the ESM entry.
       alias: {
+        ...DRIVE_RUNTIME_ALIASES,
         "vscode-json-languageservice": "vscode-json-languageservice/lib/esm/jsonLanguageService.js",
         "jsonc-parser": "jsonc-parser/lib/esm/main.js",
       },
@@ -108,9 +110,7 @@ export default mergeConfig(
         // false from `alwaysBundle` only means "no opinion", so a transitive
         // dependency would still be bundled — which silently inlined native
         // loaders such as node-gyp-build, losing native acceleration.
-        alwaysBundle: shouldBundleCliDependency,
-        neverBundle: (id: string) => isExternalCliDependency(id),
-        onlyBundle: false,
+        ...SERVER_RUNTIME_DEPENDENCY_OPTIONS,
       },
       banner: {
         js: "#!/usr/bin/env node\n",

@@ -52,7 +52,8 @@
     "vscode-jsonrpc": "8.2.1",
     "vscode-languageserver-textdocument": "1.0.12",
     "yaml": "catalog:",
-    "yauzl": "^3.4.0"
+    "yauzl": "^3.4.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",

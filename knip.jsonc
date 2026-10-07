@@ -40,11 +40,13 @@
       // The Vite+ web build prerequisite.
       // The bundled TypeScript and Python language servers, spawned from their resolved paths,
       // never imported.
+      // Zod 4 is external at runtime for the bundled Drive contract package.
       "ignoreDependencies": [
         "@effect/platform-node-shared",
         "@t3tools/web",
         "pyright",
         "typescript-tsserver",
+        "zod",
       ],
     },
     "apps/desktop": {

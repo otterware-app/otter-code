@@ -106,3 +106,7 @@ verifies module integration and shared-home compatibility, then builds Linux x64
 artifacts and a draft release. It does not publish an Otter Code update or switch a running server.
 Fleet runtime installation and switching use `scripts/otterware/fleet-server.sh`; mutations are
 serialized, and switching uses the existing launcher's backup and rollback path.
+
+The server declares Zod 4 as a production dependency because its bundled Drive contracts import
+it as a runtime external. Keep that version compatible with the vendored Drive package; Cursor's
+separate Zod 3 dependency does not provide Drive's schema API.

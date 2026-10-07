@@ -142,7 +142,7 @@ jobs:
       - name: Final integrated typecheck
         env:
           GOMAXPROCS: "2"
-          GOMEMLIMIT: 3GiB
+          GOMEMLIMIT: 5GiB
         run: |
           set -euo pipefail
           for package in @t3tools/contracts @t3tools/shared @t3tools/client-runtime t3 @t3tools/web @t3tools/desktop @t3tools/scripts; do

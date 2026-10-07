@@ -14,6 +14,8 @@
 import { decodeMailBytes, encodeMailBytes, type SuiteMailEvent } from "@t3tools/contracts/suite";
 
 import type { OtterMailHost } from "../mailHost";
+import { receiveMailGoogleAuth } from "../mailGoogleAuth";
+import { showGoogleAuthPrompt } from "./googleAuthPrompt";
 import { FRAME_CHANNELS, inertAnswer, isFrameChannel } from "./frameChannels";
 import { mailConversationFromPath, mailPathSegments } from "./mailRoute";
 import { startThemeBridge } from "./themeBridge";
@@ -128,9 +130,27 @@ function boot(host: OtterMailHost): void {
 
   // ── Core's asks of this client ───────────────────────────────────────────
 
+  const googleRequests = new Map<number, AbortController>();
+
   async function answer(event: Extract<SuiteMailEvent, { type: "request" }>): Promise<unknown> {
     const params = decodeMailBytes(event.params) as Record<string, unknown> | undefined;
     switch (event.kind) {
+      case "googleAuth": {
+        const controller = new AbortController();
+        googleRequests.set(event.id, controller);
+        try {
+          return await receiveMailGoogleAuth({
+            authorizationUrl: String(params?.authorizationUrl ?? ""),
+            signal: controller.signal,
+            openBrowser: openUrl,
+            receiveNative: host.receiveGoogleAuthCallback,
+            cancelNative: host.cancelGoogleAuthCallback,
+            prompt: showGoogleAuthPrompt,
+          });
+        } finally {
+          googleRequests.delete(event.id);
+        }
+      }
       case "openExternal":
         await openUrl(String(params?.url ?? ""));
         return undefined;
@@ -158,7 +178,11 @@ function boot(host: OtterMailHost): void {
         serverChannels = new Set(event.channels);
         return;
       case "failed":
+        for (const controller of googleRequests.values()) controller.abort();
         showNotice(`Mail couldn't start on this server: ${event.message}`);
+        return;
+      case "requestCancelled":
+        googleRequests.get(event.id)?.abort();
         return;
       case "event":
         emit(event.channel, decodeMailBytes(event.params));

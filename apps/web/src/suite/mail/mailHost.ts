@@ -29,6 +29,8 @@ export interface OtterMailHost {
   listen(listener: (event: SuiteMailEvent) => void): () => void;
   reply(id: number, result: unknown, error?: string): void;
   openExternal(url: string): Promise<void>;
+  receiveGoogleAuthCallback?: (authorizationUrl: string) => Promise<string>;
+  cancelGoogleAuthCallback?: (authorizationUrl: string) => Promise<void>;
   /** The frame's route changed (Mail's hash), for the URL and the side chat. */
   navigated(path: string): void;
   /** What the open conversation is, when the frame knows. */
@@ -107,7 +109,12 @@ export function createOtterMailHost(options: {
 }): OtterMailHostHandle {
   const clientId = randomUUID();
   const frameListeners = new Set<(event: SuiteMailEvent) => void>();
+  const desktop = window.desktopBridge;
+  const googleRequests = new Set<string>();
+  const googleRequestIds = new Set<number>();
   listeners.set(clientId, (event) => {
+    if (event.type === "request" && event.kind === "googleAuth") googleRequestIds.add(event.id);
+    if (event.type === "requestCancelled") googleRequestIds.delete(event.id);
     for (const listener of frameListeners) listener(event);
   });
   const unmount = appAtomRegistry.mount(
@@ -135,6 +142,7 @@ export function createOtterMailHost(options: {
       return () => frameListeners.delete(listener);
     },
     reply(id, result, error) {
+      googleRequestIds.delete(id);
       void runAtomCommand(appAtomRegistry, replyCommand, {
         environmentId: options.environmentId,
         input: {
@@ -146,9 +154,32 @@ export function createOtterMailHost(options: {
       });
     },
     openExternal: openExternalUrl,
+    ...(desktop?.receiveGoogleAuthCallback
+      ? {
+          async receiveGoogleAuthCallback(authorizationUrl: string) {
+            googleRequests.add(authorizationUrl);
+            try {
+              return await desktop.receiveGoogleAuthCallback!(authorizationUrl);
+            } finally {
+              googleRequests.delete(authorizationUrl);
+            }
+          },
+          cancelGoogleAuthCallback: (authorizationUrl: string) =>
+            desktop.cancelGoogleAuthCallback?.(authorizationUrl) ?? Promise.resolve(),
+        }
+      : {}),
     navigated: options.onNavigate,
     showing: options.onShowing,
     dispose() {
+      // End the frame's prompt first so a rejected native listener cannot reopen consent
+      // after navigation away from Mail. This also clears pending web-only prompts.
+      for (const id of googleRequestIds) {
+        for (const listener of frameListeners) listener({ type: "requestCancelled", id });
+      }
+      googleRequestIds.clear();
+      for (const url of googleRequests)
+        void desktop?.cancelGoogleAuthCallback?.(url).catch(() => {});
+      googleRequests.clear();
       unmount();
       listeners.delete(clientId);
       frameListeners.clear();

@@ -105,15 +105,21 @@ it.layer(Layer.mergeAll(NodeServices.layer, NetService.layer))("StateDirGuard", 
   );
 });
 
-it.effect("atomically excludes simultaneous starts before a runtime record exists and releases on exit", () =>
-  Effect.scoped(Effect.gen(function* () {
-    const fs = yield* FileSystem.FileSystem;
-    const stateDir = yield* fs.makeTempDirectoryScoped();
-    yield* Effect.scoped(Effect.gen(function* () {
-      yield* acquireWriterLock({ stateDir });
-      const error = yield* Effect.flip(Effect.scoped(acquireWriterLock({ stateDir })));
-      assert.strictEqual(error._tag, "StateDirInUseError");
-    }));
-    yield* Effect.scoped(acquireWriterLock({ stateDir }));
-  })).pipe(Effect.provide(NodeServices.layer)),
+it.effect(
+  "atomically excludes simultaneous starts before a runtime record exists and releases on exit",
+  () =>
+    Effect.scoped(
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const stateDir = yield* fs.makeTempDirectoryScoped();
+        yield* Effect.scoped(
+          Effect.gen(function* () {
+            yield* acquireWriterLock({ stateDir });
+            const error = yield* Effect.flip(Effect.scoped(acquireWriterLock({ stateDir })));
+            assert.strictEqual(error._tag, "StateDirInUseError");
+          }),
+        );
+        yield* Effect.scoped(acquireWriterLock({ stateDir }));
+      }),
+    ).pipe(Effect.provide(NodeServices.layer)),
 );

@@ -100,7 +100,6 @@ nav[aria-label="Spaces"] [data-tour="mailbox"] > span[aria-hidden] {
 }
 `;
 
-
 export interface ParentAppearance {
   readonly dark: boolean;
   readonly themeId: string;

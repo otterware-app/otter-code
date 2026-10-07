@@ -156,7 +156,10 @@ describe("migrateLegacyClientState", () => {
         yield* fs.writeFileString(joinPath(legacy, "connection-catalog.json"), "catalog");
         yield* fs.writeFileString(joinPath(legacy, "otter-account-session.bin"), "session");
         yield* fs.writeFileString(joinPath(legacy, "desktop-settings.json"), "legacy-settings");
-        yield* fs.writeFileString(joinPath(legacy, "client-settings.json"), "legacy-client-settings");
+        yield* fs.writeFileString(
+          joinPath(legacy, "client-settings.json"),
+          "legacy-client-settings",
+        );
         yield* fs.writeFileString(joinPath(legacy, "statev2.sqlite"), "db");
         yield* fs.writeFileString(joinPath(client, "desktop-settings.json"), "client-settings");
 

@@ -43,7 +43,8 @@ export class StateDirInUseError extends Schema.TaggedError<StateDirInUseError>()
   { pid: Schema.Int, stateDir: Schema.String },
 ) {
   override get message(): string {
-    if (this.pid === 0) return `Another Otterware server is starting or using ${this.stateDir}. Quit it first.`;
+    if (this.pid === 0)
+      return `Another Otterware server is starting or using ${this.stateDir}. Quit it first.`;
     return `Another Otter Code/Otterware server (pid ${this.pid}) is using ${this.stateDir}. Quit it first.`;
   }
 }
@@ -92,19 +93,24 @@ export const acquireWriterLock = Effect.fn("StateDirGuard.acquireWriterLock")(fu
   yield* fs.makeDirectory(input.stateDir, { recursive: true });
   yield* Effect.acquireRelease(
     Effect.tryPromise({
-      try: () => lock(input.stateDir, {
-        // Resolve symlinked homes before choosing the lock directory.
-        realpath: true,
-        stale: 10_000,
-        update: 2_000,
-        retries: 0,
-      }),
+      try: () =>
+        lock(input.stateDir, {
+          // Resolve symlinked homes before choosing the lock directory.
+          realpath: true,
+          stale: 10_000,
+          update: 2_000,
+          retries: 0,
+        }),
       catch: () => new StateDirInUseError({ pid: 0, stateDir: input.stateDir }),
-    }).pipe(Effect.tapError((error) =>
-      encodeMarkerDetail({ pid: error.pid, stateDir: error.stateDir }).pipe(
-        Effect.flatMap((detail) => Effect.sync(() => process.stderr.write(`${STATE_DIR_IN_USE_MARKER} ${detail}\n`))),
+    }).pipe(
+      Effect.tapError((error) =>
+        encodeMarkerDetail({ pid: error.pid, stateDir: error.stateDir }).pipe(
+          Effect.flatMap((detail) =>
+            Effect.sync(() => process.stderr.write(`${STATE_DIR_IN_USE_MARKER} ${detail}\n`)),
+          ),
+        ),
       ),
-    )),
+    ),
     (release) => Effect.promise(() => release()).pipe(Effect.ignore),
   );
   // The target directory itself is the lock key; proper-lockfile creates a

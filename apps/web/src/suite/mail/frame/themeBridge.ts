@@ -90,7 +90,7 @@ nav[aria-label="Spaces"] {
   gap: 8px; border-bottom: 1px solid var(--border);
 }
 nav[aria-label="Spaces"] > [aria-hidden],
-nav[aria-label="Spaces"] > span { display: none; }
+nav[aria-label="Spaces"] > span:not(.contents) { display: none; }
 nav[aria-label="Spaces"] > [data-tour="mailbox"] {
   flex: 1; min-width: 0; flex-direction: row; margin-top: 0;
   overflow-x: auto; padding: 4px 0;

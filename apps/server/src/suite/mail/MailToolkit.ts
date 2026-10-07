@@ -50,7 +50,7 @@ const resolveCaller = Effect.fn("mail.resolveToolCaller")(function* (
   if (scope.thread === undefined) {
     return {
       key: `client:${scope.client?.sessionId ?? scope.requestNamespace}`,
-      access: mailAccessFor(scope.client?.runtimeModeCeiling ?? "approval-required"),
+      access: mailAccessFor(McpInvocationContext.clientRuntimeModeCeiling(scope.client)),
     } satisfies MailToolCaller;
   }
   const threads = yield* ThreadManagement.ThreadManagementService;

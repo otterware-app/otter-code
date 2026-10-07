@@ -217,7 +217,7 @@ describe("Calendar module", () => {
         issuedAt: 0,
         requestNamespace: "test",
         thread: undefined,
-        client: { sessionId: "client", label: "Outside agent", runtimeModeCeiling: "auto" },
+        client: { sessionId: "client", label: "Outside agent", access: "auto" },
       } as const;
       const refused = yield* requireSuiteCapability.pipe(
         Effect.provideService(McpInvocationContext, {

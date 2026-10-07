@@ -77,6 +77,12 @@ function showNotice(message: string, link?: { readonly label: string; readonly u
 }
 
 function boot(host: OtterMailHost): void {
+  // Mail shares its available width with the suite assistant. Its existing
+  // full-inbox layout gives the reader that width and a back button instead
+  // of squeezing three Mail columns beside chat. Keep any explicit choice.
+  if (localStorage.getItem("otter:mail-layout") === null) {
+    localStorage.setItem("otter:mail-layout", "full");
+  }
   const listeners = new Map<string, Set<Listener>>();
   const emit = (channel: string, params?: unknown) => {
     for (const listener of listeners.get(channel) ?? []) listener(params);

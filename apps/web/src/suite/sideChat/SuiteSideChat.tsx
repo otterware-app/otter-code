@@ -19,6 +19,8 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import ChatView, { type ChatViewOutgoingMessageDecoration } from "../../components/ChatView";
+import { WorkspacePageHeader } from "../../components/WorkspacePageHeader";
+import { isElectron } from "../../env";
 import {
   resolveDraftPromotionNavigationTarget,
   threadShellHasStarted,
@@ -206,7 +208,7 @@ export function SuiteSideChat({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col" data-suite-side-chat-module={moduleId}>
-      <div className="flex h-(--workspace-topbar-height) shrink-0 items-center gap-1 border-b border-border pr-2 pl-3">
+      <WorkspacePageHeader electron={isElectron} className="gap-1 border-b border-border pr-2 pl-3">
         <MessagesSquareIcon className="size-4 shrink-0 text-muted-foreground" />
         <Menu>
           <MenuTrigger
@@ -264,7 +266,7 @@ export function SuiteSideChat({
         <HeaderButton label={`Hide side chat (${hideShortcutLabel})`} onClick={onHide}>
           <PanelRightCloseIcon />
         </HeaderButton>
-      </div>
+      </WorkspacePageHeader>
       {pageContext ? (
         <label className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-1.5 text-muted-foreground text-xs">
           <span className="min-w-0 flex-1 truncate">

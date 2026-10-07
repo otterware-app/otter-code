@@ -101,7 +101,7 @@ export const HomeCard = {
   }) => (
     <div
       className={cn(
-        "flex min-h-11 items-center gap-2 border-b border-border/50 px-4 py-2 [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-muted-foreground",
+        "flex min-h-11 flex-wrap items-center gap-2 border-b border-border/50 px-4 py-2 [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-muted-foreground",
         className,
       )}
     >
@@ -112,7 +112,7 @@ export const HomeCard = {
       ) : (
         <span className="flex-1" />
       )}
-      {action}
+      {action ? <div className="ml-auto max-w-full overflow-x-auto">{action}</div> : null}
     </div>
   ),
   Rows: ({ className, ...props }: ComponentProps<"div">) => (

@@ -9,7 +9,7 @@ import {
   type AssistantCitation,
 } from "@t3tools/contracts";
 import {
-  assistantCitationLabel,
+  assistantCitationKindLabel,
   assistantCitationsToPlainText,
   linearCitationIssue,
   linearCitationSourceId,
@@ -360,7 +360,7 @@ describe("Linear issue quotes", () => {
   it("labels quotes by where they came from and reads them back from a prompt", () => {
     expect(linearCitationIssue(linearQuote)).toBe("ENG-7");
     expect(linearCitationIssue(citation)).toBeNull();
-    expect(assistantCitationLabel(citation)).toBe("Assistant quote");
+    expect(assistantCitationKindLabel(citation)).toBe("Assistant quote");
     const prompt = `See ${serializeAssistantCitation(linearQuote)} and ${serializeAssistantCitation(citation)}`;
     expect(prompt).toContain("[Linear quote](t3-citation://");
     expect(collectAssistantCitations(prompt).map((match) => match.citation.messageId)).toEqual([

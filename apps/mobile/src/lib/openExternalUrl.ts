@@ -8,6 +8,7 @@ const ExternalUrlTarget = Schema.Literals([
   "linear-issue",
   "provider-auth",
   "html-render",
+  "mcp-app",
 ]);
 
 export type ExternalUrlTarget = typeof ExternalUrlTarget.Type;

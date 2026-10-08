@@ -38,6 +38,7 @@ import * as DesktopApp from "./app/DesktopApp.ts";
 import * as DesktopAppActivation from "./app/DesktopAppActivation.ts";
 import * as DesktopAppIdentity from "./app/DesktopAppIdentity.ts";
 import * as DesktopConnectionCatalogStore from "./app/DesktopConnectionCatalogStore.ts";
+import * as DesktopCliCommand from "./app/DesktopCliCommand.ts";
 import * as DesktopProtocols from "./app/DesktopProtocols.ts";
 import * as DesktopApplicationMenu from "./window/DesktopApplicationMenu.ts";
 import * as DesktopAssets from "./app/DesktopAssets.ts";
@@ -215,6 +216,7 @@ const layerDesktopApplication = Layer.mergeAll(
   layerDesktopAppActivation,
   DesktopApplicationMenu.layer,
   DesktopLinuxUrlHandler.layer,
+  DesktopCliCommand.layer,
   DesktopShellEnvironment.layer,
   layerDesktopSsh,
 ).pipe(

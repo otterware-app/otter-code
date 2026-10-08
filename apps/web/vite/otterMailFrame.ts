@@ -22,13 +22,15 @@ const WEB_ROOT = NodeURL.fileURLToPath(new URL("..", import.meta.url));
 const MAIL_SRC = NodePath.resolve(WEB_ROOT, "../../vendor/otter-mail/apps/web/src");
 const MAIL_ENTRY = NodePath.join(MAIL_SRC, "main/index.tsx");
 const WEB_BRIDGE_STUB = "\0otterware:mail-web-bridge";
+const MAIL_COMMANDS = NodePath.join(MAIL_SRC, "main/keybindings/commands.ts");
+const MAIL_COMMANDS_STUB = "\0otterware:mail-keybinding-commands";
 
 const VIRTUAL_MODULES: Readonly<Record<string, string>> = {
   "otter-mail:renderer": MAIL_ENTRY,
   "otter-mail:settings-search": NodePath.join(MAIL_SRC, "main/settings/settings-search.ts"),
 };
 
-export function otterMailFrame(): Plugin {
+export function otterMailFrame() {
   return {
     name: "otterware:mail-frame",
     enforce: "pre",
@@ -46,6 +48,14 @@ export function otterMailFrame(): Plugin {
       const virtual = VIRTUAL_MODULES[source];
       if (virtual) return virtual;
       if (importer === undefined || !importer.startsWith(MAIL_SRC)) return null;
+      const mailSource = source.startsWith("~/")
+        ? NodePath.join(MAIL_SRC, source.slice(2))
+        : source.startsWith(".")
+          ? NodePath.resolve(NodePath.dirname(importer), source)
+          : source;
+      if (mailSource.replace(/\.[cm]?[jt]sx?$/, "") === MAIL_COMMANDS.slice(0, -3)) {
+        return MAIL_COMMANDS_STUB;
+      }
       if (source.startsWith("~/")) {
         return this.resolve(NodePath.join(MAIL_SRC, source.slice(2)), importer, { skipSelf: true });
       }
@@ -53,9 +63,20 @@ export function otterMailFrame(): Plugin {
       return null;
     },
     load(id) {
+      if (id === MAIL_COMMANDS_STUB) {
+        // Mail's full-width panel hides its inbox. Its agent commands must be
+        // unavailable here, including saved shortcuts and command-palette items:
+        // Otterware's Code side chat owns agents, and Mail's panel is hidden.
+        const upstream = JSON.stringify(MAIL_COMMANDS);
+        return `export * from ${upstream};
+import { KEYBINDING_COMMANDS as commands, DEFAULT_KEYBINDINGS as bindings, isKeybindingCommand as isUpstreamCommand } from ${upstream};
+export const KEYBINDING_COMMANDS = commands.filter(command => !command.startsWith("agent."));
+export const DEFAULT_KEYBINDINGS = bindings.filter(binding => !binding.command.startsWith("agent."));
+export const isKeybindingCommand = value => !value.startsWith("agent.") && isUpstreamCommand(value);`;
+      }
       if (id !== WEB_BRIDGE_STUB) return null;
       return `export const webBridge = undefined;
 export async function requireOtterAccount() {}`;
     },
-  };
+  } satisfies Plugin;
 }

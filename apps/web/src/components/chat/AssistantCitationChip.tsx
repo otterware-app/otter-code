@@ -1,6 +1,7 @@
 import { scopeThreadRef } from "@t3tools/client-runtime/environment";
 import type { AssistantCitation } from "@t3tools/contracts";
 import {
+  assistantCitationLabel,
   linearCitationIssue,
   serializeAssistantCitation,
 } from "@t3tools/shared/assistantCitations";
@@ -99,8 +100,7 @@ export function AssistantCitationChip({
         },
       }
     : undefined;
-  const preview = (citation.comment?.trim() || citation.text).replace(/\s+/g, " ");
-  const label = preview.length > 64 ? `${preview.slice(0, 64)}…` : preview;
+  const label = assistantCitationLabel(citation);
   // Linear quotes come from the issue page, not the timeline, so they reopen that page.
   const linearIssue = linearCitationIssue(citation);
   const sourceLabel = linearIssue === null ? "View cited assistant text" : "View cited Linear text";

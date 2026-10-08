@@ -34,7 +34,7 @@ export function linearCitationIssue(citation: Pick<AssistantCitation, "messageId
 }
 
 /** "Linear quote" or "Assistant quote": the link text in prompts and native previews. */
-export function assistantCitationLabel(citation: Pick<AssistantCitation, "messageId">): string {
+export function assistantCitationKindLabel(citation: Pick<AssistantCitation, "messageId">): string {
   return linearCitationIssue(citation) === null ? "Assistant quote" : "Linear quote";
 }
 
@@ -119,8 +119,13 @@ export function parseAssistantCitationHref(href: string): AssistantCitation | nu
   }
 }
 
+export function assistantCitationLabel(citation: AssistantCitation): string {
+  const preview = (citation.comment?.trim() || citation.text).replace(/\s+/g, " ");
+  return preview.length > 64 ? `${preview.slice(0, 64)}…` : preview;
+}
+
 export function serializeAssistantCitation(citation: AssistantCitation): string {
-  return `[${assistantCitationLabel(citation)}](${formatAssistantCitationHref(citation)})`;
+  return `[${assistantCitationKindLabel(citation)}](${formatAssistantCitationHref(citation)})`;
 }
 
 export function collectAssistantCitations(text: string) {
@@ -202,7 +207,7 @@ export function renderAssistantCitationsAsText(prompt: string): string {
   let cursor = 0;
   for (const match of matches) {
     const quote = escapeMarkdownText(match.citation.text);
-    text += `${prompt.slice(cursor, match.start)}\n\n> ${assistantCitationLabel(match.citation)}:\n${quote
+    text += `${prompt.slice(cursor, match.start)}\n\n> ${assistantCitationKindLabel(match.citation)}:\n${quote
       .split("\n")
       .map((line) => `> ${line}`)
       .join("\n")}\n\n`;

@@ -828,6 +828,18 @@ export default function DiffPanel({
       return { scopeKey: collapseScopeKey, fileKeys: next };
     });
   }, []);
+  // Find can ask again before the unfolded file reaches the viewer, so this must never fold.
+  const unfoldDiffFile = useCallback((fileKey: string) => {
+    const { collapseScopeKey, defaultCollapsedDiffFileKeys } = collapseDefaultsRef.current;
+    setCollapsedDiffFiles((current) => {
+      const fileKeys =
+        current.scopeKey === collapseScopeKey ? current.fileKeys : defaultCollapsedDiffFileKeys;
+      if (!fileKeys.has(fileKey)) return current;
+      const next = new Set(fileKeys);
+      next.delete(fileKey);
+      return { scopeKey: collapseScopeKey, fileKeys: next };
+    });
+  }, []);
 
   // Marking a file viewed collapses it and unmarking expands it again.
   const toggleDiffFileViewed = useCallback(
@@ -1334,6 +1346,7 @@ export default function DiffPanel({
                             "[data-additions-count], [data-deletions-count] { display: none; }",
                         }
                       : {})}
+                    onRevealSearchMatch={unfoldDiffFile}
                     renderHeaderMetadata={(fileDiff) => {
                       const stat = lazySource
                         ? fileStats.get(resolveFileDiffPath(fileDiff))

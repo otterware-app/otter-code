@@ -943,7 +943,7 @@ export function PreviewView({
           ) : null
         }
         extensionActions={
-          previewBridge && !serverOwnsRendering ? (
+          previewBridge && !isServerTab ? (
             <PreviewExtensionToolbar
               threadRef={threadRef}
               webContentsId={desktopOverlay?.webContentsId ?? null}

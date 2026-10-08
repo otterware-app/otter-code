@@ -4,7 +4,7 @@ import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import { BrowserWindow, ipcMain, shell, session, WebContentsView } from "electron";
 import { DRIVE_COMMAND, DRIVE_SIGN_OUT, DRIVE_STATE } from "./channels.ts";
-import { driveViewBounds, isDriveViewUrl } from "./navigation.ts";
+import { driveViewBounds, isDriveSuiteSignOutUrl, isDriveViewUrl } from "./navigation.ts";
 
 const Request = Schema.Union([
   Schema.Struct({ action: Schema.Literal("account"), token: Schema.NullOr(Schema.String) }),
@@ -140,6 +140,11 @@ export const installDriveView = Effect.acquireRelease(
               event.sender.send(DRIVE_STATE, stateOf(owned));
           };
           const guard = (navigationEvent: Electron.Event, url: string) => {
+            if (accountUserId !== null && isDriveSuiteSignOutUrl(url)) {
+              navigationEvent.preventDefault();
+              if (!window.isDestroyed()) window.webContents.send(DRIVE_SIGN_OUT);
+              return;
+            }
             if (isDriveViewUrl(url, owned.baseUrl)) return;
             navigationEvent.preventDefault();
             openExternal(url);

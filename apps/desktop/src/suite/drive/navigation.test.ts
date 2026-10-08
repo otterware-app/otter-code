@@ -1,9 +1,21 @@
 import { describe, expect, it } from "@effect/vitest";
-import { driveViewBounds, isDriveViewUrl } from "./navigation.ts";
+import { driveViewBounds, isDriveSuiteSignOutUrl, isDriveViewUrl } from "./navigation.ts";
 
 const BASE = "https://drive.otterware.app";
 
 describe("Drive native view navigation", () => {
+  it("recognizes only the canonical Drive browser sign-out action", () => {
+    expect(isDriveSuiteSignOutUrl(`${BASE}/api/auth/browser-sign-out/start`)).toBe(true);
+    for (const url of [
+      `${BASE}/api/auth/browser-sign-out`,
+      "https://accounts.otterware.app/api/auth/browser-sign-out/start",
+      "https://drive.otterware.app.evil.test/api/auth/browser-sign-out/start",
+      "http://drive.otterware.app/api/auth/browser-sign-out/start",
+      "https://user@drive.otterware.app/api/auth/browser-sign-out/start",
+      "invalid",
+    ])
+      expect(isDriveSuiteSignOutUrl(url)).toBe(false);
+  });
   it("keeps Drive and Accounts in the isolated session", () => {
     for (const url of [
       BASE,

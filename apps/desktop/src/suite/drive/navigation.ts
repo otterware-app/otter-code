@@ -1,4 +1,19 @@
-import { DRIVE_CONTENT_HOST, isDriveHost } from "@t3tools/contracts/suite";
+import { DRIVE_CONTENT_HOST, DRIVE_DEFAULT_BASE_URL, isDriveHost } from "@t3tools/contracts/suite";
+
+/** A suite-owned account signs out through its host, without another browser login. */
+export function isDriveSuiteSignOutUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return (
+      !url.username &&
+      !url.password &&
+      url.origin === DRIVE_DEFAULT_BASE_URL &&
+      url.pathname === "/api/auth/browser-sign-out/start"
+    );
+  } catch {
+    return false;
+  }
+}
 
 /** Drive and Accounts share the guest's session; other links belong in the system browser. */
 export function isDriveViewUrl(value: string, baseUrl: string): boolean {

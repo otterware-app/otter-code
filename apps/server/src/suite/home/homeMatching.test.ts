@@ -17,6 +17,7 @@ import {
   todayEntries,
 } from "./homeMatching.ts";
 
+const decodeJson = Schema.decodeUnknownSync(Schema.Json);
 const decodeRules = Schema.decodeUnknownSync(SuiteProjectRules);
 const NOW = Date.parse("2026-10-06T12:00:00.000Z");
 const hoursAgo = (hours: number) => new Date(NOW - hours * 3_600_000).toISOString();
@@ -224,4 +225,10 @@ describe("projectCounts", () => {
       drive: 0,
     });
   });
+});
+
+it("returns valid JSON for a Home item without a matching project", () => {
+  const ranked = rankItems([item({ id: "unmatched" })], [], NOW);
+  expect(() => decodeJson(ranked)).not.toThrow();
+  expect(ranked[0]).not.toHaveProperty("projectKey");
 });

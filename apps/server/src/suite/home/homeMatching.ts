@@ -128,9 +128,10 @@ export function rankItems(
     if (seen.has(key)) continue;
     seen.add(key);
     const projectIds = matchProjectIds(projects, item);
+    const { projectKey: _oldProjectKey, ...unranked } = item;
     ranked.push({
-      ...item,
-      projectKey: projectIds[0],
+      ...unranked,
+      ...(projectIds[0] === undefined ? {} : { projectKey: projectIds[0] }),
       projectIds,
       score: scoreItem(item, nowMs),
     });

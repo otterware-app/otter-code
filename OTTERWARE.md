@@ -85,7 +85,16 @@ handler object, `SuiteServer.layerRpcHandlers`), `auth/RpcAuthorization.ts`
 `observability/RpcInstrumentation.ts` (`SUITE_RPC_AGGREGATES` for module RPC labels), `packages/contracts/src/rpc.ts`
 (`.merge(SuiteRpcGroup)`), `t3McpToolPresentation.ts`, and in the web app `SpaceRail.tsx`,
 `mainAppLocation.ts`, `AppSidebarLayout.tsx`, `CommandPalette.tsx` and `_chat.index.tsx` (the
-first load of `/` lands on Home).
+first load of `/` lands on Home), and `AppRoot.tsx` (`SuiteAccountProvider`).
+
+The desktop's primary local suite reuses Code's Otter Accounts identity. Accounts exchanges
+its OAuth authorization for a short-lived native credential; Mail adopts that credential and
+Drive exchanges it for its own API and browser sessions. Those sessions remain bound to the
+same canonical user and authorization, including refresh and revocation. Keep this bridge in
+the suite adapters: do not replace Code's account provider or forward credentials to secondary
+or remote environments. Calendar already uses the host identity; Google mailbox and calendar
+permissions are separate provider connections. Signing out clears suite account sessions while
+preserving those local provider connections.
 
 ## Daily maintenance and previews
 

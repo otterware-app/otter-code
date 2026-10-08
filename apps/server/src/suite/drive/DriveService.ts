@@ -96,6 +96,9 @@ export class DriveService extends Context.Service<
     readonly statusChanges: Stream.Stream<DriveConnectionStatus>;
     readonly connect: Effect.Effect<DriveConnectionStatus, DriveError>;
     readonly disconnect: Effect.Effect<DriveConnectionStatus>;
+    readonly syncAccount: (
+      token: string | null,
+    ) => Effect.Effect<DriveConnectionStatus, DriveError>;
     readonly listFolders: Effect.Effect<ReadonlyArray<DriveFolder>, DriveError>;
     readonly listDocuments: (
       input: DriveListDocumentsInput,
@@ -815,6 +818,7 @@ export const makeWith = (options: { readonly api: DriveApi; readonly store: Driv
       statusChanges: connection.statusChanges,
       connect: connection.connect,
       disconnect: connection.disconnect,
+      syncAccount: connection.syncAccount,
       listFolders: withSession((token) => folders(token)),
       listDocuments,
       documentDetail,

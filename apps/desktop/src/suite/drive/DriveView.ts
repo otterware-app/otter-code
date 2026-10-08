@@ -1,12 +1,13 @@
 /** Persistent Drive WebContentsView. The renderer owns only its placement and navigation. */
-import type { DriveDesktopState } from "@t3tools/contracts/suite";
+import { DRIVE_DEFAULT_BASE_URL, type DriveDesktopState } from "@t3tools/contracts/suite";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import { BrowserWindow, ipcMain, shell, WebContentsView } from "electron";
-import { DRIVE_COMMAND, DRIVE_STATE } from "./channels.ts";
+import { BrowserWindow, ipcMain, shell, session, WebContentsView } from "electron";
+import { DRIVE_COMMAND, DRIVE_SIGN_OUT, DRIVE_STATE } from "./channels.ts";
 import { driveViewBounds, isDriveViewUrl } from "./navigation.ts";
 
 const Request = Schema.Union([
+  Schema.Struct({ action: Schema.Literal("account"), token: Schema.NullOr(Schema.String) }),
   Schema.Struct({ action: Schema.Literal("open"), url: Schema.String, baseUrl: Schema.String }),
   Schema.Struct({
     action: Schema.Literal("bounds"),
@@ -22,9 +23,13 @@ const Request = Schema.Union([
   Schema.Struct({ action: Schema.Literals(["back", "forward", "reload"]) }),
 ]);
 const decode = Schema.decodeUnknownSync(Request);
+const decodeUser = Schema.decodeUnknownSync(Schema.Struct({ id: Schema.String }));
 
 export const installDriveView = Effect.acquireRelease(
   Effect.sync(() => {
+    const driveSession = session.fromPartition("persist:otterware-drive");
+    let syncingAccount = 0;
+    let accountUserId: string | null = null;
     const views = new Map<
       number,
       {
@@ -35,11 +40,80 @@ export const installDriveView = Effect.acquireRelease(
         visible: boolean;
       }
     >();
-    ipcMain.handle(DRIVE_COMMAND, (event, raw: unknown) => {
+    const signedOut = (
+      _event: Electron.Event,
+      cookie: Electron.Cookie,
+      cause: string,
+      removed: boolean,
+    ) => {
+      if (
+        syncingAccount ||
+        !removed ||
+        cause !== "explicit" ||
+        !cookie.name.endsWith("otterdrive.session_token") ||
+        cookie.domain?.replace(/^\./, "") !== "drive.otterware.app"
+      )
+        return;
+      for (const { window } of views.values()) {
+        if (!window.isDestroyed()) window.webContents.send(DRIVE_SIGN_OUT);
+      }
+    };
+    driveSession.cookies.on("changed", signedOut);
+    ipcMain.handle(DRIVE_COMMAND, async (event, raw: unknown) => {
       const window = BrowserWindow.fromWebContents(event.sender);
       if (!window || window.webContents !== event.sender)
         throw new Error("Drive IPC requires the app window.");
       const request = decode(raw);
+      if (request.action === "account") {
+        syncingAccount += 1;
+        try {
+          let nextUserId: string | null = null;
+          // Renew in place so an open document keeps its editing state.
+          if (request.token === null) {
+            const cookies = await driveSession.cookies.get({ url: DRIVE_DEFAULT_BASE_URL });
+            await Promise.all(
+              cookies.map((cookie) =>
+                driveSession.cookies.remove(DRIVE_DEFAULT_BASE_URL, cookie.name),
+              ),
+            );
+          }
+          if (request.token !== null) {
+            const response = await driveSession.fetch(
+              `${DRIVE_DEFAULT_BASE_URL}/api/auth/suite-session`,
+              {
+                method: "POST",
+                headers: {
+                  authorization: `Bearer ${request.token}`,
+                  "content-type": "application/json",
+                },
+                body: "{}",
+                redirect: "error",
+                credentials: "include",
+                signal: AbortSignal.timeout(20_000),
+              },
+            );
+            if (!response.ok) throw new Error("Drive could not sign in with your Otter account.");
+            const result: unknown = await response.json();
+            if (!result || typeof result !== "object" || !("user" in result))
+              throw new Error("Drive returned an invalid account.");
+            nextUserId = decodeUser(result.user).id;
+            // Electron's network stack saves the service's HttpOnly session cookie.
+            const cookies = await driveSession.cookies.get({ url: DRIVE_DEFAULT_BASE_URL });
+            if (
+              !cookies.some(
+                (cookie) => cookie.httpOnly && cookie.name.endsWith("otterdrive.session_token"),
+              )
+            )
+              throw new Error("Drive did not establish its browser session.");
+          }
+          if (request.token === null || accountUserId !== nextUserId)
+            for (const { view } of views.values()) view.webContents.reload();
+          accountUserId = nextUserId;
+        } finally {
+          syncingAccount -= 1;
+        }
+        return;
+      }
       let entry = views.get(event.sender.id);
       if (request.action === "open") {
         if (!isDriveViewUrl(request.url, request.baseUrl))
@@ -120,10 +194,11 @@ export const installDriveView = Effect.acquireRelease(
         wc.navigationHistory.goForward();
       else if (request.action === "reload") wc.reload();
     });
-    return views;
+    return { views, dispose: () => driveSession.cookies.removeListener("changed", signedOut) };
   }),
-  (views) =>
+  ({ views, dispose }) =>
     Effect.sync(() => {
+      dispose();
       ipcMain.removeHandler(DRIVE_COMMAND);
       for (const { view, window } of views.values()) {
         if (!window.isDestroyed()) window.contentView.removeChildView(view);

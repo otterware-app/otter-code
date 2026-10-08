@@ -247,6 +247,15 @@ export const makeDriveApi = (baseUrl: string) =>
       origin,
       deviceCode,
       deviceToken,
+      suiteSession: (token: string) =>
+        json(
+          HttpClientRequest.post(url("/api/auth/suite-session")).pipe(
+            HttpClientRequest.bodyJsonUnsafe({}),
+          ),
+          { token },
+          effectParser(Schema.Struct({ token: Schema.String })),
+          "suite session",
+        ).pipe(Effect.map((body) => body.token)),
       me: (options: DriveRequestOptions) =>
         json(HttpClientRequest.get(url("/api/v1/me")), options, meResponseSchema, "account").pipe(
           Effect.map((body) => body.data),

@@ -220,6 +220,38 @@ export const makeDriveConnection = (api: DriveApi, baseUrl: string) =>
       status: SubscriptionRef.get(status),
       statusChanges: SubscriptionRef.changes(status) as Stream.Stream<DriveConnectionStatus>,
       connect,
+      syncAccount: (token: string | null) =>
+        token === null
+          ? disconnect
+          : Effect.gen(function* () {
+              if (baseUrl !== DRIVE_DEFAULT_BASE_URL)
+                return yield* Effect.fail(
+                  new DriveError({
+                    reason: "forbidden",
+                    detail: "Shared sign-in requires the Otter Drive service.",
+                  }),
+                );
+              yield* FiberHandle.clear(poller);
+              const driveToken = yield* api.suiteSession(token).pipe(Effect.mapError(driveErrorOf));
+              const account = yield* accountOf(driveToken);
+              if (account === null)
+                return yield* Effect.fail(
+                  new DriveError({
+                    reason: "unavailable",
+                    detail: "Drive could not validate your Otter account.",
+                  }),
+                );
+              yield* storeSession(driveToken, account).pipe(
+                Effect.mapError(
+                  () =>
+                    new DriveError({
+                      reason: "unavailable",
+                      detail: "Drive could not save your Otter account session.",
+                    }),
+                ),
+              );
+              return yield* SubscriptionRef.get(status);
+            }),
       disconnect,
       markRejected,
       refreshAccount,

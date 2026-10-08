@@ -25,6 +25,7 @@ const rpcHandlers = SuiteDriveRpcGroup.toLayer(
       [SUITE_DRIVE_METHODS.subscribeStatus]: () => drive.statusChanges,
       [SUITE_DRIVE_METHODS.connect]: () => drive.connect,
       [SUITE_DRIVE_METHODS.disconnect]: () => drive.disconnect,
+      [SUITE_DRIVE_METHODS.syncAccount]: ({ token }) => drive.syncAccount(token),
       [SUITE_DRIVE_METHODS.listFolders]: () =>
         drive.listFolders.pipe(Effect.map((folders) => ({ folders }))),
       [SUITE_DRIVE_METHODS.listDocuments]: (input) =>

@@ -14,6 +14,7 @@ import { useSuitePageContext } from "../suitePageContext";
 import { createOtterMailHost, type OtterMailHostHandle } from "./mailHost";
 
 import { mailPageRefs } from "./mailPageRefs";
+import { useSuiteAccount } from "../SuiteAccountProvider";
 
 const FRAME_PATH = "/mail-frame.html";
 
@@ -33,6 +34,11 @@ function MailFrameForEnvironment({
   readonly onNavigate: (path: string) => void;
 }) {
   const frameRef = useRef<HTMLIFrameElement>(null);
+  const account = useSuiteAccount();
+  const accountRef = useRef(account);
+  useEffect(() => {
+    accountRef.current = account;
+  }, [account]);
   const reportedRef = useRef<string | null>(at ?? "/");
   const onNavigateRef = useRef(onNavigate);
   useEffect(() => {
@@ -49,6 +55,11 @@ function MailFrameForEnvironment({
   useEffect(() => {
     const created = createOtterMailHost({
       environmentId,
+      account: {
+        available: () => accountRef.current.available,
+        ensure: () => accountRef.current.ensure(),
+        signOut: () => accountRef.current.signOut(),
+      },
       onNavigate: (path) => {
         reportedRef.current = path;
         setPath(path);

@@ -15,6 +15,7 @@ import {
   WS_METHODS,
   type AuthSessionState,
 } from "@t3tools/contracts";
+import { SUITE_DRIVE_METHODS } from "@t3tools/contracts/suite";
 import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
 import * as Fiber from "effect/Fiber";
@@ -70,6 +71,21 @@ describe("command permissions", () => {
         expect(registry.get(permissions.permissionAtom(other))).toBe(false);
         const denied = yield* permissions.authorize(registry, other).pipe(Effect.flip);
         expect(denied._tag).toBe("EnvironmentAuthorizationError");
+      }),
+    ),
+  );
+  it.effect("guards suite account synchronization with the destination's operate permission", () =>
+    Effect.scoped(
+      Effect.gen(function* () {
+        const registry = yield* setup;
+        const sync = createCommandPermissions(runtime, SUITE_DRIVE_METHODS.syncAccount);
+        registry.set(sessions(env), AsyncResult.success(grant(false)));
+        expect(registry.get(sync.permissionAtom(env))).toBe(false);
+        expect(
+          (yield* sync.authorize(registry, env, { token: "native-token" }).pipe(Effect.flip))._tag,
+        ).toBe("EnvironmentAuthorizationError");
+        registry.set(sessions(env), AsyncResult.success(grant(true)));
+        yield* sync.authorize(registry, env, { token: "native-token" });
       }),
     ),
   );

@@ -20,8 +20,10 @@ import { writeTextToClipboard } from "../../hooks/useCopyToClipboard";
 import { useAtomCommand } from "../../state/use-atom-command";
 import { connectDrive, disconnectDrive, useDriveStatus } from "./driveState";
 import { openDriveExternally } from "./driveView";
+import { useSuiteAccount } from "../SuiteAccountProvider";
 
 export function useDriveConnectionActions() {
+  const account = useSuiteAccount();
   const { environmentId, status } = useDriveStatus();
   const connect = useAtomCommand(connectDrive, { reportFailure: true });
   const disconnect = useAtomCommand(disconnectDrive, { reportFailure: true });
@@ -30,12 +32,20 @@ export function useDriveConnectionActions() {
     if (environmentId === null) return;
     setBusy(true);
     try {
-      await command({ environmentId, input: {} });
+      if (account.available) await (command === connect ? account.ensure() : account.signOut());
+      else await command({ environmentId, input: {} });
     } finally {
       setBusy(false);
     }
   };
-  return { environmentId, status, busy, connect: run(connect), disconnect: run(disconnect) };
+  return {
+    environmentId,
+    status,
+    busy,
+    sharedAccount: account.available,
+    connect: run(connect),
+    disconnect: run(disconnect),
+  };
 }
 
 /** The code to enter and where, while the device sign-in waits for approval. */

@@ -10,7 +10,8 @@ import { searchableSetting } from "../../components/settings/settingsSearch";
 import { DrivePendingCode, useDriveConnectionActions } from "./DriveConnect";
 
 export function DriveSettingsPanel() {
-  const { environmentId, status, busy, connect, disconnect } = useDriveConnectionActions();
+  const { environmentId, status, busy, sharedAccount, connect, disconnect } =
+    useDriveConnectionActions();
   const description =
     environmentId === null
       ? "This environment is not an Otterware server with Drive."
@@ -34,7 +35,7 @@ export function DriveSettingsPanel() {
           control={
             environmentId === null || status === null ? null : status.status === "connected" ? (
               <Button size="sm" variant="outline" disabled={busy} onClick={() => void disconnect()}>
-                Disconnect
+                {sharedAccount ? "Sign out of Otter" : "Disconnect"}
               </Button>
             ) : status.status === "pending" ? (
               <Button size="sm" variant="ghost" disabled={busy} onClick={() => void disconnect()}>

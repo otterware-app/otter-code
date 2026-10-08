@@ -9,7 +9,14 @@
 import * as NodeFSP from "node:fs/promises";
 import * as NodeWorkerThreads from "node:worker_threads";
 
-import { handle, registeredHandlers, startCore, syncAllAccounts } from "@otter-mail/core";
+import {
+  clearOtterSession,
+  handle,
+  registeredHandlers,
+  signInWithSession,
+  startCore,
+  syncAllAccounts,
+} from "@otter-mail/core";
 
 import {
   DEMO_RELAY_URL,
@@ -67,6 +74,16 @@ function start(): Promise<{ channels: ReadonlyArray<string> }> {
     handle("desktop:syncAll", async () => {
       await syncAllAccounts({ force: true });
       return { ok: true };
+    });
+    handle("otterware:accountSession", async (params: unknown) => {
+      const token = (params as { token?: unknown } | null)?.token;
+      if (token === null) await clearOtterSession();
+      else if (typeof token === "string" && token.length > 0) {
+        if (mailWorkerData.relayUrl !== "https://relay.mail.otterware.app")
+          throw new Error("Shared sign-in requires the Otter Mail service.");
+        await signInWithSession(token);
+      } else throw new Error("Invalid Otter account credential.");
+      return null;
     });
     return { channels: [...registeredHandlers().keys()] };
   })());

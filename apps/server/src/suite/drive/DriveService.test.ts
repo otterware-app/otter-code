@@ -116,6 +116,10 @@ function makeFakeDrive() {
   const handle = (method: string, url: URL, headers: Record<string, string>): Response => {
     state.requests.push(`${method} ${url.pathname}`);
     const path = url.pathname;
+    if (path === "/api/auth/suite-session")
+      return headers.authorization === "Bearer suite-account"
+        ? respond(200, { token: TOKEN })
+        : respond(401, { error: { code: "unauthenticated", message: "Invalid Otter account" } });
     if (path === "/api/auth/device/code")
       return respond(200, {
         device_code: "dev-code",
@@ -423,6 +427,20 @@ describe("DriveService", () => {
         syncState: "not_found",
         snapshot: { title: "Q3 plan", version: 2 },
       });
+    }).pipe(Effect.scoped, Effect.provide(testLayer)),
+  );
+
+  it.effect("reuses the suite account for document access and clears it on sign-out", () =>
+    Effect.gen(function* () {
+      const fake = makeFakeDrive();
+      const secrets = makeSecretStore();
+      const drive = yield* setup(fake, secrets);
+      const status = yield* drive.syncAccount("suite-account");
+      expect(status).toMatchObject({ status: "connected", account: { userId: "u-1" } });
+      expect((yield* drive.listFolders).map((folder) => folder.slug)).toEqual(["team-docs"]);
+      expect((yield* drive.syncAccount(null)).status).toBe("disconnected");
+      const store = yield* ServerSecretStore.ServerSecretStore.pipe(Effect.provide(secrets));
+      expect(Option.isNone(yield* store.get(DRIVE_SESSION_SECRET))).toBe(true);
     }).pipe(Effect.scoped, Effect.provide(testLayer)),
   );
 

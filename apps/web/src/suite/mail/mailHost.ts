@@ -99,9 +99,34 @@ export type OtterMailHostHandle = OtterMailHost & {
   readonly dispose: () => void;
 };
 
+export async function invokeMailAccount(
+  environmentId: EnvironmentId,
+  token: string | null,
+): Promise<void> {
+  const result = await runAtomCommand(
+    appAtomRegistry,
+    invokeCommand,
+    {
+      environmentId,
+      input: {
+        clientId: "otterware-account",
+        channel: "otterware:accountSession",
+        params: { token },
+      },
+    },
+    { reportFailure: false },
+  );
+  if (result._tag !== "Success") throw new Error(failureMessage(squashAtomCommandFailure(result)));
+}
+
 /** A host for one frame, talking to `environmentId`. `dispose` ends its subscription. */
 export function createOtterMailHost(options: {
   readonly environmentId: EnvironmentId;
+  readonly account?: {
+    readonly available: () => boolean;
+    readonly ensure: () => Promise<void>;
+    readonly signOut: () => Promise<void>;
+  };
   readonly onNavigate: (path: string) => void;
   readonly onShowing: (
     conversation: { readonly title: string; readonly path: string } | null,
@@ -124,6 +149,13 @@ export function createOtterMailHost(options: {
   return {
     clientId,
     async invoke(channel, params) {
+      if (options.account?.available() && channel === "otter:signIn") {
+        await options.account.ensure();
+        channel = "otter:getState";
+      } else if (options.account?.available() && channel === "otter:signOut") {
+        await options.account.signOut();
+        channel = "otter:getState";
+      }
       const result = await runAtomCommand(
         appAtomRegistry,
         invokeCommand,

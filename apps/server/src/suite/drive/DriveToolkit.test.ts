@@ -19,6 +19,7 @@ it.effect(
       statusChanges: Stream.empty,
       connect: unused,
       disconnect: unused,
+      syncAccount: () => unused,
       listFolders: Effect.succeed([]),
       listDocuments: () => unused,
       documentDetail: () => unused,

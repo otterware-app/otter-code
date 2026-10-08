@@ -407,6 +407,7 @@ export const SUITE_DRIVE_METHODS = {
   status: "suite.drive.status",
   subscribeStatus: "suite.drive.subscribeStatus",
   connect: "suite.drive.connect",
+  syncAccount: "suite.drive.syncAccount",
   disconnect: "suite.drive.disconnect",
   listFolders: "suite.drive.listFolders",
   listDocuments: "suite.drive.listDocuments",
@@ -448,6 +449,12 @@ const DriveConnectRpc = Rpc.make(SUITE_DRIVE_METHODS.connect, {
 
 const DriveDisconnectRpc = Rpc.make(SUITE_DRIVE_METHODS.disconnect, {
   payload: Schema.Struct({}),
+  success: DriveConnectionStatus,
+  error: DriveRpcError,
+});
+
+const DriveSyncAccountRpc = Rpc.make(SUITE_DRIVE_METHODS.syncAccount, {
+  payload: Schema.Struct({ token: Schema.NullOr(Schema.String) }),
   success: DriveConnectionStatus,
   error: DriveRpcError,
 });
@@ -517,6 +524,7 @@ export const SuiteDriveRpcGroup = RpcGroup.make(
   DriveSubscribeStatusRpc,
   DriveConnectRpc,
   DriveDisconnectRpc,
+  DriveSyncAccountRpc,
   DriveListFoldersRpc,
   DriveListDocumentsRpc,
   DriveDocumentDetailRpc,
@@ -534,6 +542,7 @@ export const SuiteDriveContract = defineSuiteContract({
     [SUITE_DRIVE_METHODS.subscribeStatus]: AuthOrchestrationReadScope,
     [SUITE_DRIVE_METHODS.connect]: AuthOrchestrationOperateScope,
     [SUITE_DRIVE_METHODS.disconnect]: AuthOrchestrationOperateScope,
+    [SUITE_DRIVE_METHODS.syncAccount]: AuthOrchestrationOperateScope,
     [SUITE_DRIVE_METHODS.listFolders]: AuthOrchestrationReadScope,
     [SUITE_DRIVE_METHODS.listDocuments]: AuthOrchestrationReadScope,
     [SUITE_DRIVE_METHODS.documentDetail]: AuthOrchestrationReadScope,
@@ -556,6 +565,8 @@ export interface DriveDesktopState {
 }
 
 export interface DriveDesktopBridge {
+  syncAccount: (token: string | null) => Promise<void>;
+  onSignOut: (listener: () => void) => () => void;
   openDriveUrl: (url: string, baseUrl: string) => Promise<DriveDesktopState>;
   setBounds: (
     bounds: { x: number; y: number; width: number; height: number } | null,

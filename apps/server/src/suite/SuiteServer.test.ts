@@ -3,6 +3,7 @@ import * as NodeServices from "@effect/platform-node/NodeServices";
 import { expect, it } from "@effect/vitest";
 import { ProviderInstanceId, ThreadId } from "@t3tools/contracts";
 import { SuiteProject, SuiteHomeOverview } from "@t3tools/contracts/suite";
+import { buildRuntimeInstructions } from "@t3tools/provider-core/server/runtimeInstructions";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
@@ -260,6 +261,16 @@ it.effect("an agent in a thread lists and calls suite_capabilities over /mcp", (
       expect(applied.map((row) => `${row.module}#${row.id}`)).toContain("core#1");
       expect(applied.map((row) => `${row.module}#${row.id}`)).toContain("home#1");
       expect(suiteAgentInstructions()).toContain("suite_capabilities");
+      const instructions = buildRuntimeInstructions({ harness: "Codex" });
+      for (const tool of [
+        "suite_capabilities",
+        "suite_home_overview",
+        "calendar_find_free_time",
+        "drive_get_document",
+        "mail_list_accounts",
+      ]) {
+        expect(instructions).toContain(tool);
+      }
     }),
   ).pipe(
     Effect.provide(

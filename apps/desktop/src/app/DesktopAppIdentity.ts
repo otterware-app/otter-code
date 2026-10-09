@@ -91,7 +91,11 @@ export const make = Effect.gen(function* () {
 
   const configure = Effect.gen(function* () {
     const commitHash = yield* resolveAboutCommitHash;
-    yield* electronApp.setName(environment.displayName);
+    // Electron removes spaces from this name to build the native User-Agent
+    // product token, but leaves parentheses intact. Keep the runtime name valid
+    // without rewriting preview sessions (which breaks Turnstile, #7110).
+    // Otter Code keeps one product name per channel, so only dev's "(Dev)" needs it.
+    yield* electronApp.setName(environment.displayName.replaceAll(/[()]/g, ""));
     yield* electronApp.setAboutPanelOptions({
       applicationName: environment.displayName,
       applicationVersion: environment.appVersion,

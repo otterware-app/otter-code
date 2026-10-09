@@ -1536,10 +1536,14 @@ export function installPreviewExtensions(options: {
       }
     }
   });
-  handle(Channels.OPEN_WEB_STORE_CHANNEL, () => {
+  handle(Channels.OPEN_WEB_STORE_CHANNEL, (_event, url: unknown) => {
+    const target = new URL(typeof url === "string" ? url : WEB_STORE_URL);
+    if (target.origin !== "https://chromewebstore.google.com") {
+      throw new Error("Expected a Chrome Web Store URL.");
+    }
     const profile = firstProfile();
     if (!profile) throw new Error("Open a browser tab first.");
-    openPageWindow(profile, WEB_STORE_URL);
+    openPageWindow(profile, target.href);
   });
   handle(Channels.SET_ENABLED_CHANNEL, (_event, extensionId: unknown, enabled: unknown) =>
     typeof extensionId === "string"

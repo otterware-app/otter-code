@@ -1,20 +1,17 @@
 import type { DesktopPreviewExtension } from "@t3tools/contracts";
-import { useNavigate } from "@tanstack/react-router";
 import { ArrowUpRight, Puzzle, Search } from "lucide-react";
 import { useState } from "react";
 
-import { openUrlInPreview } from "~/browser/openFileInPreview";
+import { resolveBrowserDefaults } from "~/browser/browserDefaults";
 import {
   CHROME_WEB_STORE_URL,
   previewExtensions,
   useInstalledPreviewExtensions,
   usePreviewExtensionsUi,
 } from "~/browser/previewExtensions";
-import { previewEnvironment } from "~/state/preview";
-import { useAtomCommand } from "~/state/use-atom-command";
-import { buildThreadRouteParams } from "~/threadRoutes";
+import { usePrimaryEnvironmentId } from "~/state/environments";
 
-import { lastMainAppThreadRef } from "../sidebar/mainAppLocation";
+import { previewBridge } from "../preview/previewBridge";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -37,24 +34,6 @@ const failed = (title: string) => (error: unknown) => {
     description: error instanceof Error ? error.message : String(error),
   });
 };
-
-/**
- * A page in a browser tab beside the thread last open, as the toolbar opens
- * them; with no thread yet, in a window of its own.
- */
-function useOpenBesideLastThread() {
-  const navigate = useNavigate();
-  const openPreview = useAtomCommand(previewEnvironment.open, { reportFailure: false });
-  return async (url: string) => {
-    const threadRef = lastMainAppThreadRef();
-    if (!threadRef) {
-      await previewExtensions?.openWebStore();
-      return;
-    }
-    await navigate({ to: "/$environmentId/$threadId", params: buildThreadRouteParams(threadRef) });
-    await openUrlInPreview({ threadRef, url, openPreview });
-  };
-}
 
 function ExtensionCard({
   extension,
@@ -168,7 +147,7 @@ export function ExtensionsSettingsPanel() {
   const extensionsButton = usePreviewExtensionsUi((state) => state.extensionsButton);
   const setExtensionsButton = usePreviewExtensionsUi((state) => state.setExtensionsButton);
   const setPinned = usePreviewExtensionsUi((state) => state.setPinned);
-  const openBesideLastThread = useOpenBesideLastThread();
+  const primaryEnvironmentId = usePrimaryEnvironmentId();
   const [query, setQuery] = useState("");
   const [removing, setRemoving] = useState<DesktopPreviewExtension | null>(null);
 
@@ -182,8 +161,18 @@ export function ExtensionsSettingsPanel() {
     );
   }
   const bridge = previewExtensions;
-  const open = (url: string) =>
-    void openBesideLastThread(url).catch(failed("Couldn't open the Chrome Web Store"));
+  const open = (url: string) => {
+    // Extensions install on this desktop, even while a remote thread is open.
+    // Initialise its profile so Settings also works before any local tab opens.
+    void (async () => {
+      if (!previewBridge || !primaryEnvironmentId) {
+        throw new Error("The desktop browser is not ready yet.");
+      }
+      const defaults = await resolveBrowserDefaults();
+      await previewBridge.getPreviewConfig(primaryEnvironmentId, defaults.profileId);
+      await bridge.openWebStore(url);
+    })().catch(failed("Couldn't open the Chrome Web Store"));
+  };
 
   const all = extensions ?? [];
   const words = query.trim().toLowerCase();

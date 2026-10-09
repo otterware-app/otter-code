@@ -56,8 +56,8 @@ export interface DesktopPreviewExtensionsBridge {
   /** The tab now showing in a preview: Chrome's active tab. */
   setActiveTab: (webContentsId: number) => Promise<void>;
   openOptions: (extensionId: string) => Promise<void>;
-  /** The Chrome Web Store, in a window of its own (from Settings, beside no thread). */
-  openWebStore: () => Promise<void>;
+  /** The Chrome Web Store or an extension's listing, in a local desktop window. */
+  openWebStore: (url?: string) => Promise<void>;
   setEnabled: (extensionId: string, enabled: boolean) => Promise<void>;
   remove: (extensionId: string) => Promise<void>;
   /** Developer mode: an extension from a folder the user picks. */

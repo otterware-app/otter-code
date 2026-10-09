@@ -451,7 +451,7 @@ contextBridge.exposeInMainWorld("desktopBridge", {
       ipcRenderer.invoke(PreviewExtensionChannels.SET_ACTIVE_TAB_CHANNEL, webContentsId),
     openOptions: (extensionId) =>
       ipcRenderer.invoke(PreviewExtensionChannels.OPEN_OPTIONS_CHANNEL, extensionId),
-    openWebStore: () => ipcRenderer.invoke(PreviewExtensionChannels.OPEN_WEB_STORE_CHANNEL),
+    openWebStore: (url) => ipcRenderer.invoke(PreviewExtensionChannels.OPEN_WEB_STORE_CHANNEL, url),
     setEnabled: (extensionId, enabled) =>
       ipcRenderer.invoke(PreviewExtensionChannels.SET_ENABLED_CHANNEL, extensionId, enabled),
     remove: (extensionId) =>

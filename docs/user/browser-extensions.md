@@ -1,11 +1,14 @@
 # Browser extensions
 
-The desktop app's browser runs Chrome extensions, such as a password manager, in every preview tab.
+Browser tabs rendered locally by the desktop app run Chrome extensions, such as a password manager.
+Previews streamed from a remote environment do not provide these extension controls.
 
 Add one from the Chrome Web Store: open the puzzle button in a browser tab's toolbar and choose
 **Visit Web Store**, or use **Settings → Browser Extensions → Chrome Web Store**. On an
 extension's page, choose **Add to** the app and confirm. Pin an extension from the puzzle menu to
 keep its button in the toolbar; its popup opens from there.
+The Web Store opened from Settings always uses a local desktop window, including while you work
+in a remote thread.
 
 **Settings → Browser Extensions** turns extensions on or off, shows what each can read, and
 removes them. Developer mode loads an unpacked extension from a folder.

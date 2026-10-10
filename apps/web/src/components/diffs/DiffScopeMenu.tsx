@@ -107,7 +107,7 @@ export function DiffScopeMenu(props: {
                   type="button"
                   aria-label={`Diff scope: ${props.title}. Choose which changes to show`}
                   className={cn(
-                    "inline-flex h-6 min-w-0 max-w-44 shrink cursor-pointer items-center gap-1 rounded-md bg-accent px-2 text-xs font-medium text-foreground outline-none transition-colors hover:bg-accent/80 focus-visible:ring-2 focus-visible:ring-ring",
+                    "inline-flex h-6 min-w-0 max-w-44 shrink cursor-pointer items-center gap-1 rounded-md bg-accent px-2 text-xs font-medium text-foreground outline-none transition-colors hover:bg-accent/80 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
                     open && "bg-accent/80",
                   )}
                 />

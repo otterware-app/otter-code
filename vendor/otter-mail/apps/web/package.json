@@ -1,6 +1,6 @@
 {
   "name": "@otter-mail/web",
-  "version": "0.12.7",
+  "version": "0.13.3",
   "private": true,
   "description": "Vendored from Otter Mail by scripts/otterware/sync-otter-mail.ts. Do not edit.",
   "type": "module",

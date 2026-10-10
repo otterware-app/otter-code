@@ -2,6 +2,7 @@ import { googleCallbackUrl } from "@t3tools/shared/googleAuthCallback";
 import { mailGoogleAuthorizationRequest } from "@t3tools/shared/suite/mailGoogleAuth";
 
 export interface MailGoogleAuthPrompt {
+  readonly provider?: "Google" | "Microsoft";
   readonly authorizationUrl: string;
   readonly submit: (callbackUrl: string) => void;
   readonly cancel: () => void;

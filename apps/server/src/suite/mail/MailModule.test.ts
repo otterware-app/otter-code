@@ -37,10 +37,24 @@ import { SuiteHomeContributors } from "../SuiteModule.ts";
 import { MailService } from "./MailService.ts";
 import { mailAccessFor } from "./MailToolkit.ts";
 
+import { GitVcsDriver } from "../../vcs/GitVcsDriver.ts";
+import { ManagedProjectFolders } from "../../project/ManagedProjectFolders.ts";
+import { PreviewManager } from "../../preview/Manager.ts";
+import { SourceControlRepositoryService } from "../../sourceControl/SourceControlRepositoryService.ts";
+import { ThreadLaunchService } from "../../orchestration-v2/ThreadLaunchService.ts";
+import { ThreadSearch } from "../../orchestration-v2/ThreadSearch.ts";
+
 // The demo mailbox: a fake Gmail inside Mail's worker, no Google account.
 process.env.OTTER_MAIL_FAKE_DEMO = "1";
 
 const layerStubServices = Layer.mergeAll(
+  Layer.mock(GitVcsDriver)({}),
+  Layer.mock(ManagedProjectFolders)({ namedProjectsRoot: "/tmp/otterware-test-unused-projects" }),
+  Layer.mock(PreviewManager)({}),
+  Layer.mock(SourceControlRepositoryService)({}),
+  Layer.mock(ThreadLaunchService)({}),
+  Layer.mock(ThreadSearch)({}),
+
   Layer.mock(Orchestrator.OrchestratorV2)({}),
   Layer.mock(ProjectionStore.ProjectionStoreV2)({}),
   Layer.mock(ProjectStore.ProjectStoreV2)({}),

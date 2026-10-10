@@ -3,6 +3,10 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./suite/mailMicrosoftAuth": {
+      "types": "./src/suite/mailMicrosoftAuth.ts",
+      "import": "./src/suite/mailMicrosoftAuth.ts"
+    },
     "./suite/agentInstructions": {
       "types": "./src/suite/agentInstructions.ts",
       "import": "./src/suite/agentInstructions.ts"
@@ -315,9 +319,13 @@
       "types": "./src/nodeRuntime.ts",
       "import": "./src/nodeRuntime.ts"
     },
-    "./hostProcess": {
-      "types": "./src/hostProcess.ts",
-      "import": "./src/hostProcess.ts"
+    "./AgentScope": {
+      "types": "./src/AgentScope.ts",
+      "import": "./src/AgentScope.ts"
+    },
+    "./HostProcess": {
+      "types": "./src/HostProcess.ts",
+      "import": "./src/HostProcess.ts"
     },
     "./testing/longTempDir": {
       "types": "./src/testing/longTempDir.ts",
@@ -478,6 +486,10 @@
     "./mcpResponsePayloads": {
       "types": "./src/mcpResponsePayloads.ts",
       "import": "./src/mcpResponsePayloads.ts"
+    },
+    "./PtyAdapter": {
+      "types": "./src/PtyAdapter.ts",
+      "import": "./src/PtyAdapter.ts"
     },
     "./otterAccounts": {
       "types": "./src/otterAccounts.ts",

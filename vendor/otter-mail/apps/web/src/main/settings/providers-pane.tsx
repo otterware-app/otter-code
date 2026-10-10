@@ -42,9 +42,10 @@ import {
   TextInput,
 } from "./settings-ui";
 import { searchableSetting } from "./settings-search";
-import { AgentTokensSection } from "./agent-tokens-section";
+import { AgentTokensSection, CopyButton } from "./agent-tokens-section";
 import { OpenRouterConnection } from "./openrouter-connection";
 import { features } from "../features";
+import { osNames } from "../os-names";
 import { RUNTIME_MODE_OPTIONS } from "../gmail/model-picker";
 import {
   modelKey,
@@ -482,13 +483,50 @@ function HermesEditor({
 }) {
   const { baseUrl, setBaseUrl, apiKey, setApiKey, saving, connect } = useConnectHermes(state);
   const connected = Boolean(state.settings.hermes.baseUrl && state.settings.hermesHasKey);
+  const device = window.desktopBridge.platform === "web" ? "browser" : osNames.computer;
 
   return (
     <>
+      {provider.status === "ready" ? null : (
+        <SettingsSection
+          title="Set up"
+          description={`Run these on the computer where Hermes runs. This ${device} reaches it over Tailscale, so it needs Tailscale too, on the same tailnet.`}
+        >
+          <SettingsRow
+            title="1. Turn on its API server"
+            description="Skip this if Hermes already serves its API on port 8642. This makes a new key."
+          >
+            <Command value="hermes config set API_SERVER_ENABLED true" />
+            <Command value={'hermes config set API_SERVER_KEY "$(openssl rand -hex 32)"'} />
+            <Command value="hermes gateway restart" />
+          </SettingsRow>
+          <SettingsRow
+            title="2. Serve it on your tailnet"
+            description="Its address becomes https://<computer>.<tailnet>.ts.net:8642."
+          >
+            <Command value="tailscale serve --bg --https=8642 http://127.0.0.1:8642" />
+          </SettingsRow>
+          <SettingsRow
+            title="3. Copy the API key"
+            description="Paste it below with the address. It stays on this device."
+          >
+            <Command value={`sed -n 's/^API_SERVER_KEY=//p' "$(hermes config env-path)"`} />
+          </SettingsRow>
+          {SITE_ORIGIN ? (
+            <SettingsRow
+              title="4. Allow Otter Mail on the web"
+              description="Browsers may only call Hermes from sites it allows. Separate sites with commas, and keep any you allowed before."
+            >
+              <Command value={`hermes config set API_SERVER_CORS_ORIGINS ${SITE_ORIGIN}`} />
+              <Command value="hermes gateway restart" />
+            </SettingsRow>
+          ) : null}
+        </SettingsSection>
+      )}
       <SettingsSection {...searchableSetting("hermes-connection")}>
         <SettingsRow
           title="Base URL"
-          description={HERMES_URL_HINT}
+          description="Its address on your tailnet: https://<computer>.<tailnet>.ts.net:8642."
           control={
             <TextInput
               value={baseUrl}
@@ -528,6 +566,226 @@ function HermesEditor({
         selectedModel={state.settings.hermes.model}
         onPick={(model) => update({ hermes: { model } })}
       />
+    </>
+  );
+}
+
+/** A command to run on the gateway's computer, with Copy. */
+function Command({ value }: { value: string }) {
+  return (
+    <div className="mt-2 mb-1.5 flex items-start gap-2 rounded-lg bg-input/40 py-1.5 pr-1 pl-3">
+      <code className="min-w-0 flex-1 py-0.5 font-mono text-xs break-all select-all">{value}</code>
+      <CopyButton value={value} label="Copy command" />
+    </div>
+  );
+}
+
+/** Where the web app runs, which the gateway must allow (the Mac app needs no origin). */
+const SITE_ORIGIN = window.desktopBridge.platform === "web" ? location.origin : null;
+
+/** `wss://computer.tailnet.ts.net` or a bare host → `computer.tailnet.ts.net`. */
+const gatewayHost = (address: string) =>
+  address
+    .trim()
+    .replace(/^[a-z]+:\/\//i, "")
+    .replace(/[/:].*$/, "");
+
+/** The gateway address inside a setup code (base64url JSON), for the allow-this-site step. */
+function setupCodeUrl(code: string): string {
+  try {
+    const json = JSON.parse(atob(code.trim().replace(/-/g, "+").replace(/_/g, "/"))) as {
+      url?: unknown;
+    };
+    return typeof json.url === "string" ? json.url : "";
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * OpenClaw: the minimum setup on the gateway's computer, step by step, then a
+ * setup code from `openclaw qr` (or, failing that, the address and token).
+ * Connecting makes this install a device the gateway must approve once;
+ * Settings waits for that and says how.
+ */
+function OpenClawEditor({
+  state,
+  provider,
+  update,
+}: {
+  state: ProvidersState;
+  provider: ProviderSnapshot;
+  update: (patch: AgentSettingsPatch) => void;
+}) {
+  const setState = useSetProvidersState();
+  const [code, setCode] = useState("");
+  const [useToken, setUseToken] = useState(false);
+  const [url, setUrl] = useState("");
+  const [token, setToken] = useState("");
+  const [saving, setSaving] = useState(false);
+  const { openclaw, openclawPairingRequest } = state.settings;
+  const connected = provider.status === "ready";
+  const device = window.desktopBridge.platform === "web" ? "browser" : osNames.computer;
+  const host = gatewayHost(url || setupCodeUrl(code) || openclaw.url);
+
+  // Waiting for approval: look again every few seconds, so it connects once approved.
+  useEffect(() => {
+    if (!openclawPairingRequest) return;
+    const timer = setInterval(() => void gmailApi.refreshAgentProviders().catch(() => {}), 4000);
+    return () => clearInterval(timer);
+  }, [openclawPairingRequest]);
+
+  const connect = async () => {
+    const address = url.trim() || openclaw.url;
+    if (useToken ? !address || !token.trim() : !code.trim()) {
+      toast.error(useToken ? "Gateway address and token are both required" : "Paste a setup code");
+      return;
+    }
+    setSaving(true);
+    console.log("[Settings:connectOpenClaw]", useToken ? "token" : "setup code");
+    try {
+      setState(
+        await gmailApi.connectOpenClaw(
+          useToken ? { url: address, token: token.trim() } : { code: code.trim() },
+        ),
+      );
+      setCode("");
+      setUrl("");
+      setToken("");
+    } catch (error) {
+      toast.error(`Could not connect: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <>
+      {connected ? null : (
+        <SettingsSection
+          title="Set up"
+          description={`Run these on the computer where OpenClaw runs. This ${device} reaches it over Tailscale, so it needs Tailscale too, on the same tailnet.`}
+        >
+          <SettingsRow
+            title="1. Serve the gateway on your tailnet"
+            description="Skip this if it already runs with Tailscale Serve. Its address becomes wss://<computer>.<tailnet>.ts.net."
+          >
+            <Command value="openclaw config set gateway.tailscale.mode serve" />
+            <Command value="openclaw gateway restart" />
+          </SettingsRow>
+          {SITE_ORIGIN ? (
+            <SettingsRow
+              title="2. Allow Otter Mail on the web"
+              description="Browsers may only connect from sites the gateway allows. This keeps the gateway's own Control UI allowed; add any other sites you allowed before."
+            >
+              <Command
+                value={`openclaw config set gateway.controlUi.allowedOrigins '${JSON.stringify([
+                  `https://${host || "<computer>.<tailnet>.ts.net"}`,
+                  SITE_ORIGIN,
+                ])}'`}
+              />
+            </SettingsRow>
+          ) : null}
+          <SettingsRow
+            title={`${SITE_ORIGIN ? 3 : 2}. Make a setup code`}
+            description="Paste it below. It holds the gateway's address and works once, for 10 minutes."
+          >
+            <Command value="openclaw qr --setup-code-only --limited" />
+          </SettingsRow>
+        </SettingsSection>
+      )}
+      <SettingsSection {...searchableSetting("openclaw-connection")}>
+        {openclaw.url ? (
+          <SettingsRow
+            title="Gateway"
+            description={<span className="font-mono text-xs">{openclaw.url}</span>}
+          />
+        ) : null}
+        {useToken ? (
+          <>
+            <SettingsRow
+              title="Gateway address"
+              description="wss://<computer>.<tailnet>.ts.net"
+              control={
+                <TextInput
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder={openclaw.url ? "Change address" : "computer.tailnet.ts.net"}
+                  aria-label="OpenClaw gateway address"
+                  className="@min-[32rem]/settings-row:w-56"
+                />
+              }
+            />
+            <SettingsRow
+              title="Gateway token"
+              description="gateway.auth.token, which this prints on the gateway's computer. It stays on this device."
+              control={
+                <TextInput
+                  type="password"
+                  value={token}
+                  onChange={(e) => setToken(e.target.value)}
+                  placeholder="Token"
+                  aria-label="OpenClaw gateway token"
+                  className="@min-[32rem]/settings-row:w-56"
+                />
+              }
+            >
+              {/* `openclaw config get` redacts secrets, so read the config file itself. */}
+              <Command value={`node -p "require('$(openclaw config file)').gateway.auth.token"`} />
+            </SettingsRow>
+          </>
+        ) : (
+          <SettingsRow
+            title="Setup code"
+            description="From openclaw qr --setup-code-only."
+            control={
+              <TextInput
+                type="password"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="Paste setup code"
+                aria-label="OpenClaw setup code"
+                className="@min-[32rem]/settings-row:w-56"
+              />
+            }
+          />
+        )}
+        <SettingsRow
+          title={openclaw.url ? "Reconnect" : "Connect"}
+          description={
+            <>
+              Connects this {device} to the gateway. The first time, you approve it there.{" "}
+              <button
+                type="button"
+                className="underline underline-offset-2 hover:text-foreground"
+                onClick={() => setUseToken(!useToken)}
+              >
+                {useToken ? "Use a setup code instead" : "Use the gateway token instead"}
+              </button>
+            </>
+          }
+          control={
+            <Btn size="sm" variant="primary" disabled={saving} onClick={() => void connect()}>
+              {saving ? "Connecting…" : openclaw.url ? "Reconnect" : "Connect"}
+            </Btn>
+          }
+        />
+        {openclawPairingRequest ? (
+          <SettingsRow
+            title={`Approve this ${device}`}
+            description={`The gateway is waiting for you to approve this ${device}. Run this on its computer; Otter Mail connects as soon as you do.`}
+          >
+            <Command value={`openclaw devices approve ${openclawPairingRequest}`} />
+          </SettingsRow>
+        ) : null}
+      </SettingsSection>
+      {connected ? (
+        <ModelsSection
+          provider={provider}
+          selectedModel={openclaw.model}
+          onPick={(model) => update({ openclaw: { model } })}
+        />
+      ) : null}
     </>
   );
 }
@@ -777,6 +1035,8 @@ export function ProvidersPane() {
       />
       {current.kind === "hermes" ? (
         <HermesEditor state={state} provider={current} update={update} />
+      ) : current.kind === "openclaw" ? (
+        <OpenClawEditor state={state} provider={current} update={update} />
       ) : current.kind === "openrouter" ? (
         <>
           <OpenRouterConnection provider={current} />

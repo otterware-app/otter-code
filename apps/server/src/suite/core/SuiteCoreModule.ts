@@ -5,8 +5,7 @@
  */
 import { SuiteCoreRpcGroup, SUITE_CORE_METHODS } from "@t3tools/contracts/suite";
 import * as Effect from "effect/Effect";
-import * as Layer from "effect/Layer";
-import { McpServer } from "effect/ai";
+import { suiteToolkitRegistration } from "../mcpRegistration.ts";
 import * as SqlClient from "effect/sql/SqlClient";
 
 import { defineSuiteServerModule, SuiteRegistry } from "../SuiteModule.ts";
@@ -41,8 +40,9 @@ export const SuiteCoreModule = defineSuiteServerModule({
     },
   ],
   rpcHandlers,
-  mcpToolkit: McpServer.toolkit(SuiteCoreToolkit.SuiteCoreToolkit).pipe(
-    Layer.provide(SuiteCoreToolkit.layerHandlers),
+  mcpToolkit: suiteToolkitRegistration(
+    SuiteCoreToolkit.SuiteCoreToolkit,
+    SuiteCoreToolkit.layerHandlers,
   ),
   agentInstructions: `## Otterware
 

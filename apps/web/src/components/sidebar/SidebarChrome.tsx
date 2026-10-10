@@ -118,7 +118,7 @@ export function SidebarSpaceHeading({
       type="button"
       {...rest}
       className={cn(
-        "group/space-heading flex h-8 min-w-0 max-w-full cursor-pointer items-center gap-1 rounded-(--control-radius) px-(--sidebar-row-content-inset) text-left text-lg font-semibold tracking-tight text-sidebar-foreground outline-hidden ring-ring hover:bg-sidebar-row-hover focus-visible:ring-2 data-[popup-open]:bg-sidebar-row-hover in-data-stage-art:text-white",
+        "group/space-heading flex h-8 min-w-0 max-w-full cursor-pointer items-center gap-1 rounded-(--control-radius) px-(--sidebar-row-content-inset) text-left text-lg font-semibold tracking-tight text-sidebar-foreground outline-hidden ring-ring hover:bg-sidebar-row-hover focus-visible:ring-2 focus-visible:ring-inset data-[popup-open]:bg-sidebar-row-hover in-data-stage-art:text-white",
         className,
       )}
     >

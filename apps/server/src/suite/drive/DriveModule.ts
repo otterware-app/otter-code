@@ -10,7 +10,7 @@ import {
 } from "@t3tools/contracts/suite";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import { McpServer } from "effect/ai";
+import { suiteToolkitRegistration } from "../mcpRegistration.ts";
 
 import { defineSuiteServerModule, type SuiteHomeContributor } from "../SuiteModule.ts";
 import * as DriveService from "./DriveService.ts";
@@ -122,9 +122,7 @@ export const DriveModule = defineSuiteServerModule({
   migrations: DRIVE_MIGRATIONS,
   layer: DriveService.layerStart.pipe(Layer.provideMerge(DriveService.layer)),
   rpcHandlers,
-  mcpToolkit: McpServer.toolkit(DriveToolkit.DriveToolkit).pipe(
-    Layer.provide(DriveToolkit.layerHandlers),
-  ),
+  mcpToolkit: suiteToolkitRegistration(DriveToolkit.DriveToolkit, DriveToolkit.layerHandlers),
   homeContributor,
   agentInstructions: `## Otter Drive
 

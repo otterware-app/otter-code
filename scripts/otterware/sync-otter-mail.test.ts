@@ -38,6 +38,12 @@ it("accepts the pinned vendor and rejects changed contracts, missing exports, an
       "#Platform changed",
     ],
     [
+      "packages/core/src/platform.ts",
+      "export interface MicrosoftAuth {",
+      "export interface MicrosoftAuth { changed: boolean;",
+      "#MicrosoftAuth changed",
+    ],
+    [
       "packages/contracts/src/index.ts",
       "export interface DesktopBridge {",
       "export interface DesktopBridge { changed: boolean;",
@@ -50,6 +56,12 @@ it("accepts the pinned vendor and rejects changed contracts, missing exports, an
       "#BridgeFeatures changed",
     ],
     ["packages/core/src/index.ts", "startCore", "removedStartCore", "no longer exports startCore"],
+    [
+      "apps/desktop/src/services/microsoft-oauth.ts",
+      "microsoftAuth",
+      "removedMicrosoftAuth",
+      "no longer exports microsoftAuth",
+    ],
   ]) {
     const original = files.get(file!)!;
     expect(original.toString()).toContain(before);

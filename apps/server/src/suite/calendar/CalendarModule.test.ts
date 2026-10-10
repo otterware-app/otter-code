@@ -40,8 +40,22 @@ import { SuiteHomeContributors, SuiteRegistry } from "../SuiteModule.ts";
 import * as SuiteServer from "../SuiteServer.ts";
 import { requireSuiteCapability } from "./CalendarToolkit.ts";
 
+import { GitVcsDriver } from "../../vcs/GitVcsDriver.ts";
+import { ManagedProjectFolders } from "../../project/ManagedProjectFolders.ts";
+import { PreviewManager } from "../../preview/Manager.ts";
+import { SourceControlRepositoryService } from "../../sourceControl/SourceControlRepositoryService.ts";
+import { ThreadLaunchService } from "../../orchestration-v2/ThreadLaunchService.ts";
+import { ThreadSearch } from "../../orchestration-v2/ThreadSearch.ts";
+
 // The upstream toolkits merged beside the suite's resolve these lazily.
 const layerStubServices = Layer.mergeAll(
+  Layer.mock(GitVcsDriver)({}),
+  Layer.mock(ManagedProjectFolders)({ namedProjectsRoot: "/tmp/otterware-test-unused-projects" }),
+  Layer.mock(PreviewManager)({}),
+  Layer.mock(SourceControlRepositoryService)({}),
+  Layer.mock(ThreadLaunchService)({}),
+  Layer.mock(ThreadSearch)({}),
+
   Layer.mock(Orchestrator.OrchestratorV2)({}),
   Layer.mock(ProjectionStore.ProjectionStoreV2)({}),
   Layer.mock(ProjectStore.ProjectStoreV2)({}),

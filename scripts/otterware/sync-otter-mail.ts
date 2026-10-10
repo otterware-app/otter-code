@@ -50,6 +50,7 @@ export const ALLOWLIST = [
   "apps/web/src/web/demo",
   "apps/web/tsconfig.json",
   "apps/desktop/src/services/gmail-oauth.ts",
+  "apps/desktop/src/services/microsoft-oauth.ts",
   "apps/desktop/src/services/credentials-store.ts",
   "apps/desktop/src/services/mail-socket.ts",
   "apps/desktop/src/services/todoist-oauth.ts",
@@ -95,6 +96,7 @@ export const REQUIRED_EXPORTS: Readonly<Record<string, ReadonlyArray<string>>> =
   "apps/web/src/main/index.tsx": [],
   "apps/web/src/main/settings/settings-search.ts": ["SETTINGS_SECTION_LABELS"],
   "apps/desktop/src/services/gmail-oauth.ts": ["googleAuth"],
+  "apps/desktop/src/services/microsoft-oauth.ts": ["microsoftAuth"],
   "apps/desktop/src/services/mail-socket.ts": ["connectMailSocket"],
   "apps/desktop/src/services/todoist-oauth.ts": ["todoistSignIn"],
 };
@@ -110,6 +112,7 @@ const DESKTOP_RELATIVE_IMPORTS = new Set([
 const CONTRACT_DECLARATIONS = [
   ["packages/core/src/platform.ts", "interface", "Platform"],
   ["packages/core/src/platform.ts", "interface", "GoogleAuth"],
+  ["packages/core/src/platform.ts", "interface", "MicrosoftAuth"],
   ["packages/core/src/platform.ts", "interface", "SqlDatabase"],
   ["packages/core/src/platform.ts", "interface", "SqlStatement"],
   ["packages/core/src/platform.ts", "interface", "ByteStream"],

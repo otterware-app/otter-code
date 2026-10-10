@@ -58,6 +58,7 @@ function resolveVendoredPackage(source: string): string | null {
 
 const buildDefines = () => ({
   __OTTER_MAIL_VERSION__: JSON.stringify(vendoredVersion()),
+  __MICROSOFT_CLIENT_ID__: JSON.stringify(process.env.OTTER_MAIL_MICROSOFT_CLIENT_ID?.trim() ?? ""),
   __GOOGLE_CLIENT_ID__: JSON.stringify(
     process.env.OTTER_MAIL_GOOGLE_CLIENT_ID?.trim() || PUBLIC_GOOGLE_CLIENT_ID,
   ),

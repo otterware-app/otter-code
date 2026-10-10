@@ -9,6 +9,7 @@ import type { PickedFile } from "@otter-mail/core";
 
 import { sealText, unsealText } from "../seal.ts";
 import { receiveRemoteGoogleCallback } from "../googleAuthRemote.ts";
+import { receiveRemoteMicrosoftCallback } from "../microsoftAuthRemote.ts";
 import { mailWorkerData, requestClient } from "../workerLink.ts";
 
 /** Mail's `MainRequests` (apps/desktop/src/backend-protocol.ts); the sync guard watches its shape. */
@@ -30,6 +31,10 @@ export async function requestMain<K extends keyof MainRequests>(
       const { url } = params as MainRequests["openExternal"]["params"];
       if (URL.canParse(url) && new URL(url).origin === "https://accounts.google.com") {
         await receiveRemoteGoogleCallback(url);
+        return undefined as never;
+      }
+      if (URL.canParse(url) && new URL(url).origin === "https://login.microsoftonline.com") {
+        await receiveRemoteMicrosoftCallback(url);
         return undefined as never;
       }
       return requestClient(kind, params);

@@ -4,7 +4,7 @@ import {
   authorizeAccount,
 } from "./methods/accountSession.ts";
 import * as Effect from "effect/Effect";
-import { HostProcessPlatform, HostProcessEnvironment } from "@t3tools/shared/hostProcess";
+import * as HostProcess from "@t3tools/shared/HostProcess";
 
 import { nativeMessagingDirectories } from "../preview/extensions/NativeMessagingLocations.ts";
 
@@ -80,6 +80,7 @@ import {
 import * as PreviewIpc from "./methods/preview.ts";
 import * as PreviewExtensions from "../preview/extensions/PreviewExtensions.ts";
 import * as AppActivationIpc from "./methods/appActivation.ts";
+import * as WebLinksIpc from "./methods/webLinks.ts";
 import {
   completeLegacyLocalStorage,
   takeLegacyLocalStorage,
@@ -96,8 +97,8 @@ export const installDesktopIpcHandlers = Effect.fn("desktop.ipc.installHandlers"
   const ipc = yield* DesktopIpc.DesktopIpc;
   yield* installNotificationBadge();
   yield* PreviewIpc.installPreviewEventForwarding();
-  const platform = yield* HostProcessPlatform;
-  const environment = yield* HostProcessEnvironment;
+  const platform = yield* HostProcess.Platform;
+  const environment = yield* HostProcess.Environment;
   yield* Effect.sync(() =>
     PreviewExtensions.installPreviewExtensions({
       preloadPath: `${__dirname}/preview-extensions-preload.cjs`,
@@ -107,6 +108,7 @@ export const installDesktopIpcHandlers = Effect.fn("desktop.ipc.installHandlers"
 
   yield* ipc.handle(AppActivationIpc.setReady);
   yield* ipc.handle(AppActivationIpc.complete);
+  yield* ipc.handle(WebLinksIpc.setReady);
 
   yield* ipc.handleSync(takeLegacyLocalStorage);
   yield* ipc.handle(completeLegacyLocalStorage);

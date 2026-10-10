@@ -10,6 +10,7 @@ name: Otterware Release
 #
 # Optional configuration (the build passes it through when set, never fails without it):
 #   vars.OTTER_MAIL_GOOGLE_CLIENT_ID    secrets.OTTER_MAIL_GOOGLE_CLIENT_SECRET
+#   vars.OTTER_MAIL_MICROSOFT_CLIENT_ID (optional public Outlook client)
 #   vars.T3CODE_GOOGLE_CLIENT_ID        secrets.T3CODE_GOOGLE_CLIENT_SECRET
 #   secrets.CSC_LINK, CSC_KEY_PASSWORD, APPLE_API_KEY, APPLE_API_KEY_ID, APPLE_API_ISSUER
 #   and vars.APPLE_TEAM_ID sign and notarize the macOS app; without them it is signed ad hoc.
@@ -113,6 +114,7 @@ jobs:
       T3CODE_ACCOUNTS_CLI_CLIENT_ID: ${{ needs.preflight.outputs.accounts_cli_client_id }}
       T3CODE_RELAY_URL: ${{ needs.preflight.outputs.relay_url }}
       OTTER_MAIL_GOOGLE_CLIENT_ID: ${{ vars.OTTER_MAIL_GOOGLE_CLIENT_ID }}
+      OTTER_MAIL_MICROSOFT_CLIENT_ID: ${{ vars.OTTER_MAIL_MICROSOFT_CLIENT_ID }}
       OTTER_MAIL_GOOGLE_CLIENT_SECRET: ${{ secrets.OTTER_MAIL_GOOGLE_CLIENT_SECRET }}
       T3CODE_GOOGLE_CLIENT_ID: ${{ vars.T3CODE_GOOGLE_CLIENT_ID }}
       T3CODE_GOOGLE_CLIENT_SECRET: ${{ secrets.T3CODE_GOOGLE_CLIENT_SECRET }}

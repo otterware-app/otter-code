@@ -8,7 +8,7 @@ import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
-import { McpServer } from "effect/ai";
+import { suiteToolkitRegistration } from "../mcpRegistration.ts";
 
 import { McpInvocationContext } from "../../mcp/McpInvocationContext.ts";
 import { CalendarHandlersLive } from "../../mcp/toolkits/calendar/handlers.ts";
@@ -53,4 +53,4 @@ export const layerHandlers = Layer.effectContext(
   }),
 );
 
-export const layer = McpServer.toolkit(CalendarToolkit).pipe(Layer.provide(layerHandlers));
+export const layer = suiteToolkitRegistration(CalendarToolkit, layerHandlers);

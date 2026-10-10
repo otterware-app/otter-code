@@ -5,6 +5,7 @@ import * as Layer from "effect/Layer";
 import * as Stream from "effect/Stream";
 import { McpSchema, McpServer } from "effect/ai";
 import * as McpInvocationContext from "../../mcp/McpInvocationContext.ts";
+import { suiteToolkitRegistration } from "../mcpRegistration.ts";
 import { DriveService } from "./DriveService.ts";
 import { DriveToolkit, layerHandlers } from "./DriveToolkit.ts";
 
@@ -40,8 +41,7 @@ it.effect(
       syncNow: unused,
       start: unused,
     });
-    const layer = McpServer.toolkit(DriveToolkit).pipe(
-      Layer.provide(layerHandlers),
+    const layer = suiteToolkitRegistration(DriveToolkit, layerHandlers).pipe(
       Layer.provide(Layer.succeed(DriveService, service)),
       Layer.provideMerge(McpServer.McpServer.layer),
     );

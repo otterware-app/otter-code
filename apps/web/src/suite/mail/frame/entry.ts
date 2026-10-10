@@ -15,6 +15,7 @@ import { decodeMailBytes, encodeMailBytes, type SuiteMailEvent } from "@t3tools/
 
 import type { OtterMailHost } from "../mailHost";
 import { receiveMailGoogleAuth } from "../mailGoogleAuth";
+import { receiveMailMicrosoftAuth } from "../mailMicrosoftAuth";
 import { showGoogleAuthPrompt } from "./googleAuthPrompt";
 import { FRAME_CHANNELS, inertAnswer, isFrameChannel } from "./frameChannels";
 import { mailConversationFromPath, mailPathSegments } from "./mailRoute";
@@ -136,14 +137,14 @@ function boot(host: OtterMailHost): void {
 
   // ── Core's asks of this client ───────────────────────────────────────────
 
-  const googleRequests = new Map<number, AbortController>();
+  const oauthRequests = new Map<number, AbortController>();
 
   async function answer(event: Extract<SuiteMailEvent, { type: "request" }>): Promise<unknown> {
     const params = decodeMailBytes(event.params) as Record<string, unknown> | undefined;
     switch (event.kind) {
       case "googleAuth": {
         const controller = new AbortController();
-        googleRequests.set(event.id, controller);
+        oauthRequests.set(event.id, controller);
         try {
           return await receiveMailGoogleAuth({
             authorizationUrl: String(params?.authorizationUrl ?? ""),
@@ -154,7 +155,21 @@ function boot(host: OtterMailHost): void {
             prompt: showGoogleAuthPrompt,
           });
         } finally {
-          googleRequests.delete(event.id);
+          oauthRequests.delete(event.id);
+        }
+      }
+      case "microsoftAuth": {
+        const controller = new AbortController();
+        oauthRequests.set(event.id, controller);
+        try {
+          return await receiveMailMicrosoftAuth({
+            authorizationUrl: String(params?.authorizationUrl ?? ""),
+            signal: controller.signal,
+            openBrowser: openUrl,
+            prompt: showGoogleAuthPrompt,
+          });
+        } finally {
+          oauthRequests.delete(event.id);
         }
       }
       case "openExternal":
@@ -184,11 +199,11 @@ function boot(host: OtterMailHost): void {
         serverChannels = new Set(event.channels);
         return;
       case "failed":
-        for (const controller of googleRequests.values()) controller.abort();
+        for (const controller of oauthRequests.values()) controller.abort();
         showNotice(`Mail couldn't start on this server: ${event.message}`);
         return;
       case "requestCancelled":
-        googleRequests.get(event.id)?.abort();
+        oauthRequests.get(event.id)?.abort();
         return;
       case "event":
         emit(event.channel, decodeMailBytes(event.params));

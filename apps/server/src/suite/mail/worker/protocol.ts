@@ -75,6 +75,7 @@ export type MailWorkerCall = keyof MailWorkerCalls;
 export type MailClientRequestKind =
   | "openExternal"
   | "googleAuth"
+  | "microsoftAuth"
   | "pickFiles"
   | "openFile"
   | "saveFile";

@@ -48,6 +48,7 @@ export type SuiteMailInvokeInput = typeof SuiteMailInvokeInput.Type;
 export const SuiteMailClientRequestKind = Schema.Literals([
   "openExternal",
   "googleAuth",
+  "microsoftAuth",
   "pickFiles",
   "openFile",
   "saveFile",

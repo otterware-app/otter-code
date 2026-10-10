@@ -24,7 +24,13 @@ import {
   installFakeGmail,
 } from "../../../../../../vendor/otter-mail/apps/web/src/web/demo/gmail.ts";
 import { mailNeedsYou, parseHomeItemId } from "./home.ts";
-import { nodeFiles, nodePlatform, realConnect, serverGoogleAuth } from "./nodePlatform.ts";
+import {
+  nodeFiles,
+  nodePlatform,
+  realConnect,
+  serverGoogleAuth,
+  serverMicrosoftAuth,
+} from "./nodePlatform.ts";
 import type { MailWorkerCalls, ToMailWorker } from "./protocol.ts";
 import { callMailTool, listMailTools } from "./tools.ts";
 import { currentClient, mailWorkerData, post, settleClientRequest } from "./workerLink.ts";
@@ -63,6 +69,7 @@ function start(): Promise<{ channels: ReadonlyArray<string> }> {
     await startCore(
       nodePlatform({
         google: mailWorkerData.demo ? demoGoogleAuth() : serverGoogleAuth,
+        ...(mailWorkerData.demo ? {} : { microsoft: serverMicrosoftAuth }),
         files: nodeFiles,
         relayUrl: mailWorkerData.demo ? DEMO_RELAY_URL : mailWorkerData.relayUrl,
         connect: mailWorkerData.demo

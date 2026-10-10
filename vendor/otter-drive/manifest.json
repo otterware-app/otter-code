@@ -1,11 +1,11 @@
 {
   "upstream": "https://github.com/otterware-app/otter-drive",
-  "commit": "4d02f30a6685be5e3eb40dced84c5235352a063b",
-  "syncedAt": "2026-10-08T13:41:41.160Z",
+  "commit": "3dd03c7505a228555edd5bbb33e203d29afdf141",
+  "syncedAt": "2026-10-10T07:10:51.448Z",
   "files": [
     {
       "path": "packages/contracts/src/index.ts",
-      "sha256": "ccaf3a100229d0b591e01f556c15f3073ffeeb718ccbe5ab9eb4fc8683ec6ffe"
+      "sha256": "d4bca6aa5983d822939cbca6bcabcdc061ba5178201e9ea4143c69b413f16c76"
     }
   ],
   "notes": [

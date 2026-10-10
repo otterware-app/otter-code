@@ -303,7 +303,7 @@ function SidebarUpdateControl() {
       aria-label={tooltip}
       aria-disabled={isInteractionDisabled || undefined}
       className={cn(
-        "relative flex size-9 shrink-0 items-center justify-center rounded-lg outline-hidden ring-ring transition-colors focus-visible:ring-2 [-webkit-app-region:no-drag]",
+        "relative flex size-9 shrink-0 items-center justify-center rounded-lg outline-hidden ring-ring transition-colors focus-visible:ring-2 focus-visible:ring-inset [-webkit-app-region:no-drag]",
         isInteractionDisabled ? "cursor-not-allowed" : "cursor-pointer",
         showUpdateIconState
           ? cn(

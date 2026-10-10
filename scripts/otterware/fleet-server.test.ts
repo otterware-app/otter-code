@@ -1,5 +1,5 @@
 // @effect-diagnostics nodeBuiltinImport:off -- Exercises flock with disposable homes and stub runtimes only.
-import { HostProcessArchitecture, HostProcessPlatform } from "@t3tools/shared/hostProcess";
+import * as HostProcess from "@t3tools/shared/HostProcess";
 import * as NodeChildProcess from "node:child_process";
 import * as NodeFSP from "node:fs/promises";
 import * as NodeOS from "node:os";
@@ -45,7 +45,7 @@ function spawn(command: string, args: string[], env: NodeJS.ProcessEnv) {
   return { child, result, until };
 }
 
-describe.skipIf(HostProcessPlatform.defaultValue() !== "linux")("fleet mutations", () => {
+describe.skipIf(HostProcess.Platform.defaultValue() !== "linux")("fleet mutations", () => {
   it.each(["install", "use-otterware", "use-otter-code"])(
     "%s waits for the home lock before reading or changing runtime state",
     async (operation) => {
@@ -59,7 +59,7 @@ describe.skipIf(HostProcessPlatform.defaultValue() !== "linux")("fleet mutations
       const unit = NodePath.join(root, ".config/systemd/user/otter-code.service");
       const archive = NodePath.join(
         root,
-        `t3-${version}-linux-${HostProcessArchitecture.defaultValue()}.tar.gz`,
+        `t3-${version}-linux-${HostProcess.Architecture.defaultValue()}.tar.gz`,
       );
       const env = {
         ...process.env,

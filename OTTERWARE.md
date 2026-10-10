@@ -55,6 +55,10 @@ agentInstructions, homeContributor })` ([`SuiteModule.ts`](apps/server/src/suite
   `homeContributor` feeds Home. The registry is type-checked: an RPC without a handler, or a
   handler needing a service nobody provides, fails `server.ts`'s typecheck. Background loops wait
   for server activation.
+  `suiteToolkitRegistration` keeps suite/vendor handler layers while excluding the per-request
+  `McpInvocationContext` from registration dependencies, like Code's MCP registration wrapper.
+  Never provide an invocation context during startup: the authenticated transport supplies it
+  separately for each caller, and each suite handler keeps its existing capability checks.
 - **Web page.** The route renders `SuiteModuleLayout` (module sidebar, content, side chat slot)
   and publishes what the user is looking at with `useSuitePageContext(...)` for the side chat.
   `useSuiteCapabilities()` reports whether the environment runs the module; a plain Otter Code
@@ -95,6 +99,13 @@ the suite adapters: do not replace Code's account provider or forward credential
 or remote environments. Calendar already uses the host identity; Google mailbox and calendar
 permissions are separate provider connections. Signing out clears suite account sessions while
 preserving those local provider connections.
+
+Mail's Outlook provider uses its vendored Microsoft PKCE flow and token store. Configure the
+optional public `OTTER_MAIL_MICROSOFT_CLIENT_ID` at build time (the release workflow reads the
+repository variable) or on the server to enable it. For a remote server, the Mail frame lets
+the user paste Microsoft's localhost callback address; the suite validates the pending state
+and forwards it to Mail's IPv4 listener. Cancelling or leaving Mail ends the client handoff.
+Microsoft mailbox permission remains separate from the shared Otter Accounts sign-in.
 
 ## Daily maintenance and previews
 

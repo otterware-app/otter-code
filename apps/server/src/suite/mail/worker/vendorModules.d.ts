@@ -8,6 +8,11 @@ declare module "otter-mail-desktop/gmail-oauth" {
   export const googleAuth: GoogleAuth;
 }
 
+declare module "otter-mail-desktop/microsoft-oauth" {
+  import type { MicrosoftAuth } from "@otter-mail/core";
+  export const microsoftAuth: MicrosoftAuth;
+}
+
 declare module "otter-mail-desktop/mail-socket" {
   import type { Platform } from "@otter-mail/core";
   export const connectMailSocket: Platform["connect"];

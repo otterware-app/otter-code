@@ -136,10 +136,11 @@ export function createOtterMailHost(options: {
   const frameListeners = new Set<(event: SuiteMailEvent) => void>();
   const desktop = window.desktopBridge;
   const googleRequests = new Set<string>();
-  const googleRequestIds = new Set<number>();
+  const oauthRequestIds = new Set<number>();
   listeners.set(clientId, (event) => {
-    if (event.type === "request" && event.kind === "googleAuth") googleRequestIds.add(event.id);
-    if (event.type === "requestCancelled") googleRequestIds.delete(event.id);
+    if (event.type === "request" && (event.kind === "googleAuth" || event.kind === "microsoftAuth"))
+      oauthRequestIds.add(event.id);
+    if (event.type === "requestCancelled") oauthRequestIds.delete(event.id);
     for (const listener of frameListeners) listener(event);
   });
   const unmount = appAtomRegistry.mount(
@@ -174,7 +175,7 @@ export function createOtterMailHost(options: {
       return () => frameListeners.delete(listener);
     },
     reply(id, result, error) {
-      googleRequestIds.delete(id);
+      oauthRequestIds.delete(id);
       void runAtomCommand(appAtomRegistry, replyCommand, {
         environmentId: options.environmentId,
         input: {
@@ -205,10 +206,10 @@ export function createOtterMailHost(options: {
     dispose() {
       // End the frame's prompt first so a rejected native listener cannot reopen consent
       // after navigation away from Mail. This also clears pending web-only prompts.
-      for (const id of googleRequestIds) {
+      for (const id of oauthRequestIds) {
         for (const listener of frameListeners) listener({ type: "requestCancelled", id });
       }
-      googleRequestIds.clear();
+      oauthRequestIds.clear();
       for (const url of googleRequests)
         void desktop?.cancelGoogleAuthCallback?.(url).catch(() => {});
       googleRequests.clear();

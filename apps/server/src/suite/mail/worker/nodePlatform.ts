@@ -17,16 +17,19 @@ import type {
   AsyncContext,
   GmailAccount,
   GoogleAuth,
+  MicrosoftAuth,
   PickedFile,
   Platform,
   SqlDatabase,
 } from "@otter-mail/core";
 import { googleAuth } from "otter-mail-desktop/gmail-oauth";
+import { microsoftAuth } from "otter-mail-desktop/microsoft-oauth";
 import { connectMailSocket } from "otter-mail-desktop/mail-socket";
 import { todoistSignIn } from "otter-mail-desktop/todoist-oauth";
 
 import { sealText, unsealText } from "./seal.ts";
 import { runGoogleSignIn } from "./googleAuthRemote.ts";
+import { runMicrosoftSignIn } from "./microsoftAuthRemote.ts";
 import { mailWorkerData, post, requestClient } from "./workerLink.ts";
 
 declare const __OTTER_MAIL_VERSION__: string;
@@ -142,8 +145,14 @@ export const serverGoogleAuth: GoogleAuth = {
 
 const resumeListeners = new Set<() => void>();
 
+export const serverMicrosoftAuth: MicrosoftAuth = {
+  ...microsoftAuth,
+  addAccount: (loginHint) => runMicrosoftSignIn(() => microsoftAuth.addAccount(loginHint)),
+};
+
 export function nodePlatform(options: {
   readonly google: GoogleAuth;
+  readonly microsoft?: MicrosoftAuth;
   readonly files: Platform["files"];
   readonly relayUrl: string;
   readonly connect: Platform["connect"];
@@ -176,6 +185,7 @@ export function nodePlatform(options: {
     },
 
     google: options.google,
+    ...(options.microsoft ? { microsoft: options.microsoft } : {}),
     todoistSignIn,
     relayUrl: options.relayUrl,
     relaySession: "bearer",

@@ -7,7 +7,7 @@
 import { SUITE_HOME_METHODS, SuiteHomeRpcGroup } from "@t3tools/contracts/suite";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import { McpServer } from "effect/ai";
+import { suiteToolkitRegistration } from "../mcpRegistration.ts";
 
 import * as SuiteDatabase from "../SuiteDatabase.ts";
 import { defineSuiteServerModule } from "../SuiteModule.ts";
@@ -43,8 +43,9 @@ export const SuiteHomeModule = defineSuiteServerModule({
     SuiteAssistantProject.layer,
   ),
   rpcHandlers,
-  mcpToolkit: McpServer.toolkit(SuiteHomeToolkit.SuiteHomeToolkit).pipe(
-    Layer.provide(SuiteHomeToolkit.layerHandlers),
+  mcpToolkit: suiteToolkitRegistration(
+    SuiteHomeToolkit.SuiteHomeToolkit,
+    SuiteHomeToolkit.layerHandlers,
   ),
   agentInstructions: `## Otterware Home
 

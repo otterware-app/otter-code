@@ -16,6 +16,11 @@ find .github -name '*.yml' -print0 | xargs -0 sed -i.bak -E \
   -e 's/blacksmith-[0-9]+vcpu-windows-2025/windows-2025/g'
 find .github -name '*.yml.bak' -delete
 
+# Upstream sizes release job timeouts for 8-vCPU Blacksmith runners; the 4-vCPU
+# GitHub-hosted runners need about twice as long (the release test suite alone
+# takes ~10 minutes there).
+perl -pi -e 's/^(    timeout-minutes: )10$/${1}20/' .github/workflows/release.yml
+
 # Otter Code ships macOS and Linux only: skip the Windows desktop jobs, let the
 # release proceed without them, and stop expecting .exe assets.
 perl -0pi -e '

@@ -405,7 +405,7 @@ function LinkedWorkspace({
     <Collapsible open={open} onOpenChange={setOpen} disabled={machineSettings === null}>
       <SettingsRow
         title={
-          <CollapsibleTrigger className="-ml-1 flex items-center gap-1 rounded-md px-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default">
+          <CollapsibleTrigger className="-ml-1 flex items-center gap-1 rounded-md px-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring disabled:cursor-default">
             <ChevronRightIcon
               aria-hidden
               className={cn(

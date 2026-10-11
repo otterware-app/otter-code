@@ -8,8 +8,7 @@ import type {
 } from "@t3tools/contracts/relay";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { ChevronRightIcon, EllipsisIcon } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
-
+import { type ReactNode, useEffect, useEffectEvent, useRef, useState } from "react";
 import {
   fetchLinearStatus,
   startLinearAuthorization,
@@ -22,7 +21,6 @@ import { useEnvironmentSettings, useUpdateEnvironmentSettings } from "~/hooks/us
 import { cn } from "~/lib/utils";
 import { useEnvironments, useRelayEnvironmentDiscovery } from "~/state/environments";
 import { serverEnvironment } from "~/state/server";
-
 import { Button } from "../ui/button";
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "../ui/collapsible";
 import { DraftInput } from "../ui/draft-input";
@@ -35,17 +33,21 @@ import { LinearProjectRows } from "./LinearProjectRows";
 import { useOptionalSettingsScope } from "./SettingsScopeContext";
 import { SettingsRow, SettingsSection, useSettingsSearchTargetId } from "./settingsLayout";
 import { searchableSetting } from "./settingsSearch";
-
 const LINEAR_SECTION_ID = searchableSetting("linear").id;
-
 type LinearStatusState =
-  | { readonly kind: "loading" }
-  | { readonly kind: "error"; readonly message: string }
-  | { readonly kind: "ready"; readonly status: RelayLinearStatusResponse };
-
+  | {
+      readonly kind: "loading";
+    }
+  | {
+      readonly kind: "error";
+      readonly message: string;
+    }
+  | {
+      readonly kind: "ready";
+      readonly status: RelayLinearStatusResponse;
+    };
 const errorMessage = (cause: unknown, fallback: string) =>
   cause instanceof Error && cause.message ? cause.message : fallback;
-
 /**
  * Everything Linear on one card. With Otter Connect: the Linear workspaces the
  * signed-in account is linked to, the machine each one runs delegated issues
@@ -65,7 +67,6 @@ export function LinearSettings({
     </LinearSection>
   );
 }
-
 function LinearSection({
   headerAction,
   children,
@@ -79,7 +80,6 @@ function LinearSection({
     </SettingsSection>
   );
 }
-
 function ConfiguredLinearSettings({
   primaryEnvironmentId,
 }: {
@@ -102,7 +102,6 @@ function ConfiguredLinearSettings({
     </LinearSection>
   );
 }
-
 /**
  * The relay sends the browser back with `?linear=<outcome>` after Linear's
  * consent screen, and Linear's own "Link account" prompt lands here with
@@ -155,7 +154,6 @@ function useLinearReturnParam(authLoaded: boolean, signedIn: boolean) {
     handle(outcome);
   }, [authLoaded, outcome]);
 }
-
 function SignedInLinearSettings({
   primaryEnvironmentId,
   readAccountToken,
@@ -166,7 +164,6 @@ function SignedInLinearSettings({
   const discovery = useRelayEnvironmentDiscovery();
   const [state, setState] = useState<LinearStatusState>({ kind: "loading" });
   const [pending, setPending] = useState<string | null>(null);
-
   // Environments linked to T3 Connect; only these can receive delegated issues.
   const machines = linearMachineOptions(discovery.environments.values());
   const machineFor = (environmentId: EnvironmentId): LinearMachineOption => {
@@ -189,7 +186,6 @@ function SignedInLinearSettings({
     ) ??
     machines[0]?.environmentId ??
     null;
-
   const readStatus = async (): Promise<LinearStatusState> => {
     try {
       return { kind: "ready", status: await fetchLinearStatus(await readAccountToken()) };
@@ -208,7 +204,6 @@ function SignedInLinearSettings({
       active = false;
     };
   }, []);
-
   const run = async (key: string, failureTitle: string, action: () => Promise<void>) => {
     setPending(key);
     try {
@@ -219,11 +214,9 @@ function SignedInLinearSettings({
         title: failureTitle,
         description: errorMessage(cause, "Try again."),
       });
-    } finally {
-      setPending(null);
     }
+    setPending(null);
   };
-
   const authorize = (kind: RelayLinearAuthorizeKind, environmentId = linkEnvironmentId) =>
     run(kind, "Could not open Linear", async () => {
       const url = await startLinearAuthorization(
@@ -241,13 +234,11 @@ function SignedInLinearSettings({
         window.location.assign(url);
       }
     });
-
   const moveLink = (organizationId: string, environmentId: EnvironmentId) =>
     run(organizationId, "Could not change the environment", async () => {
       await updateLinearLinkEnvironment(await readAccountToken(), organizationId, environmentId);
       await load();
     });
-
   const unlink = async (organizationId: string, organizationName: string) => {
     const confirmed = await requestConfirmDialog(
       `Unlink your Linear account in ${organizationName}?\nIssues you delegate there stop running on your environments.`,
@@ -259,14 +250,12 @@ function SignedInLinearSettings({
       await load();
     });
   };
-
   const apiKeyRow = <LinearApiKeyRow primaryEnvironmentId={primaryEnvironmentId} />;
   // Without the relay's Linear app there is nothing to link; the API key still works.
   if (state.kind === "ready" && !state.status.available) {
     return <LinearSection>{apiKeyRow}</LinearSection>;
   }
   const links = state.kind === "ready" ? state.status.links : [];
-
   return (
     <LinearSection
       headerAction={
@@ -353,7 +342,6 @@ function SignedInLinearSettings({
     </LinearSection>
   );
 }
-
 /**
  * One linked Linear workspace: the machine its delegated issues run on, and,
  * folded below, that machine's projects and prompt. Opens by itself when
@@ -400,12 +388,11 @@ function LinkedWorkspace({
     setOpenedForSearch(true);
     if (machineSettings !== null) setOpen(true);
   }
-
   return (
     <Collapsible open={open} onOpenChange={setOpen} disabled={machineSettings === null}>
       <SettingsRow
         title={
-          <CollapsibleTrigger className="-ml-1 flex items-center gap-1 rounded-md px-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default">
+          <CollapsibleTrigger className="-ml-1 flex items-center gap-1 rounded-md px-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring disabled:cursor-default">
             <ChevronRightIcon
               aria-hidden
               className={cn(
@@ -466,7 +453,6 @@ function LinkedWorkspace({
     </Collapsible>
   );
 }
-
 /**
  * The key a machine reads Linear with when no linked account covers it:
  * issue status, the issue page, and live updates. Stored on that machine.
@@ -527,13 +513,10 @@ function LinearApiKeyRow({
     />
   );
 }
-
 function LinearApiKeyInput({ environmentId }: { readonly environmentId: EnvironmentId }) {
   const stored = useEnvironmentSettings(
     environmentId,
-    // The server never sends the key back; a stored key arrives as a
-    // non-empty redaction marker, so only its presence is meaningful here.
-    useCallback((settings) => settings.linear.apiKey.length > 0, []),
+    (settings) => settings.linear.apiKey.length > 0,
   );
   const updateSettings = useUpdateEnvironmentSettings(environmentId);
   return (
@@ -564,7 +547,6 @@ function LinearApiKeyInput({ environmentId }: { readonly environmentId: Environm
     </>
   );
 }
-
 function MachineName({ machine }: { readonly machine: LinearMachineOption }) {
   return (
     <span className="flex min-w-0 items-baseline gap-1.5">
@@ -575,7 +557,6 @@ function MachineName({ machine }: { readonly machine: LinearMachineOption }) {
     </span>
   );
 }
-
 function EnvironmentSelect({
   ariaLabel,
   machines,

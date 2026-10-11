@@ -27,7 +27,7 @@ import { SidebarUpdatePill } from "./SidebarUpdatePill";
 
 /** A rail button: a square that lights up on hover, and stays lit where you are. */
 const RAIL_BUTTON =
-  "relative flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-sidebar-muted-foreground outline-hidden ring-ring hover:bg-sidebar-row-hover hover:text-sidebar-foreground focus-visible:ring-2 [-webkit-app-region:no-drag]";
+  "relative flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-sidebar-muted-foreground outline-hidden ring-ring hover:bg-sidebar-row-hover hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-inset [-webkit-app-region:no-drag]";
 const RAIL_BUTTON_SELECTED = "bg-sidebar-row-selected text-sidebar-foreground";
 
 type RailPlace = "settings" | "usage" | "pull-requests" | "threads";

@@ -50,7 +50,7 @@ jobs:
   # have already run. Scheduled runs also decide here whether a nightly is due.
   resolve_commit:
     name: Resolve release commit
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-8vcpu-ubuntu-2404
     timeout-minutes: 5
     outputs:
       ref: ${{ steps.resolve.outputs.ref }}
@@ -105,7 +105,7 @@ jobs:
       needs.resolve_commit.result == 'success' &&
       (github.event_name != 'schedule' || needs.resolve_commit.outputs.has_changes == 'true')
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     outputs:
       release_channel: ${{ steps.release_meta.outputs.release_channel }}
       version: ${{ steps.release_meta.outputs.version }}
@@ -235,7 +235,7 @@ jobs:
     needs: [preflight]
     if: ${{ !failure() && !cancelled() && needs.preflight.result == 'success' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -269,7 +269,7 @@ jobs:
     needs: [preflight]
     if: ${{ !failure() && !cancelled() && needs.preflight.result == 'success' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -305,7 +305,7 @@ jobs:
     needs: [preflight]
     if: ${{ !failure() && !cancelled() && needs.preflight.result == 'success' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -344,7 +344,7 @@ jobs:
     if: |
       needs.resolve_commit.result == 'success' &&
       (github.event_name != 'schedule' || needs.resolve_commit.outputs.has_changes == 'true')
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-8vcpu-ubuntu-2404
     timeout-minutes: 5
     environment:
       name: production
@@ -452,7 +452,7 @@ jobs:
     # this runs alongside preflight. See the condition comment there.
     needs: [preflight, relay_public_config]
     if: ${{ !cancelled() && needs.preflight.result == 'success' && needs.relay_public_config.result == 'success' }}
-    runs-on: ubuntu-24.04
+    runs-on: blacksmith-32vcpu-ubuntu-2404
     timeout-minutes: 30
     env:
       T3CODE_ACCOUNTS_URL: ${{ needs.relay_public_config.outputs.accounts_url }}
@@ -552,7 +552,7 @@ jobs:
       accounts_cli_client_id: ${{ needs.relay_public_config.outputs.accounts_cli_client_id }}
       relay_url: ${{ needs.relay_public_config.outputs.relay_url }}
       label: macOS arm64
-      runner: macos-15
+      runner: blacksmith-12vcpu-macos-26
       platform: mac
       target: dmg
       arch: arm64
@@ -574,7 +574,7 @@ jobs:
       accounts_cli_client_id: ${{ needs.relay_public_config.outputs.accounts_cli_client_id }}
       relay_url: ${{ needs.relay_public_config.outputs.relay_url }}
       label: macOS x64
-      runner: macos-15
+      runner: blacksmith-12vcpu-macos-26
       platform: mac
       target: dmg
       arch: x64
@@ -599,7 +599,7 @@ jobs:
       accounts_cli_client_id: ${{ needs.relay_public_config.outputs.accounts_cli_client_id }}
       relay_url: ${{ needs.relay_public_config.outputs.relay_url }}
       label: Linux x64
-      runner: ubuntu-24.04
+      runner: blacksmith-32vcpu-ubuntu-2404
       platform: linux
       target: AppImage
       arch: x64
@@ -623,7 +623,7 @@ jobs:
       accounts_cli_client_id: ${{ needs.relay_public_config.outputs.accounts_cli_client_id }}
       relay_url: ${{ needs.relay_public_config.outputs.relay_url }}
       label: Linux arm64
-      runner: ubuntu-24.04-arm
+      runner: blacksmith-16vcpu-ubuntu-2404-arm
       platform: linux
       target: AppImage
       arch: arm64
@@ -637,7 +637,7 @@ jobs:
   desktop_win_x64:
     name: Desktop Windows x64
     needs: [preflight, relay_public_config, build_bundle]
-    if: ${{ false }}
+    if: ${{ !cancelled() && needs.preflight.result == 'success' && needs.relay_public_config.result == 'success' && needs.build_bundle.result == 'success' }}
     uses: ./.github/workflows/release-desktop.yml
     secrets: inherit
     with:
@@ -648,7 +648,7 @@ jobs:
       accounts_cli_client_id: ${{ needs.relay_public_config.outputs.accounts_cli_client_id }}
       relay_url: ${{ needs.relay_public_config.outputs.relay_url }}
       label: Windows x64
-      runner: windows-2025
+      runner: blacksmith-32vcpu-windows-2025
       platform: win
       target: nsis
       arch: x64
@@ -659,7 +659,7 @@ jobs:
   desktop_win_arm64:
     name: Desktop Windows arm64
     needs: [preflight, relay_public_config, build_bundle]
-    if: ${{ false }}
+    if: ${{ !cancelled() && needs.preflight.result == 'success' && needs.relay_public_config.result == 'success' && needs.build_bundle.result == 'success' }}
     uses: ./.github/workflows/release-desktop.yml
     secrets: inherit
     with:
@@ -696,8 +696,8 @@ jobs:
         desktop_win_x64,
         desktop_win_arm64,
       ]
-    if: ${{ !failure() && !cancelled() && needs.preflight.result == 'success' && needs.relay_public_config.result == 'success' && needs.quality.result == 'success' && needs.test.result == 'success' && needs.test_server.result == 'success' && needs.desktop_mac_arm64.result == 'success' && needs.desktop_linux_x64.result == 'success' && needs.desktop_linux_arm64.result == 'success' && needs.desktop_win_x64.result != 'failure' && needs.desktop_win_arm64.result != 'failure' }}
-    runs-on: ubuntu-24.04 # ubuntu-24.04
+    if: ${{ !failure() && !cancelled() && needs.preflight.result == 'success' && needs.relay_public_config.result == 'success' && needs.quality.result == 'success' && needs.test.result == 'success' && needs.test_server.result == 'success' && needs.desktop_mac_arm64.result == 'success' && needs.desktop_linux_x64.result == 'success' && needs.desktop_linux_arm64.result == 'success' && needs.desktop_win_x64.result == 'success' && needs.desktop_win_arm64.result == 'success' }}
+    runs-on: ubuntu-24.04 # blacksmith-8vcpu-ubuntu-2404
     timeout-minutes: 15
     permissions:
       contents: read
@@ -729,16 +729,8 @@ jobs:
           merge-multiple: true
           path: release-cli
 
-      - name: Configure npm token (Otter Code)
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          if [ -n "$NPM_TOKEN" ]; then
-            printf "//registry.npmjs.org/:_authToken=%s\n" "$NPM_TOKEN" >> ~/.npmrc
-          fi
-
       - name: Build npm packages from CLI archives
-        run: node scripts/build-npm-platform-packages.ts --archives-dir release-cli --version "${{ needs.preflight.outputs.version }}" --output-dir npm-packages --allow-missing
+        run: node scripts/build-npm-platform-packages.ts --archives-dir release-cli --version "${{ needs.preflight.outputs.version }}" --output-dir npm-packages
 
       # A dry run of every package first: an auth or scope error here (the
       # @t3code org missing, a package without a trusted publisher) fails
@@ -753,10 +745,6 @@ jobs:
       - name: Publish CLI packages
         run: node apps/server/scripts/cli.ts publish --packages-dir npm-packages --tag "${{ needs.preflight.outputs.cli_dist_tag }}" --provenance --verbose
 
-      - name: Tag nightly as latest (Otter Code)
-        if: needs.preflight.outputs.release_channel == 'nightly'
-        run: npm dist-tag add "otter-code@${{ needs.preflight.outputs.version }}" latest
-
   release:
     name: Publish GitHub Release
     needs:
@@ -770,8 +758,8 @@ jobs:
         desktop_win_arm64,
         publish_cli,
       ]
-    if: ${{ !failure() && !cancelled() && needs.preflight.result == 'success' && needs.desktop_mac_arm64.result == 'success' && needs.desktop_mac_x64.result == 'success' && needs.desktop_linux_x64.result == 'success' && needs.desktop_linux_arm64.result == 'success' && needs.desktop_win_x64.result != 'failure' && needs.desktop_win_arm64.result != 'failure' && (needs.publish_cli.result == 'success' || needs.publish_cli.result == 'skipped') }}
-    runs-on: ubuntu-24.04
+    if: ${{ !failure() && !cancelled() && needs.preflight.result == 'success' && needs.desktop_mac_arm64.result == 'success' && needs.desktop_mac_x64.result == 'success' && needs.desktop_linux_x64.result == 'success' && needs.desktop_linux_arm64.result == 'success' && needs.desktop_win_x64.result == 'success' && needs.desktop_win_arm64.result == 'success' && (needs.publish_cli.result == 'success' || needs.publish_cli.result == 'skipped') }}
+    runs-on: blacksmith-8vcpu-ubuntu-2404
     timeout-minutes: 30
     permissions:
       contents: write
@@ -883,6 +871,7 @@ jobs:
             echo 'release-assets/*.zip'
             echo 'release-assets/*.AppImage'
             echo 'release-assets/*.deb'
+            echo 'release-assets/*.exe'
             if [[ "${{ needs.preflight.outputs.release_channel }}" != "preview" ]]; then
               echo 'release-assets/*.blockmap'
               echo 'release-assets/*.yml'
@@ -962,7 +951,7 @@ jobs:
     needs: [preflight, relay_public_config]
     if: ${{ !cancelled() && needs.preflight.result == 'success' && needs.relay_public_config.result == 'success' && needs.preflight.outputs.release_channel != 'preview' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     outputs:
       version_id: ${{ steps.deploy.outputs.version_id }}
       deployment_url: ${{ steps.deploy.outputs.deployment_url }}
@@ -1068,7 +1057,7 @@ jobs:
     needs: [preflight, build_web, release]
     if: ${{ !failure() && !cancelled() && needs.preflight.result == 'success' && needs.build_web.result == 'success' && needs.release.result == 'success' && needs.preflight.outputs.release_channel != 'preview' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     env:
       WEB_VERSION_ID: ${{ needs.build_web.outputs.version_id }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -1149,7 +1138,7 @@ jobs:
     needs: [preflight]
     if: ${{ github.repository == 'pingdotgg/t3code' && !cancelled() && needs.preflight.result == 'success' && needs.preflight.outputs.release_channel == 'nightly' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     outputs:
       deployment_url: ${{ steps.deploy.outputs.deployment_url }}
       project_id: ${{ steps.deploy.outputs.project_id }}
@@ -1213,7 +1202,7 @@ jobs:
     needs: [preflight, build_marketing, release]
     if: ${{ github.repository == 'pingdotgg/t3code' && !failure() && !cancelled() && needs.preflight.result == 'success' && needs.build_marketing.result == 'success' && needs.release.result == 'success' && needs.preflight.outputs.release_channel == 'nightly' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     env:
       DEPLOYMENT_URL: ${{ needs.build_marketing.outputs.deployment_url }}
       VERCEL_PROJECT_ID: ${{ needs.build_marketing.outputs.project_id }}
@@ -1258,7 +1247,7 @@ jobs:
     if: ${{ !failure() && !cancelled() && needs.preflight.result == 'success' && needs.release.result == 'success' && needs.preflight.outputs.release_channel == 'stable' }}
     needs: [preflight, release]
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - id: app_token
         name: Mint release app token
@@ -1344,7 +1333,7 @@ jobs:
       (needs.finalize.result == 'success' || needs.finalize.result == 'skipped')
     needs: [preflight, relay_public_config, release, deploy_web, finalize]
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v6

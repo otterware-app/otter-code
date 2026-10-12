@@ -1,14 +1,49 @@
 {
-  "fill": {
-    "solid": "display-p3:0.00000,0.00000,0.00000,1.00000"
-  },
+  "fill-specializations": [
+    {
+      "value": {
+        "solid": "extended-srgb:0.97255,0.96078,0.92549,1.00000"
+      }
+    },
+    {
+      "appearance": "dark",
+      "value": {
+        "solid": "extended-srgb:0.17255,0.18431,0.19216,1.00000"
+      }
+    }
+  ],
   "groups": [
     {
       "layers": [
         {
+          "fill-specializations": [
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "extended-srgb:0.97255,0.96078,0.92549,1.00000"
+              }
+            }
+          ],
           "glass": false,
-          "image-name": "otter.png",
-          "name": "Otter",
+          "image-name": "symbol.svg",
+          "name": "Symbol",
+          "position": {
+            "scale": 1,
+            "translation-in-points": [0, 0]
+          }
+        },
+        {
+          "fill-specializations": [
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "extended-srgb:0.17255,0.18431,0.19216,1.00000"
+              }
+            }
+          ],
+          "glass": false,
+          "image-name": "background.svg",
+          "name": "Background",
           "position": {
             "scale": 1,
             "translation-in-points": [0, 0]

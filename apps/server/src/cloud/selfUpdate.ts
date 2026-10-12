@@ -21,6 +21,9 @@ import * as Path from "effect/Path";
 import { HttpClient } from "effect/http";
 
 import { CLI_RELEASE_BASE_URL_ENV } from "@t3tools/shared/cliRelease";
+import { isOtterwareVersion, OTTERWARE_SERVER_UPDATE_NOTICE } from "@t3tools/shared/otterware";
+
+import packageJson from "../../package.json" with { type: "json" };
 
 import * as ServerConfig from "../config.ts";
 import * as DesktopAppUpdate from "../desktopUpdate/DesktopAppUpdate.ts";
@@ -40,8 +43,13 @@ const PREFLIGHT_TIMEOUT = Duration.seconds(30);
 export function resolveServerSelfUpdateCapability(input: {
   readonly desktopManaged: boolean;
   readonly launcherManaged: boolean;
+  readonly serverVersion?: string;
 }): ServerSelfUpdateCapability | null {
   if (input.desktopManaged) return "desktop-managed" as const;
+  // An Otterware service never updates itself: clients would move it to their
+  // own version or to an Otter Code release, swapping the product under it.
+  // scripts/otterware/fleet-server.sh switches runtimes instead.
+  if (isOtterwareVersion(input.serverVersion ?? packageJson.version)) return null;
   return input.launcherManaged ? ("boot-service" as const) : null;
 }
 
@@ -186,8 +194,10 @@ export const make = Effect.fn("cloud.server_self_update.make")(function* () {
   );
   const inFlight = yield* Ref.make(false);
 
-  const capability: ServerSelfUpdateCapability | null =
-    serverConfig.mode === "desktop" ? "desktop-managed" : launcher.managed ? "boot-service" : null;
+  const capability = resolveServerSelfUpdateCapability({
+    desktopManaged: serverConfig.mode === "desktop",
+    launcherManaged: launcher.managed,
+  });
   const failWith = (reason: string, cause?: unknown) =>
     cause === undefined
       ? new ServerSelfUpdateError({ reason })
@@ -206,6 +216,9 @@ export const make = Effect.fn("cloud.server_self_update.make")(function* () {
       return yield* failWith(
         "This server is managed by the T3 Code desktop app on its machine; update the desktop app to update it.",
       );
+    }
+    if (capability === null && launcher.managed) {
+      return yield* failWith(OTTERWARE_SERVER_UPDATE_NOTICE);
     }
     if (capability === null) {
       return yield* failWith(

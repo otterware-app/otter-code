@@ -140,11 +140,14 @@ export async function reopenClosedView(
         if (surface.title) panels.renameDevice(ref, surface.id, surface.title);
       } else panels.open(ref, "device");
       break;
-    case "pull-request":
-      panels.openPullRequest(ref, surface);
-      break;
     case "linear-issue":
       panels.openLinearIssue(ref, surface);
+      break;
+    case "drive-document":
+      panels.openDriveDocument(ref, surface);
+      break;
+    case "pull-request":
+      panels.openPullRequest(ref, surface);
       break;
     default:
       panels.open(ref, surface.kind);

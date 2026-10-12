@@ -3,6 +3,18 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./suite/mailMicrosoftAuth": {
+      "types": "./src/suite/mailMicrosoftAuth.ts",
+      "import": "./src/suite/mailMicrosoftAuth.ts"
+    },
+    "./suite/agentInstructions": {
+      "types": "./src/suite/agentInstructions.ts",
+      "import": "./src/suite/agentInstructions.ts"
+    },
+    "./suite/mailGoogleAuth": {
+      "types": "./src/suite/mailGoogleAuth.ts",
+      "import": "./src/suite/mailGoogleAuth.ts"
+    },
     "./githubMarkdownLinks": {
       "types": "./src/githubMarkdownLinks.ts",
       "import": "./src/githubMarkdownLinks.ts"
@@ -411,6 +423,10 @@
       "types": "./src/codexAuthCallback.ts",
       "import": "./src/codexAuthCallback.ts"
     },
+    "./otterware": {
+      "types": "./src/otterware.ts",
+      "import": "./src/otterware.ts"
+    },
     "./codexAuthHandoff": {
       "types": "./src/codexAuthHandoff.ts",
       "import": "./src/codexAuthHandoff.ts"
@@ -482,6 +498,22 @@
     "./otterAccounts": {
       "types": "./src/otterAccounts.ts",
       "import": "./src/otterAccounts.ts"
+    },
+    "./brand": {
+      "types": "./src/brand.ts",
+      "import": "./src/brand.ts"
+    },
+    "./googleAuthCallback": {
+      "types": "./src/googleAuthCallback.ts",
+      "import": "./src/googleAuthCallback.ts"
+    },
+    "./calendar/time": {
+      "types": "./src/calendar/time.ts",
+      "import": "./src/calendar/time.ts"
+    },
+    "./calendar/recurrence": {
+      "types": "./src/calendar/recurrence.ts",
+      "import": "./src/calendar/recurrence.ts"
     }
   },
   "scripts": {

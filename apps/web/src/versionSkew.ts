@@ -5,6 +5,7 @@ import type {
   ServerSelfUpdateCapability,
 } from "@t3tools/contracts";
 import type { ServerUpdateState } from "@t3tools/client-runtime/state/server";
+import { isOtterwareVersion } from "@t3tools/shared/otterware";
 import { compareSemverVersions, parseSemver } from "@t3tools/shared/semver";
 import * as Schema from "effect/Schema";
 
@@ -63,6 +64,11 @@ export function resolveVersionMismatch(
   const normalizedClientVersion = normalizeVersion(APP_VERSION);
   const normalizedServerVersion = normalizeVersion(serverVersion);
   if (!normalizedClientVersion || !normalizedServerVersion) {
+    return null;
+  }
+  // Otterware builds are installed by hand. Offering to "sync" would move a
+  // server to the client's product, so neither side suggests an update.
+  if (isOtterwareVersion(normalizedClientVersion) || isOtterwareVersion(normalizedServerVersion)) {
     return null;
   }
 

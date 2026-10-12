@@ -70,12 +70,21 @@ const make = Effect.gen(function* () {
   const safeStorage = yield* ElectronSafeStorage.ElectronSafeStorage;
   const shell = yield* ElectronShell.ElectronShell;
   const lock = yield* Semaphore.make(1);
-  const file = path.join(environment.stateDir, "otter-account-session.bin");
+  const file = path.join(environment.clientStateDir, "otter-account-session.bin");
   const decode = Schema.decodeUnknownEffect(Schema.fromJsonString(OtterAccountSession));
   return DesktopAccountSession.of({
     read: Effect.gen(function* () {
       if (!(yield* fs.exists(file))) return null;
-      return yield* safeStorage.decryptString(yield* fs.readFile(file));
+      // A session sealed by another app identity (e.g. copied from Otter Code)
+      // cannot be decrypted here; treat it as signed out instead of failing.
+      return yield* safeStorage.decryptString(yield* fs.readFile(file)).pipe(
+        Effect.catchTags({
+          ElectronSafeStorageDecryptError: (error) =>
+            Effect.logWarning("Otter account session could not be decrypted; signed out", {
+              error: error.message,
+            }).pipe(Effect.as(null)),
+        }),
+      );
     }).pipe(
       Effect.mapError((cause) => new DesktopAccountSessionError({ operation: "read", cause })),
     ),
@@ -95,7 +104,7 @@ const make = Effect.gen(function* () {
             )
               return yield* Effect.fail("encryption_unavailable");
             const encrypted = yield* safeStorage.encryptString(value);
-            yield* fs.makeDirectory(environment.stateDir, { recursive: true });
+            yield* fs.makeDirectory(environment.clientStateDir, { recursive: true });
             const temporary = `${file}.tmp`;
             yield* fs.writeFile(temporary, encrypted, { mode: 0o600 });
             yield* fs.rename(temporary, file);

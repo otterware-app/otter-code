@@ -16,7 +16,7 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch src/bin.ts",
-    "build:bundle": "vp pack",
+    "build:bundle": "vp pack && node src/suite/mail/worker/buildMailWorker.ts dist/otter-mail-worker.mjs",
     "build:exe": "node scripts/cli.ts build-exe",
     "start": "node dist/bin.mjs",
     "typecheck": "tsc-rs --noEmit",
@@ -65,11 +65,13 @@
     "vscode-jsonrpc": "8.2.1",
     "vscode-languageserver-textdocument": "1.0.12",
     "yaml": "catalog:",
-    "yauzl": "^3.4.0"
+    "yauzl": "^3.4.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@effect/vitest": "catalog:",
     "@modelcontextprotocol/sdk": "1.29.0",
+    "@otterware/drive-contracts": "workspace:*",
     "@t3tools/contracts": "workspace:*",
     "@t3tools/provider-testing": "workspace:*",
     "@t3tools/shared": "workspace:*",

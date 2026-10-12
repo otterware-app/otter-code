@@ -45,6 +45,28 @@ beforeEach(() => {
 });
 
 describe("reopenClosedView", () => {
+  it("restores linked Drive and Linear tabs in their original thread without a workspace", async () => {
+    const options = { openPreview: vi.fn(), workspaceAvailable: false };
+    const surfaces = [
+      { kind: "drive-documents", id: "drive-documents" },
+      { kind: "drive-document", id: "drive-document:doc-a", reference: "doc-a", title: "Notes" },
+      { kind: "linear-issues", id: "linear-issues" },
+      {
+        kind: "linear-issue",
+        id: "linear-issue:ENG-123",
+        identifier: "ENG-123",
+        url: "https://linear.app/team/issue/ENG-123",
+      },
+    ] as const;
+    for (const surface of surfaces) {
+      expect(await reopenClosedView({ kind: "panel-tab", threadRef, surface }, options)).toBe(true);
+    }
+    const state = selectThreadRightPanelState(useRightPanelStore.getState().byThreadKey, threadRef);
+    expect(state.surfaces).toEqual(surfaces);
+    expect(state.activeSurfaceId).toBe("linear-issue:ENG-123");
+    expect(options.openPreview).not.toHaveBeenCalled();
+  });
+
   it("restores a file tab at its line without creating a browser session", async () => {
     const openPreview = vi.fn();
     const reopened = await reopenClosedView(

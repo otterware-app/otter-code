@@ -10,6 +10,7 @@
  * archive stem):
  *
  *   t3 | t3.exe          the single-executable
+ *   otter-mail-worker.mjs Mail worker loaded from disk by the single-executable
  *   client/              web app served by the server
  *   resource-monitor/    per-platform Rust helper, same paths as the npm package
  *   node_modules/        runtime externals (node-pty, msgpackr-extract, fff)
@@ -269,6 +270,18 @@ const removeNestedBinDirectories = (
     }
   });
 
+/** SEA worker threads load this module from disk beside the executable. */
+export const stageCliMailWorker = Effect.fn("stageCliMailWorker")(function* (
+  serverDist: string,
+  contentDir: string,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  const worker = path.join(serverDist, "otter-mail-worker.mjs");
+  yield* requireInput(worker, "Run `vp run --filter t3 build:bundle` first.");
+  yield* fs.copyFile(worker, path.join(contentDir, "otter-mail-worker.mjs"));
+});
+
 /** Copies the web client without its sourcemaps, which nothing serves. */
 const stageWebClient = Effect.fn("stageWebClient")(function* (source: string, target: string) {
   const fs = yield* FileSystem.FileSystem;
@@ -507,6 +520,7 @@ const buildCliArchive = Effect.fn("buildCliArchive")(function* (input: {
 
   yield* Effect.log(`[cli-archive] Staging ${stem}...`);
   yield* fs.copyFile(builtExecutable, path.join(contentDir, executableName));
+  yield* stageCliMailWorker(path.join(serverDir, "dist"), contentDir);
   yield* stageWebClient(webClient, path.join(contentDir, "client"));
   yield* fs.copy(resourceMonitorDir, path.join(contentDir, "resource-monitor"));
   yield* stageRuntimeExternals({

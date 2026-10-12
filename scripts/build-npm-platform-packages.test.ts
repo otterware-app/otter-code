@@ -72,6 +72,7 @@ const makeFakeArchives = Effect.fn("test.makeFakeArchives")(function* () {
       '{ "name": "@ff-labs/fff-node", "version": "0.9.4" }\n',
     );
     yield* fs.writeFileString(path.join(contentDir, "client/index.html"), "<html></html>\n");
+    yield* fs.writeFileString(path.join(contentDir, "otter-mail-worker.mjs"), "export {};\n");
     yield* fs.writeFileString(
       path.join(contentDir, "t3"),
       `#!/bin/sh\necho "stub ${key} $*"\nexit 7\n`,
@@ -134,6 +135,7 @@ it.layer(NodeServices.layer)("build-npm-platform-packages", (it) => {
       assert.deepStrictEqual(linuxManifest.files, [
         "t3",
         "t3.exe",
+        "otter-mail-worker.mjs",
         "client",
         "resource-monitor",
         "node_modules",
@@ -196,6 +198,7 @@ it.layer(NodeServices.layer)("build-npm-platform-packages", (it) => {
       const lines = listing.stdout.split("\n");
       assert.isTrue(lines.some((line) => line.endsWith(" package/node_modules/node-pty/")));
       assert.isTrue(lines.some((line) => line.endsWith(" package/package.json")));
+      assert.isTrue(lines.some((line) => line.endsWith(" package/otter-mail-worker.mjs")));
       assert.isTrue(
         lines.some((line) => /^-rwxr-xr-x .* package\/t3$/.test(line)),
         listing.stdout,

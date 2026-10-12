@@ -25,6 +25,16 @@ export const BRAND_ASSET_PATHS = {
   nightlyWebAppleTouchIconPng: "assets/otter-nightly/otter-nightly-web-apple-touch-180.png",
   nightlyWebFaviconSvg: "assets/otter-nightly/otter-nightly-web-favicon.svg",
 
+  // Otterware's teal variant of the production artwork (scripts/otterware/generate-icons.sh),
+  // used in place of production for the desktop app and hosted web icons.
+  otterwareMacIconPng: "assets/otterware/otterware-macos-1024.png",
+  otterwareLinuxIconPng: "assets/otterware/otterware-universal-1024.png",
+  otterwareWebFaviconSvg: "assets/otterware/otterware-web-favicon.svg",
+  otterwareWebFaviconIco: "assets/otterware/otterware-web-favicon.ico",
+  otterwareWebFavicon16Png: "assets/otterware/otterware-web-favicon-16x16.png",
+  otterwareWebFavicon32Png: "assets/otterware/otterware-web-favicon-32x32.png",
+  otterwareWebAppleTouchIconPng: "assets/otterware/otterware-web-apple-touch-180.png",
+
   developmentDesktopIconPng: "assets/otter-dev/otter-dev-macos-1024.png",
   developmentWindowsIconIco: "assets/otter-dev/otter-dev-windows.ico",
   developmentWebFaviconIco: "assets/otter-dev/otter-dev-web-favicon.ico",
@@ -77,11 +87,11 @@ const WEB_ICON_SOURCE_PATHS_BY_BRAND = {
     faviconSvg: BRAND_ASSET_PATHS.nightlyWebFaviconSvg,
   },
   production: {
-    faviconIco: BRAND_ASSET_PATHS.productionWebFaviconIco,
-    favicon16Png: BRAND_ASSET_PATHS.productionWebFavicon16Png,
-    favicon32Png: BRAND_ASSET_PATHS.productionWebFavicon32Png,
-    appleTouchIconPng: BRAND_ASSET_PATHS.productionWebAppleTouchIconPng,
-    faviconSvg: BRAND_ASSET_PATHS.productionWebFaviconSvg,
+    faviconIco: BRAND_ASSET_PATHS.otterwareWebFaviconIco,
+    favicon16Png: BRAND_ASSET_PATHS.otterwareWebFavicon16Png,
+    favicon32Png: BRAND_ASSET_PATHS.otterwareWebFavicon32Png,
+    appleTouchIconPng: BRAND_ASSET_PATHS.otterwareWebAppleTouchIconPng,
+    faviconSvg: BRAND_ASSET_PATHS.otterwareWebFaviconSvg,
   },
 } as const satisfies Record<WebAssetBrand, Record<keyof typeof WEB_ICON_TARGET_FILENAMES, string>>;
 

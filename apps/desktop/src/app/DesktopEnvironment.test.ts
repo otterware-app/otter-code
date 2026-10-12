@@ -76,9 +76,9 @@ describe("DesktopEnvironment", () => {
       assert.equal(environment.serverRoot, "/repo");
       assert.equal(environment.backendEntryPath, "/repo/apps/server/dist/bin.mjs");
       assert.equal(environment.backendCwd, "/repo");
-      assert.equal(environment.appUserModelId, "dev.otterware.code.dev");
-      assert.equal(environment.linuxWmClass, "otter-code-dev");
-      assert.equal(environment.linuxDesktopEntryName, "dev.otterware.code.dev.desktop");
+      assert.equal(environment.appUserModelId, "dev.otterware.suite.dev");
+      assert.equal(environment.linuxWmClass, "otterware-dev");
+      assert.equal(environment.linuxDesktopEntryName, "dev.otterware.suite.dev.desktop");
       assert.deepEqual(
         Option.map(environment.devServerUrl, (url) => url.href),
         Option.some("http://localhost:5173/"),
@@ -150,7 +150,7 @@ describe("DesktopEnvironment", () => {
         resourcesPath: "/tmp/.mount_t3code/resources",
       });
 
-      assert.equal(environment.linuxDesktopEntryName, "dev.otterware.code.desktop");
+      assert.equal(environment.linuxDesktopEntryName, "dev.otterware.suite.desktop");
     }),
   );
 

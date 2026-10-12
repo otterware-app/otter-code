@@ -22,6 +22,10 @@
     "./accounts": {
       "types": "./src/accounts.ts",
       "import": "./src/accounts.ts"
+    },
+    "./suite": {
+      "types": "./src/suite/index.ts",
+      "import": "./src/suite/index.ts"
     }
   },
   "scripts": {

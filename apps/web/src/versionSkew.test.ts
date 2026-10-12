@@ -48,6 +48,14 @@ describe("versionSkew", () => {
     branding.APP_VERSION = "0.0.34";
   });
 
+  it("never suggests moving a server between Otterware and Otter Code", () => {
+    branding.APP_VERSION = "0.0.47-otterware.20261007.3";
+    expect(resolveVersionMismatch("0.0.46-nightly.20261006.343")).toBeNull();
+    expect(resolveVersionMismatch("0.0.46-otterware.20261006.1")).toBeNull();
+    branding.APP_VERSION = "0.0.48-nightly.20261008.1";
+    expect(resolveVersionMismatch("0.0.47-otterware.20261007.3")).toBeNull();
+  });
+
   it("dismisses only the current failed attempt without clearing its retry state", () => {
     const failure = {
       status: "failed",

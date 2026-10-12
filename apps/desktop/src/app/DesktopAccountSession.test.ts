@@ -27,7 +27,7 @@ function dependencies(
   return Layer.mergeAll(
     NodeServices.layer,
     Layer.succeed(Environment.DesktopEnvironment, {
-      stateDir,
+      clientStateDir: stateDir,
     } as Environment.DesktopEnvironment["Service"]),
     Layer.succeed(SafeStorage.ElectronSafeStorage, {
       isEncryptionAvailable: Effect.succeed(true),
@@ -66,6 +66,27 @@ it.live(
         }).pipe(Effect.provide(Account.layer.pipe(Layer.provide(dependencies(stateDir)))));
       }),
     ).pipe(Effect.provide(NodeServices.layer)),
+);
+it.live("treats a session it cannot decrypt as signed out", () =>
+  Effect.scoped(
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const stateDir = yield* fs.makeTempDirectoryScoped({ prefix: "otter-account-test-" });
+      yield* fs.writeFile(`${stateDir}/otter-account-session.bin`, new Uint8Array([1, 2, 3]));
+      const undecryptable = Layer.mock(SafeStorage.ElectronSafeStorage)({
+        decryptString: () =>
+          Effect.fail(
+            new SafeStorage.ElectronSafeStorageDecryptError({ cause: new Error("wrong key") }),
+          ),
+      });
+      const account = yield* Account.DesktopAccountSession.pipe(
+        Effect.provide(
+          Account.layer.pipe(Layer.provide(undecryptable), Layer.provide(dependencies(stateDir))),
+        ),
+      );
+      expect(yield* account.read).toBeNull();
+    }),
+  ).pipe(Effect.provide(NodeServices.layer)),
 );
 it.live("refuses Linux plaintext storage and malformed credentials", () =>
   Effect.scoped(

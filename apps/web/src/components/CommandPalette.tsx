@@ -248,6 +248,9 @@ import {
 import type { Project } from "../types";
 import { PullRequestGlyph } from "~/components/pullRequest/pullRequestIcons";
 import { readPullRequestListPreferences } from "~/components/pullRequest/pullRequestListPreferences";
+import { suiteCommandPaletteItems } from "~/suite/commandPaletteItems";
+import { useSuiteCommandPaletteGroups } from "~/suite/commandPaletteGroups";
+import { useDriveCommandPaletteItems } from "~/suite/drive/driveCommandPaletteItems";
 
 const EMPTY_BROWSE_ENTRIES: FilesystemBrowseResult["entries"] = [];
 
@@ -1815,6 +1818,9 @@ function OpenCommandPaletteDialog(props: {
     });
   }, [clearOpenIntent, browseNavigation, openIntent, projectThreadItems, pushPaletteView]);
 
+  const driveActionItems = useDriveCommandPaletteItems(
+    activeThread ? scopeThreadRef(activeThread.environmentId, activeThread.id) : null,
+  );
   const actionItems: Array<CommandPaletteActionItem | CommandPaletteSubmenuItem> = [];
 
   if (projects.length > 0) {
@@ -2047,6 +2053,7 @@ function OpenCommandPaletteDialog(props: {
       },
     });
   }
+  actionItems.push(...driveActionItems);
 
   actionItems.push({
     kind: "action",
@@ -2262,6 +2269,7 @@ function OpenCommandPaletteDialog(props: {
     });
   }
 
+  actionItems.push(...suiteCommandPaletteItems(navigate));
   actionItems.push({
     kind: "action",
     value: "action:usage",
@@ -2323,7 +2331,8 @@ function OpenCommandPaletteDialog(props: {
     });
   }
 
-  const rootGroups = buildRootGroups({ actionItems, recentThreadItems });
+  const suiteGroups = useSuiteCommandPaletteGroups(deferredQuery);
+  const rootGroups = [...buildRootGroups({ actionItems, recentThreadItems }), ...suiteGroups];
   const settingsSearchItems: CommandPaletteActionItem[] = searchSettings(
     deferredQuery,
     availableSettingsSearchItems,

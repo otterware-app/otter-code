@@ -15,6 +15,7 @@ import {
   BotIcon,
   createLucideIcon,
   CalendarClockIcon,
+  CalendarDaysIcon,
   BracesIcon,
   GitBranchIcon,
   HardDriveIcon,
@@ -81,6 +82,7 @@ const SETTINGS_SECTION_ICONS: Readonly<
   Record<SettingsPath, ComponentType<{ className?: string }>>
 > = {
   "/settings/general": Settings2Icon,
+  "/settings/calendar": CalendarDaysIcon,
   "/settings/diagnostics": Settings2Icon,
   "/settings/appearance": PaletteIcon,
   "/settings/projects": PanelsTopLeftIcon,
@@ -95,6 +97,7 @@ const SETTINGS_SECTION_ICONS: Readonly<
   "/settings/code-intelligence": BracesIcon,
   "/settings/storage": HardDriveIcon,
   "/settings/connections": Link2Icon,
+  "/settings/drive": HardDriveIcon,
   "/settings/archived": ArchiveIcon,
 };
 

@@ -4,5 +4,7 @@
     "types": ["node"],
     "lib": ["ESNext", "esnext.disposable"]
   },
-  "include": ["src", "vite.config.ts", "scripts", "integration", "../../scripts/lib"]
+  "include": ["src", "vite.config.ts", "scripts", "integration", "../../scripts/lib"],
+  // Otterware Mail's worker thread is checked with its own tsconfig (Mail's settings).
+  "exclude": ["src/suite/mail/worker"]
 }

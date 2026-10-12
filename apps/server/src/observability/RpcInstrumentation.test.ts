@@ -8,6 +8,7 @@ import {
   WS_METHODS,
   WsRpcGroup,
 } from "@t3tools/contracts";
+import { SUITE_CORE_METHODS } from "@t3tools/contracts/suite";
 import * as Deferred from "effect/Deferred";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
@@ -102,6 +103,27 @@ const requestDuration = (snapshots: ReadonlyArray<Metric.Metric.Snapshot>, metho
   )?.state;
 
 describe("WS RPC instrumentation middleware", () => {
+  it.effect("authorizes suite calls and records their module aggregate", () =>
+    withTelemetry((ended) =>
+      Effect.gen(function* () {
+        const group = groupOf(SUITE_CORE_METHODS.capabilities);
+        const result = { modules: ["core", "mail", "calendar", "drive", "home"], suiteVersion: 1 };
+        const client = yield* RpcTest.makeClient(group).pipe(
+          Effect.provide(
+            Layer.merge(
+              group.toLayerHandler(SUITE_CORE_METHODS.capabilities, () => Effect.succeed(result)),
+              readOnlyConnection,
+            ),
+          ),
+        );
+        assert.deepStrictEqual(yield* client[SUITE_CORE_METHODS.capabilities]({}), result);
+        const spans = rpcSpans(ended);
+        assert.equal(spans.length, 1);
+        assert.equal(spans[0]?.attributes.get("rpc.aggregate"), "suite.core");
+      }),
+    ),
+  );
+
   it.effect("records one span and request metric per call, including rejected calls", () =>
     withTelemetry((ended) =>
       Effect.gen(function* () {

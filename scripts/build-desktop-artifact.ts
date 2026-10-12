@@ -16,6 +16,14 @@ import {
 import { fromYaml } from "@t3tools/shared/schemaYaml";
 import * as HostProcess from "@t3tools/shared/HostProcess";
 import { resolveSpawnCommand } from "@t3tools/shared/shell";
+import {
+  OTTERWARE_APP_ID,
+  OTTERWARE_ARTIFACT_NAME,
+  OTTERWARE_DEV_URL_SCHEME,
+  OTTERWARE_PRODUCT_NAME,
+  OTTERWARE_SLUG,
+  OTTERWARE_URL_SCHEME,
+} from "@t3tools/shared/otterware";
 import rootPackageJson from "../package.json" with { type: "json" };
 import desktopPackageJson from "../apps/desktop/package.json" with { type: "json" };
 import gnomeCaptureBundle from "../apps/desktop/gnome-extension/bundle.json" with { type: "json" };
@@ -59,7 +67,8 @@ import { Command, Flag } from "effect/cli";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";
 
 const LINUX_ICON_SIZES = [16, 22, 24, 32, 48, 64, 128, 256, 512] as const;
-const DESKTOP_APP_ID = "dev.otterware.code";
+const DESKTOP_APP_ID = OTTERWARE_APP_ID;
+const DESKTOP_URL_SCHEMES = [OTTERWARE_URL_SCHEME, OTTERWARE_DEV_URL_SCHEME];
 
 const BuildPlatform = Schema.Literals(["mac", "linux", "win"]);
 const BuildArch = Schema.Literals(["arm64", "x64", "universal"]);
@@ -2393,8 +2402,8 @@ export function resolveDesktopBuildIconAssets(version: string): DesktopBuildIcon
   }
 
   return {
-    macIconPng: BRAND_ASSET_PATHS.productionMacIconPng,
-    linuxIconPng: BRAND_ASSET_PATHS.productionLinuxIconPng,
+    macIconPng: BRAND_ASSET_PATHS.otterwareMacIconPng,
+    linuxIconPng: BRAND_ASSET_PATHS.otterwareLinuxIconPng,
     windowsIconIco: BRAND_ASSET_PATHS.productionWindowsIconIco,
   };
 }
@@ -2416,11 +2425,8 @@ export function resolvePackageManagerUserAgent(packageManager: string): string {
   return `${trimmed.slice(0, versionSeparator)}/${trimmed.slice(versionSeparator + 1)}`;
 }
 
-export function resolveDesktopProductName(version: string): string {
-  // Otter Code ships daily builds on the nightly channel under the same product name.
-  return resolveDesktopUpdateChannel(version) === "nightly"
-    ? "Otter Code"
-    : (desktopPackageJson.productName ?? "Otter Code");
+export function resolveDesktopProductName(_version: string): string {
+  return OTTERWARE_PRODUCT_NAME;
 }
 
 export const createBuildConfig = Effect.fn("createBuildConfig")(function* (
@@ -2445,7 +2451,7 @@ export const createBuildConfig = Effect.fn("createBuildConfig")(function* (
   const buildConfig: Record<string, unknown> = {
     appId: DESKTOP_APP_ID,
     productName: resolveDesktopProductName(version),
-    artifactName: "Otter-Code-${version}-${arch}.${ext}",
+    artifactName: OTTERWARE_ARTIFACT_NAME,
     electronLanguages: [...DESKTOP_ELECTRON_LANGUAGES],
     files: [
       ...DESKTOP_FILE_EXCLUSIONS,
@@ -2474,18 +2480,17 @@ export const createBuildConfig = Effect.fn("createBuildConfig")(function* (
     ],
   };
   const updateChannel = resolveDesktopUpdateChannel(version);
-  if (!isDesktopPreviewVersion(version)) {
-    const publishConfig = yield* resolveGitHubPublishConfig(updateChannel);
-    if (publishConfig) {
-      buildConfig.publish = [publishConfig];
-    } else if (mockUpdates) {
-      buildConfig.publish = [
-        {
-          provider: "generic",
-          url: resolveMockUpdateServerUrl(mockUpdateServerPort),
-        },
-      ];
-    }
+  // Otterware never gets a GitHub update feed: this repository's releases are
+  // Otter Code's, and electron-updater must never offer one to Otterware. No
+  // publish config means no app-update.yml, so the updater reports itself
+  // disabled. Only the local mock update server is allowed.
+  if (mockUpdates && !isDesktopPreviewVersion(version)) {
+    buildConfig.publish = [
+      {
+        provider: "generic",
+        url: resolveMockUpdateServerUrl(mockUpdateServerPort),
+      },
+    ];
   }
 
   if (platform === "mac") {
@@ -2499,9 +2504,8 @@ export const createBuildConfig = Effect.fn("createBuildConfig")(function* (
         // macOS 26 offers Messages/Mail codes in every text field unless opted out.
         NSAutoFillRequiresTextContentTypeForOneTimeCodeOnMac: true,
         NSLocalNetworkUsageDescription:
-          "Otter Code connects to devices on your local network for remote environments and commands run by terminals and coding agents.",
-        NSScreenCaptureUsageDescription:
-          "Otter Code captures the active window when you use the window capture shortcut.",
+          `${OTTERWARE_PRODUCT_NAME} connects to devices on your local network for remote environments and commands run by terminals and coding agents.`,
+        NSScreenCaptureUsageDescription: `${OTTERWARE_PRODUCT_NAME} captures the active window when you use the window capture shortcut.`,
         // macOS lists an app under Default web browser only when it opens web
         // pages as documents as well as http and https links (see protocols).
         CFBundleDocumentTypes: [
@@ -2515,8 +2519,8 @@ export const createBuildConfig = Effect.fn("createBuildConfig")(function* (
       },
       protocols: [
         {
-          name: "Otter Code",
-          schemes: ["ottercode", "ottercode-dev"],
+          name: OTTERWARE_PRODUCT_NAME,
+          schemes: DESKTOP_URL_SCHEMES,
         },
         // Lets people choose Otter Code as their default web browser, which opens
         // each link in a new thread's browser panel.
@@ -2526,7 +2530,11 @@ export const createBuildConfig = Effect.fn("createBuildConfig")(function* (
           role: "Viewer",
         },
       ],
-      ...(signed ? { sign: path.join(repoRoot, "scripts/sign-macos.ts") } : {}),
+      // Unsigned Otterware builds are signed ad hoc so Apple Silicon runs them.
+      // Library validation needs a real team, so ad hoc drops the hardened runtime.
+      ...(signed
+        ? { sign: path.join(repoRoot, "scripts/sign-macos.ts") }
+        : { identity: "-", hardenedRuntime: false }),
       ...(macSigning
         ? {
             entitlements: macSigning.entitlementsPath,
@@ -2571,10 +2579,10 @@ export const createBuildConfig = Effect.fn("createBuildConfig")(function* (
       // resources/package-type into the .deb only, so electron-updater updates
       // each install in its own format.
       target: target === "AppImage" ? [target, "deb"] : [target],
-      executableName: "otter-code",
+      executableName: OTTERWARE_SLUG,
       icon: "icons",
       category: "Development",
-      synopsis: "Desktop GUI for coding agents",
+      synopsis: "Otter Code with Mail, Calendar and Drive",
       // Required by the .deb control file.
       maintainer: "T3 Tools <hello@t3.codes>",
       // electron-builder turns these into MimeType=x-scheme-handler/<scheme>;
@@ -2582,13 +2590,13 @@ export const createBuildConfig = Effect.fn("createBuildConfig")(function* (
       // t3code:// OAuth callbacks to the app.
       protocols: [
         {
-          name: "Otter Code",
-          schemes: ["ottercode", "ottercode-dev"],
+          name: OTTERWARE_PRODUCT_NAME,
+          schemes: DESKTOP_URL_SCHEMES,
         },
       ],
       desktop: {
         entry: {
-          StartupWMClass: "otter-code",
+          StartupWMClass: OTTERWARE_SLUG,
         },
       },
     };
@@ -3539,7 +3547,8 @@ const buildDesktopArtifact = Effect.fn("buildDesktopArtifact")(function* (
       ? path.join(stageAppDir, WINDOWS_SERVER_RESOURCE_SOURCE_DIR, WINDOWS_SERVER_ASAR_RESOURCE)
       : undefined;
   const stagePackageJson: StagePackageJson = {
-    name: "otter-code",
+    // Also the .deb package name, so it must differ from Otter Code's.
+    name: OTTERWARE_SLUG,
     version: appVersion,
     buildVersion: appVersion,
     t3codeCommitHash: commitHash,
@@ -3547,8 +3556,7 @@ const buildDesktopArtifact = Effect.fn("buildDesktopArtifact")(function* (
     ...(macWebAuthn ? { t3codeWebAuthn: macWebAuthn } : {}),
     private: true,
     packageManager: rootPackageJson.packageManager,
-    description:
-      "T3 Code is an open-source desktop app for coding agents. Work with your existing agent subscriptions, review code changes, and run commands in your projects. Connect from desktop, web, or mobile to continue working remotely.",
+    description: "Otterware brings Code, Mail, Calendar and Drive together with shared agents.",
     license: "MIT",
     // Required by the .deb control file.
     homepage: "https://t3.codes",

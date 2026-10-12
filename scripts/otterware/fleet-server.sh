@@ -149,10 +149,88 @@ foreground_server_pid() {
   [[ -f "$RUNTIME_STATE" ]] || return 0
   pid="$(sed -n 's/.*"pid": *\([0-9]*\).*/\1/p' "$RUNTIME_STATE" | head -n 1)"
   managed="$(sed -n 's/.*"serviceManaged": *\(true\|false\).*/\1/p' "$RUNTIME_STATE" | head -n 1)"
-  [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null || return 0
+  [[ -n "$pid" ]] && pid_running "$pid" || return 0
   [[ "$managed" == true ]] && return 0
   grep -q "/$SERVICE_UNIT" "/proc/$pid/cgroup" 2>/dev/null && return 0
   echo "$pid"
+}
+
+# Match argv fields, not a substring: a different home or an unrelated/reused PID
+# must never be signalled. Shell scripts retain the interpreter before t3 in argv.
+pid_owns_home() {
+  local pid="$1" index=0 arg home=""
+  local -a argv=()
+  [[ "$pid" =~ ^[0-9]+$ && -r "/proc/$pid/cmdline" ]] || return 1
+  mapfile -d '' -t argv 2>/dev/null <"/proc/$pid/cmdline" || return 1
+  ((${#argv[@]} >= 2)) || return 1
+  if [[ "${argv[0]##*/}" != t3 ]]; then
+    case "${argv[0]##*/}" in bash | sh | dash | node) index=1 ;; *) return 1 ;; esac
+  fi
+  [[ "${argv[index]##*/}" == t3 && "${argv[index+1]-}" == serve ]] || return 1
+  for ((index += 2; index < ${#argv[@]}; index++)); do
+    arg="${argv[index]}"
+    case "$arg" in
+      --base-dir) home="${argv[index+1]-}"; break ;;
+      --base-dir=*) home="${arg#--base-dir=}"; break ;;
+    esac
+  done
+  [[ -n "$home" && "$(readlink -m "$home")" == "$(readlink -m "$BASE_DIR")" ]]
+}
+
+pid_running() {
+  [[ "$1" =~ ^[0-9]+$ ]] && ((10#$1 > 1)) && kill -0 "$1" 2>/dev/null &&
+    [[ "$(sed -n 's/.*) \([A-Z]\) .*/\1/p' "/proc/$1/stat" 2>/dev/null)" != Z ]]
+}
+
+stop_ssh_servers() {
+  local dir pid deadline
+  for dir in "$BASE_DIR"/ssh-launch/*; do
+    [[ -d "$dir" && "$(cat "$dir/managed" 2>/dev/null)" == managed ]] || continue
+    pid="$(cat "$dir/pid" 2>/dev/null || true)"
+    if [[ "$pid" =~ ^[0-9]+$ ]] && pid_running "$pid"; then
+      if ! pid_owns_home "$pid"; then
+        log "leaving SSH record $dir: pid $pid does not serve this home"
+        continue
+      fi
+      grep -q "/$SERVICE_UNIT" "/proc/$pid/cgroup" 2>/dev/null &&
+        die "SSH record $dir unexpectedly names a service process (pid $pid)"
+      log "stopping SSH-launched server pid $pid on $BASE_DIR (SIGTERM)"
+      kill -TERM "$pid" 2>/dev/null || true
+      deadline=$((SECONDS + ${OTTERWARE_FLEET_SSH_STOP_TIMEOUT:-10}))
+      while pid_running "$pid" && ((SECONDS < deadline)); do sleep 0.1; done
+      if pid_running "$pid"; then
+        pid_owns_home "$pid" || die "pid $pid changed while stopping the SSH server"
+        log "SSH-launched server pid $pid did not stop; sending SIGKILL"
+        kill -KILL "$pid" 2>/dev/null || true
+        deadline=$((SECONDS + 5))
+        while pid_running "$pid" && ((SECONDS < deadline)); do sleep 0.1; done
+        pid_running "$pid" && die "SSH-launched server pid $pid is still running"
+      fi
+    fi
+    rm -f "$dir/pid" "$dir/port" "$dir/managed"
+    log "removed SSH launch records in $dir"
+  done
+}
+
+prepare_service_handoff() {
+  local fg proc pid recorded service_managed
+  stop_ssh_servers
+  fg="$(foreground_server_pid)"
+  [[ -z "$fg" ]] || die "a server started by hand runs on $BASE_DIR (pid $fg); stop it first so only one server uses the data"
+  # A second server may have overwritten server-runtime.json. Check other
+  # exact home owners too, without signalling any unrecorded process.
+  recorded="" service_managed=""
+  if [[ -f "$RUNTIME_STATE" ]]; then
+    recorded="$(sed -n 's/.*"pid": *\([0-9]*\).*/\1/p' "$RUNTIME_STATE" 2>/dev/null | head -n 1)"
+    service_managed="$(sed -n 's/.*"serviceManaged": *\(true\|false\).*/\1/p' "$RUNTIME_STATE" 2>/dev/null | head -n 1)"
+  fi
+  for proc in /proc/[0-9]*/cmdline; do
+    pid="${proc%/cmdline}"; pid="${pid##*/}"
+    pid_owns_home "$pid" || continue
+    grep -q "/$SERVICE_UNIT" "/proc/$pid/cgroup" 2>/dev/null && continue
+    [[ "$pid" == "$recorded" && "$service_managed" == true ]] && continue
+    die "a non-service server owns $BASE_DIR (pid $pid); stop it first"
+  done
 }
 
 served_version() {
@@ -304,6 +382,7 @@ repoint_cli() {
 switch_forward() {
   local active="$1" target="$2" id status
   id="otterware-fleet-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+  prepare_service_handoff
   log "stopping $SERVICE_UNIT"
   systemctl --user stop "$SERVICE_UNIT"
   # The record the launcher itself writes when it accepts a remote update. On
@@ -324,6 +403,7 @@ switch_forward() {
 EOF
   sync "$STATE_FILE.tmp.$$" 2>/dev/null || true
   mv -f "$STATE_FILE.tmp.$$" "$STATE_FILE"
+  prepare_service_handoff
   log "starting $SERVICE_UNIT; the launcher trials $target"
   systemctl --user start "$SERVICE_UNIT"
   local deadline=$((SECONDS + SWITCH_TIMEOUT))
@@ -350,6 +430,7 @@ EOF
 
 switch_backward() {
   local active="$1" target="$2" backup suffix
+  prepare_service_handoff
   log "stopping $SERVICE_UNIT"
   systemctl --user stop "$SERVICE_UNIT"
   backup="$BASE_DIR/runtime/db-backup/fleet-$(date -u +%Y%m%dT%H%M%SZ)"
@@ -359,6 +440,7 @@ switch_backward() {
   done
   sync "$backup" 2>/dev/null || true
   log "database snapshot in $backup"
+  prepare_service_handoff
   if T3CODE_HOME="$BASE_DIR" "$VERSIONS_DIR/$target/t3" service install --allow-downgrade 9>&- &&
     wait_for_version "$target"; then
     rm -rf "$backup"
@@ -367,6 +449,7 @@ switch_backward() {
     return 0
   fi
   log "$target did not come up; restoring the database and $active"
+  prepare_service_handoff
   systemctl --user stop "$SERVICE_UNIT" || true
   for suffix in "" -wal -shm; do
     if [[ -f "$backup/database$suffix" ]]; then
@@ -375,6 +458,7 @@ switch_backward() {
       rm -f "$DB_PATH$suffix"
     fi
   done
+  prepare_service_handoff
   T3CODE_HOME="$BASE_DIR" "$VERSIONS_DIR/$active/t3" service install --allow-downgrade 9>&- ||
     die "could not reinstall $active; the snapshot is kept in $backup"
   wait_for_version "$active" || die "$active is installed again but not answering; snapshot kept in $backup"
@@ -383,7 +467,7 @@ switch_backward() {
 }
 
 cmd_use() {
-  local product="$1" target="" active unit_home fg pending
+  local product="$1" target="" active unit_home pending
   shift
   while (($#)); do
     case "$1" in
@@ -410,8 +494,7 @@ cmd_use() {
   [[ -f "$STATE_FILE" ]] || die "no launcher state at $STATE_FILE"
   pending="$(state_field update status)"
   [[ "$pending" != pending ]] || die "an update is already pending in $STATE_FILE; wait for it to finish"
-  fg="$(foreground_server_pid)"
-  [[ -z "$fg" ]] || die "a server started by hand runs on $BASE_DIR (pid $fg); stop it first so only one server uses the data"
+  prepare_service_handoff
   active="$(state_field top activeVersion)"
   [[ -n "$active" ]] || die "cannot read the active version from $STATE_FILE"
   runtime_complete "$active" || die "the active runtime $active is missing, so there is nothing to fall back to"

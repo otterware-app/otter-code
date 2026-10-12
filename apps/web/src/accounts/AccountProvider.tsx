@@ -25,7 +25,7 @@ type AccountContextValue = {
   readonly userId: string | null;
   readonly user: OtterAccountUser | null;
   readonly error: string | null;
-  readonly getToken: () => Promise<string | null>;
+  readonly getToken: (options?: { readonly minValidityMs?: number }) => Promise<string | null>;
   readonly signIn: () => Promise<void>;
   readonly signOut: () => Promise<void>;
   readonly completeSignIn: (code: string, state: string) => Promise<string | null>;

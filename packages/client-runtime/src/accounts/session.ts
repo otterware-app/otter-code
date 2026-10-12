@@ -142,9 +142,12 @@ export function createAccountSession(input: {
     publish();
     await locked(() => input.storage.write(null));
   };
-  const readToken = async (): Promise<string | null> => {
+  const readToken = async (options?: {
+    readonly minValidityMs?: number;
+  }): Promise<string | null> => {
+    const minValidityMs = Math.max(60_000, options?.minValidityMs ?? 60_000);
     if (!session) return null;
-    if (session.expiresAt > now() + 60_000) return session.accessToken;
+    if (session.expiresAt > now() + minValidityMs) return session.accessToken;
     if (refreshing) return refreshing;
     const expectedGeneration = generation;
     const operation = locked(async () => {
@@ -157,7 +160,7 @@ export function createAccountSession(input: {
         publish();
         return null;
       }
-      if (previous.expiresAt > now() + 60_000) {
+      if (previous.expiresAt > now() + minValidityMs) {
         session = previous;
         publish();
         return previous.accessToken;

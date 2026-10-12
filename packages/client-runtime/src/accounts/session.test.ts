@@ -175,3 +175,24 @@ it("revokes a newly approved grant when sign-out overtakes sign-in", async () =>
   const revocation = f.fetcher.mock.calls.find(([url]) => String(url).endsWith("/revoke"));
   expect(new URLSearchParams(String(revocation?.[1]?.body)).get("token")).toBe("new-refresh");
 });
+
+it("supports early refresh without changing the default 60-second validity window", async () => {
+  const f = fixture(savedSession(400_000));
+  await f.manager.load();
+  expect(await f.manager.readToken()).toBe("old-access");
+  expect(f.fetcher).not.toHaveBeenCalled();
+  expect(await f.manager.readToken({ minValidityMs: 300_000 })).toBe("new-access");
+  expect(f.fetcher).toHaveBeenCalledTimes(1);
+  expect(await f.manager.readToken({ minValidityMs: 300_000 })).toBe("new-access");
+  expect(f.fetcher).toHaveBeenCalledTimes(1);
+});
+it("early refresh retains storage-lock rotation and preserves transient failures", async () => {
+  const f = fixture(savedSession(400_000), async () => new Response(null, { status: 503 }));
+  await f.manager.load();
+  await f.storage.write(savedSession(900_000).replace("old-access", "another-tab-access"));
+  expect(await f.manager.readToken({ minValidityMs: 300_000 })).toBe("another-tab-access");
+  expect(f.fetcher).not.toHaveBeenCalled();
+  await expect(f.manager.readToken({ minValidityMs: 900_000 })).rejects.toThrow();
+  expect(f.manager.getSnapshot().user).toEqual(user);
+  expect(f.saved()).not.toBeNull();
+});

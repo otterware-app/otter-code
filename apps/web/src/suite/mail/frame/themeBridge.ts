@@ -89,8 +89,12 @@ html[data-window-controls] {
   --workspace-titlebar-content-left: 48px;
 }
 [data-mail-layout] { flex-direction: column; }
+/* The row layout's pane wrapper has an automatic minimum height. Once the
+   rail sits above it, let it shrink so Mail's own viewports can scroll. */
+[data-mail-layout] > .contents > :has(> [data-mail-workspace]) { min-height: 0px; }
 nav[aria-label="Spaces"] {
   width: 100%; flex-direction: row; height: 48px; padding: 0 8px;
+  flex-shrink: 0;
   padding-left: 48px;
   gap: 8px; border-bottom: 1px solid var(--border);
 }

@@ -218,7 +218,17 @@ jobs:
     needs: [preflight, build_bundle]
     if: ${{ github.event_name == 'push' || inputs.mac }}
     uses: ./.github/workflows/release-desktop.yml
-    secrets: inherit
+    # Explicit, not inherit: Otterware embeds its own profile (dev.otterware.suite);
+    # Otter Code's MACOS_PROVISIONING_PROFILE belongs to a different App ID.
+    secrets:
+      CSC_LINK: ${{ secrets.CSC_LINK }}
+      CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+      APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+      OTTER_MAIL_GOOGLE_CLIENT_SECRET: ${{ secrets.OTTER_MAIL_GOOGLE_CLIENT_SECRET }}
+      T3CODE_GOOGLE_CLIENT_SECRET: ${{ secrets.T3CODE_GOOGLE_CLIENT_SECRET }}
+      MACOS_PROVISIONING_PROFILE: ${{ secrets.OTTERWARE_MACOS_PROVISIONING_PROFILE }}
     with:
       version: ${{ needs.preflight.outputs.version }}
       ref: ${{ needs.preflight.outputs.ref }}

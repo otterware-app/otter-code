@@ -74,10 +74,10 @@ export function SuiteAccountProvider({ children }: { readonly children: ReactNod
       available: session !== null,
       ensure: async () => {
         if (!session) return;
-        let token = await getToken();
+        let token = await getToken({ minValidityMs: session.accessTokenValidityMs() });
         if (!token) {
           await signIn();
-          token = await getToken();
+          token = await getToken({ minValidityMs: session.accessTokenValidityMs() });
         }
         if (!token) throw new Error("Sign in to your Otter account to continue.");
         await session.ensure(token, userId);
@@ -99,24 +99,36 @@ export function SuiteAccountProvider({ children }: { readonly children: ReactNod
   useEffect(() => {
     if (!session || !isLoaded) return;
     let active = true;
-    const sync = async () => {
+    const sync = async (recover = false) => {
       if (shouldClearSuiteAccount(owner.current, userId)) await session.clear();
       if (!active) return;
       owner.current = userId;
-      if (!isSignedIn) return;
-      const token = await getToken();
-      if (active && token) await session.ensure(token, userId);
+      if (!isSignedIn) {
+        if (recover) throw new Error("The Otter account is signed out.");
+        return;
+      }
+      const token = await getToken({ minValidityMs: session.accessTokenValidityMs() });
+      if (active && token) await session.ensure(token, userId, recover);
+      else if (recover) throw new Error("The Otter account is unavailable.");
     };
     // User actions report errors; background recovery retries on the next foreground/refresh.
     void sync().catch(() => undefined);
-    const timer = setInterval(() => void sync().catch(() => undefined), 60_000);
+    // Desktop main owns the clock; IPC wakes a background renderer without relying on its timers.
+    const unsubscribe = window.desktopBridge?.drive?.onRenewAccount?.(sync);
+    const timer = unsubscribe
+      ? null
+      : setInterval(() => void sync().catch(() => undefined), 15_000);
+    const online = () => void sync(true).catch(() => undefined);
+    window.addEventListener("online", online);
     const foreground = () => {
       if (document.visibilityState === "visible") void sync().catch(() => undefined);
     };
     document.addEventListener("visibilitychange", foreground);
     return () => {
       active = false;
-      clearInterval(timer);
+      if (timer !== null) clearInterval(timer);
+      unsubscribe?.();
+      window.removeEventListener("online", online);
       document.removeEventListener("visibilitychange", foreground);
     };
   }, [getToken, isLoaded, isSignedIn, userId, session]);

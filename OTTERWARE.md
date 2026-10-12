@@ -193,7 +193,11 @@ executable version, installs it, then calls `use-otterware --version <selected-v
 The entire operation holds the home's fleet lock and retains the launcher's backup/rollback
 path. It does not silently select another installed runtime. The release currently builds
 only Linux x64 server archives; arm64 fleet hosts fail clearly until that artifact is added.
-Test fixtures use disposable homes and stub transports/services, never the live data home.
+Before stopping and again before starting the service, fleet switches stop verified managed
+SSH-launched servers for this home (TERM, then KILL after 10 seconds) and remove their launch
+records. This covers older desktops launching a backend during the service handoff. Unmanaged
+servers still block a switch; other homes and reused PIDs are never signalled. Test fixtures use
+disposable homes and stub transports/services, never the live data home.
 
 The server declares Zod 4 as a production dependency because its bundled Drive contracts import
 it as a runtime external. Keep that version compatible with the vendored Drive package; Cursor's

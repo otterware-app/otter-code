@@ -219,3 +219,169 @@ describe.skipIf(HostProcess.Platform.defaultValue() !== "linux")("fleet channel 
     },
   );
 });
+
+describe.skipIf(HostProcess.Platform.defaultValue() !== "linux")("fleet SSH handoff", () => {
+  it.each([
+    "forward",
+    "backward",
+    "force-kill",
+    "unmanaged",
+    "unrecorded",
+    "reused-pid",
+    "other-home",
+  ])(
+    "%s only stops verified SSH owners and catches a launch during the stopped-service gap",
+    async (scenario) => {
+      const root = await NodeFSP.mkdtemp(NodePath.join(NodeOS.tmpdir(), "otterware-ssh-handoff-"));
+      const home = NodePath.join(root, "data");
+      const bin = NodePath.join(root, "bin");
+      const code = "1.2.3-nightly.20261012.1";
+      const ware = "1.2.3-otterware.20261012.1";
+      const active = scenario === "backward" ? ware : code;
+      const target = scenario === "backward" ? code : ware;
+      const env = {
+        ...process.env,
+        HOME: root,
+        T3CODE_HOME: home,
+        PATH: `${bin}:${process.env.PATH}`,
+        OTTERWARE_FLEET_SSH_STOP_TIMEOUT: scenario === "force-kill" ? "0" : "2",
+      };
+      const children: ReturnType<typeof spawn>[] = [];
+      const record = async (pid: number, slot: string, managed = true) => {
+        const dir = NodePath.join(home, "ssh-launch", slot);
+        await NodeFSP.mkdir(dir, { recursive: true });
+        await NodeFSP.writeFile(NodePath.join(dir, "pid"), String(pid));
+        await NodeFSP.writeFile(NodePath.join(dir, "port"), "45678");
+        if (managed) await NodeFSP.writeFile(NodePath.join(dir, "managed"), "managed");
+        return dir;
+      };
+      try {
+        await NodeFSP.mkdir(bin, { recursive: true });
+        await NodeFSP.mkdir(NodePath.join(home, "userdata"), { recursive: true });
+        const unit = NodePath.join(root, ".config/systemd/user/otter-code.service");
+        await NodeFSP.mkdir(NodePath.dirname(unit), { recursive: true });
+        await NodeFSP.writeFile(unit, `Environment=T3CODE_HOME=${home}\n`);
+        for (const version of [code, ware]) {
+          const runtime = NodePath.join(home, "runtime/versions", version);
+          await NodeFSP.mkdir(runtime, { recursive: true });
+          await NodeFSP.writeFile(NodePath.join(runtime, ".install-complete"), version);
+          await NodeFSP.writeFile(
+            NodePath.join(runtime, "t3"),
+            `#!/bin/bash\nif [[ "$1" == __service-preflight ]]; then echo '{"status":"ready"}'; else echo 'installed-target'; fi\n`,
+            { mode: 0o755 },
+          );
+        }
+        await NodeFSP.writeFile(
+          NodePath.join(home, "runtime/service-state.json"),
+          `{\n  "activeVersion": "${active}"\n}\n`,
+        );
+        await NodeFSP.writeFile(
+          NodePath.join(bin, "systemctl"),
+          `#!/bin/bash\ncase "$2" in\nstop) echo service-stopped; read -r release ;;\nstart) sed -i 's/"pending"/"committed"/' "$T3CODE_HOME/runtime/service-state.json" ;;\nesac\n`,
+          { mode: 0o755 },
+        );
+        await NodeFSP.writeFile(
+          NodePath.join(bin, "curl"),
+          `#!/bin/bash\necho '{"serverVersion":"${target}"}'\n`,
+          { mode: 0o755 },
+        );
+        const fake = NodePath.join(bin, "t3");
+        await NodeFSP.writeFile(
+          fake,
+          `#!/bin/bash\ntrap '${scenario === "force-kill" ? ":" : "exit 0"}' TERM\necho fake-ready\nwhile read -r input; do :; done\n`,
+          { mode: 0o755 },
+        );
+        const fakeServer = (base: string) => {
+          const child = spawn(fake, ["serve", "--base-dir", base], env);
+          children.push(child);
+          return child;
+        };
+        const initial =
+          scenario === "reused-pid"
+            ? spawn("bash", ["-c", "echo fake-ready; read -r release"], env)
+            : fakeServer(scenario === "other-home" ? NodePath.join(root, "another-home") : home);
+        if (scenario === "reused-pid") children.push(initial);
+        await initial.until("fake-ready");
+        const firstDir = await record(
+          initial.child.pid!,
+          "first",
+          scenario !== "unmanaged" && scenario !== "unrecorded",
+        );
+        // A runtime record may name SSH or unmanaged servers; it must not bypass cleanup/refusal.
+        await NodeFSP.writeFile(
+          NodePath.join(home, "userdata/server-runtime.json"),
+          JSON.stringify({
+            pid: initial.child.pid,
+            serviceManaged: false,
+            origin: "http://fixture.test",
+          }),
+        );
+        if (scenario === "other-home" || scenario === "reused-pid" || scenario === "unrecorded")
+          await NodeFSP.writeFile(
+            NodePath.join(home, "userdata/server-runtime.json"),
+            JSON.stringify({ pid: 0, origin: "http://fixture.test" }),
+          );
+        const script = NodeURL.fileURLToPath(new URL("./fleet-server.sh", import.meta.url));
+        const fleet = spawn(
+          "bash",
+          [
+            script,
+            scenario === "backward" ? "use-otter-code" : "use-otterware",
+            "--version",
+            target,
+          ],
+          env,
+        );
+        children.push(fleet);
+        if (scenario === "unmanaged" || scenario === "unrecorded") {
+          const result = await fleet.result;
+          expect(result.code).not.toBe(0);
+          expect(result.output).toContain(
+            scenario === "unmanaged" ? "server started by hand" : "non-service server owns",
+          );
+          expect(result.output).not.toContain("service-stopped");
+          expect(initial.child.exitCode).toBeNull();
+          return;
+        }
+        await fleet.until("service-stopped");
+        if (scenario !== "other-home" && scenario !== "reused-pid") {
+          await initial.result;
+          expect(await NodeFSP.stat(NodePath.join(firstDir, "pid")).catch(() => null)).toBeNull();
+          expect(await NodeFSP.stat(NodePath.join(firstDir, "port")).catch(() => null)).toBeNull();
+          expect(
+            await NodeFSP.stat(NodePath.join(firstDir, "managed")).catch(() => null),
+          ).toBeNull();
+        } else {
+          expect(initial.child.exitCode).toBeNull();
+          expect(await NodeFSP.readFile(NodePath.join(firstDir, "pid"), "utf8")).toBe(
+            String(initial.child.pid),
+          );
+        }
+        const gap = fakeServer(home);
+        await gap.until("fake-ready");
+        const gapDir = await record(gap.child.pid!, "gap");
+        await NodeFSP.writeFile(
+          NodePath.join(home, "userdata/server-runtime.json"),
+          JSON.stringify({
+            pid: gap.child.pid,
+            serviceManaged: false,
+            origin: "http://fixture.test",
+          }),
+        );
+        fleet.child.stdin.write("release\n");
+        const result = await fleet.result;
+        await gap.result;
+        expect(result.code, result.output).toBe(0);
+        expect(result.output).toContain(`stopping SSH-launched server pid ${gap.child.pid}`);
+        if (scenario === "force-kill") expect(result.output).toContain("sending SIGKILL");
+        else expect(result.output).not.toContain("sending SIGKILL");
+        expect(await NodeFSP.stat(NodePath.join(gapDir, "pid")).catch(() => null)).toBeNull();
+      } finally {
+        // Only captured fixture processes; never touch a real service or data home.
+        for (const item of children) item.child.kill("SIGKILL");
+        await Promise.allSettled(children.map((item) => item.result));
+        await NodeFSP.rm(root, { recursive: true, force: true });
+      }
+    },
+  );
+});

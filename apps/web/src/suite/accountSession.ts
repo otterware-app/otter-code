@@ -8,6 +8,8 @@ const Credential = Schema.Struct({
   user: OtterAccountUser,
 });
 
+export const SUITE_RENEW_AHEAD_MS = 5 * 60_000;
+
 const decodeCredential = Schema.decodeUnknownSync(Credential);
 
 export function isLocalSuiteTarget(desktop: boolean, baseUrl: string | null): boolean {
@@ -33,14 +35,21 @@ export function createSuiteAccountSession(options: {
     return next;
   };
   return {
-    ensure: (accessToken: string, userId: string | null) => {
+    // Accounts keeps a cached suite credential until its final minute. Prepare
+    // Code early, then force a newly minted access token at the actual rotation.
+    accessTokenValidityMs: () =>
+      credential && credential.expiresAt <= Date.now() + 60_000
+        ? 15 * 60_000
+        : SUITE_RENEW_AHEAD_MS + 60_000,
+    ensure: (accessToken: string, userId: string | null, reapply = false) => {
       const current = generation;
       return serialize(async () => {
         if (current !== generation) throw new Error("The Otter account changed. Try again.");
         if (
           credential &&
           credential.user.id === userId &&
-          credential.expiresAt > Date.now() + 120_000
+          credential.expiresAt > Date.now() + SUITE_RENEW_AHEAD_MS &&
+          !reapply
         )
           return;
         const response = await options.fetch(`${options.accountsUrl}/suite/session`, {
@@ -57,7 +66,7 @@ export function createSuiteAccountSession(options: {
         if (next.expiresAt <= Date.now() || (userId !== null && next.user.id !== userId))
           throw new Error("Accounts returned a different or expired Otter session.");
         if (current !== generation) throw new Error("The Otter account changed. Try again.");
-        if (credential?.token !== next.token) {
+        if (reapply || credential?.token !== next.token) {
           await options.apply(next.token);
           if (current !== generation) return;
         }

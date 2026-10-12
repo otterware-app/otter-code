@@ -139,7 +139,10 @@ const ProvisioningProfilePlist = Schema.Struct({
   Entitlements: Schema.Struct({
     "com.apple.application-identifier": Schema.optional(Schema.String),
     "com.apple.developer.team-identifier": Schema.optional(Schema.String),
-    "com.apple.developer.associated-domains": Schema.optional(Schema.Array(Schema.String)),
+    // Developer ID profiles grant a wildcard as the bare string "*", not a list.
+    "com.apple.developer.associated-domains": Schema.optional(
+      Schema.Union([Schema.String, Schema.Array(Schema.String)]),
+    ),
     "keychain-access-groups": Schema.optional(Schema.Array(Schema.String)),
     [BROWSER_PASSKEYS_ENTITLEMENT]: Schema.optional(Schema.Boolean),
   }),
@@ -200,13 +203,15 @@ export function renderMacPasskeyEntitlements(
       : "";
   const associatedDomains = configuration.rpDomains
     .filter((domain) =>
-      (grants?.["com.apple.developer.associated-domains"] ?? []).some(
-        (grant) =>
-          grant === "*" ||
-          grant === `webcredentials:${domain}` ||
-          (grant.startsWith("webcredentials:*.") &&
-            domain.endsWith(grant.slice("webcredentials:*".length))),
-      ),
+      [grants?.["com.apple.developer.associated-domains"] ?? []]
+        .flat()
+        .some(
+          (grant) =>
+            grant === "*" ||
+            grant === `webcredentials:${domain}` ||
+            (grant.startsWith("webcredentials:*.") &&
+              domain.endsWith(grant.slice("webcredentials:*".length))),
+        ),
     )
     .map((domain) => `      <string>webcredentials:${escapeXml(domain)}</string>`)
     .join("\n");

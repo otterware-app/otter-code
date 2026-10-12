@@ -22,6 +22,7 @@ import {
   PanelsTopLeftIcon,
   KeyboardIcon,
   LayersIcon,
+  MailIcon,
   Link2Icon,
   PaletteIcon,
   PuzzleIcon,
@@ -97,6 +98,7 @@ const SETTINGS_SECTION_ICONS: Readonly<
   "/settings/code-intelligence": BracesIcon,
   "/settings/storage": HardDriveIcon,
   "/settings/connections": Link2Icon,
+  "/settings/mail": MailIcon,
   "/settings/drive": HardDriveIcon,
   "/settings/archived": ArchiveIcon,
 };

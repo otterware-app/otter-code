@@ -52,7 +52,6 @@ sync_date=$(date +%F)
 git merge-base --is-ancestor "$old_base" "$old_main"
 git merge-base --is-ancestor "$old_base" "$new_base"
 last_sync=$(git log -1 --format=%H --grep='^chore(otter): changes before the .* sync' "$old_main")
-git branch "backup/otter-before-$sync_date" "$old_main"
 # Commits since the last sync wait here; they become this sync's squash commit.
 git branch "otter/sync-$sync_date" "$old_main"
 git switch -c "otter/stack-$sync_date" "$last_sync"
@@ -103,12 +102,12 @@ Run focused tests and typechecks for conflicted code and the preserved features 
 
 ### Publishing a prepared sync
 
-A sync rewrites Otter's shared history. Preserve the old `main` as a remote backup, then update
-`main` and `upstream-base` together with explicit leases. If another writer moved either ref, stop
+A sync rewrites Otter's shared history. Update `main` and `upstream-base` together with explicit
+leases; the squash commits are the record of the fork's changes, so no backup branches are kept.
+If another writer moved either ref, stop
 and prepare against the new state instead of overriding it:
 
 ```sh
-git push origin "$old_main:refs/heads/backup/otter-before-$sync_date"
 git push --atomic origin \
   --force-with-lease="refs/heads/main:$old_main" \
   --force-with-lease="refs/heads/upstream-base:$old_base" \

@@ -71,3 +71,11 @@ export function createSuiteAccountSession(options: {
     },
   };
 }
+
+/** Unknown startup identity must not revoke the persisted browser session. */
+export function shouldClearSuiteAccount(
+  previous: string | null | undefined,
+  next: string | null,
+): boolean {
+  return previous != null && previous !== next;
+}

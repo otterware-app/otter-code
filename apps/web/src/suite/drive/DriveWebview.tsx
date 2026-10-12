@@ -1,6 +1,7 @@
 /** The placeholder beneath Electron's native Drive WebContentsView. */
 import type { DriveDesktopState } from "@t3tools/contracts/suite";
 import { useCallback, useEffect, useState } from "react";
+import { observeResize } from "../../lib/observeResize";
 import { useDriveViewStore } from "./driveView";
 
 export function useDriveWebview(baseUrl: string) {
@@ -27,7 +28,7 @@ export function useDriveWebview(baseUrl: string) {
     const unsubscribe = bridge.onState(sync);
     const initial = element.dataset.driveUrl ?? baseUrl;
     void bridge
-      .openDriveUrl(initial, baseUrl)
+      .show(initial, baseUrl)
       .then((state) => {
         if (disposed) return;
         sync(state);
@@ -56,7 +57,11 @@ export function useDriveWebview(baseUrl: string) {
       );
       const rect = element.getBoundingClientRect();
       const bounds =
-        !overlay && !document.hidden && rect.width > 0 && rect.height > 0
+        !overlay &&
+        !document.hidden &&
+        element.getClientRects().length > 0 &&
+        rect.width > 0 &&
+        rect.height > 0
           ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
           : null;
       const serialized = JSON.stringify(bounds);
@@ -69,8 +74,7 @@ export function useDriveWebview(baseUrl: string) {
     function schedule() {
       if (!frame) frame = requestAnimationFrame(update);
     }
-    const resize = new ResizeObserver(schedule);
-    resize.observe(element);
+    const stopResize = observeResize(element, schedule);
     const mutations = new MutationObserver(schedule);
     mutations.observe(document.body, {
       childList: true,
@@ -85,7 +89,7 @@ export function useDriveWebview(baseUrl: string) {
     return () => {
       disposed = true;
       unsubscribe();
-      resize.disconnect();
+      stopResize();
       mutations.disconnect();
       cancelAnimationFrame(frame);
       window.removeEventListener("resize", schedule);

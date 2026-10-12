@@ -114,9 +114,8 @@ function DriveViewPage({
   );
   // A `?url=` that arrives while the page is already open (Home, links).
   useEffect(() => {
-    if (requestedUrl && requestedUrl !== initialUrl)
-      useDriveViewStore.getState().request(requestedUrl);
-  }, [initialUrl, requestedUrl]);
+    if (requestedUrl) useDriveViewStore.getState().request(requestedUrl);
+  }, [requestedUrl]);
 
   const target = current ? parseDriveUrl(current.url, status?.baseUrl) : null;
   const document = useDriveNativeDocument(current?.url ?? null, webview.navigation.loading);
@@ -208,8 +207,9 @@ function DriveListPage({
     url: requestedUrl,
     document: null,
   });
-  const selected =
-    selection.url === requestedUrl ? (selection.document ?? requestedUrl) : requestedUrl;
+  const selected = selection.document ?? selection.url;
+  if (requestedUrl && requestedUrl !== selection.url)
+    setSelection({ url: requestedUrl, document: null });
   const setSelected = (document: DriveDocumentSummary) =>
     setSelection({ url: requestedUrl, document });
   const connected = status?.status === "connected";

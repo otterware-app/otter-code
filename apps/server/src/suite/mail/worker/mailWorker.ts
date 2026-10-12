@@ -23,6 +23,11 @@ import {
   demoGoogleAuth,
   installFakeGmail,
 } from "../../../../../../vendor/otter-mail/apps/web/src/web/demo/gmail.ts";
+import { googleConfiguration } from "./googleConfiguration.ts";
+
+declare const __GOOGLE_CLIENT_ID__: string;
+declare const __GOOGLE_CLIENT_SECRET__: string;
+
 import { mailNeedsYou, parseHomeItemId } from "./home.ts";
 import {
   nodeFiles,
@@ -82,6 +87,15 @@ function start(): Promise<{ channels: ReadonlyArray<string> }> {
       await syncAllAccounts({ force: true });
       return { ok: true };
     });
+    handle("otterware:googleStatus", () =>
+      googleConfiguration(
+        { clientId: __GOOGLE_CLIENT_ID__, clientSecret: __GOOGLE_CLIENT_SECRET__ },
+        {
+          clientId: process.env.OTTER_MAIL_GOOGLE_CLIENT_ID,
+          clientSecret: process.env.OTTER_MAIL_GOOGLE_CLIENT_SECRET,
+        },
+      ),
+    );
     handle("otterware:accountSession", async (params: unknown) => {
       const token = (params as { token?: unknown } | null)?.token;
       if (token === null) await clearOtterSession();

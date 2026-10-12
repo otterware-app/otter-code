@@ -9,7 +9,11 @@ import { connectionAtomRuntime } from "../connection/runtime";
 import { isElectron } from "../env";
 import { appAtomRegistry } from "../rpc/atomRegistry";
 import { useEnvironmentHttpBaseUrl, usePrimaryEnvironmentId } from "../state/environments";
-import { createSuiteAccountSession, isLocalSuiteTarget } from "./accountSession";
+import {
+  createSuiteAccountSession,
+  isLocalSuiteTarget,
+  shouldClearSuiteAccount,
+} from "./accountSession";
 import { invokeMailAccount } from "./mail/mailHost";
 import { useSuiteCapabilities, suiteHasModule } from "./useSuiteCapabilities";
 
@@ -96,7 +100,7 @@ export function SuiteAccountProvider({ children }: { readonly children: ReactNod
     if (!session || !isLoaded) return;
     let active = true;
     const sync = async () => {
-      if (owner.current !== userId) await session.clear();
+      if (shouldClearSuiteAccount(owner.current, userId)) await session.clear();
       if (!active) return;
       owner.current = userId;
       if (!isSignedIn) return;

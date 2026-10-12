@@ -347,3 +347,9 @@ describe("getDesktopUpdateButtonTooltip", () => {
     );
   });
 });
+
+it("links an Otterware update to its isolated immutable release", () => {
+  expect(getDesktopUpdateReleaseUrl("0.0.46-otterware.20261012.1")).toBe(
+    "https://github.com/otterware-app/otterware-releases/releases/tag/otterware-v0.0.46-otterware.20261012.1",
+  );
+});

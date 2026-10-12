@@ -122,3 +122,100 @@ describe.skipIf(HostProcess.Platform.defaultValue() !== "linux")("fleet mutation
     },
   );
 });
+
+// Curl is a fixture transport: no server or live service is started.
+describe.skipIf(HostProcess.Platform.defaultValue() !== "linux")("fleet channel updates", () => {
+  it.each(["valid", "corrupt", "missing-sums", "code-version", "duplicate"])(
+    "%s channel download verifies before installing and selects the feed version explicitly",
+    async (scenario) => {
+      const root = await NodeFSP.mkdtemp(NodePath.join(NodeOS.tmpdir(), "otterware-feed-"));
+      const home = NodePath.join(root, "data");
+      const bin = NodePath.join(root, "bin");
+      const version = "1.2.3-otterware.20261012.4";
+      const arch = HostProcess.Architecture.defaultValue();
+      const name = `t3-${version}-linux-${arch}.tar.gz`;
+      const fixture = NodePath.join(root, "fixture");
+      const target = NodePath.join(home, "runtime/versions", version);
+      const env = {
+        ...process.env,
+        HOME: root,
+        T3CODE_HOME: home,
+        PATH: `${bin}:${process.env.PATH}`,
+      };
+      try {
+        await NodeFSP.mkdir(bin);
+        await NodeFSP.mkdir(fixture);
+        const runtime = NodePath.join(root, "runtime");
+        await NodeFSP.mkdir(runtime);
+        await NodeFSP.writeFile(
+          NodePath.join(runtime, "t3"),
+          `#!/bin/sh\necho 'Otter Code v${version}'\n`,
+          { mode: 0o755 },
+        );
+        NodeChildProcess.execFileSync("tar", [
+          "-czf",
+          NodePath.join(fixture, name),
+          "-C",
+          root,
+          "runtime",
+        ]);
+        const sum = NodeChildProcess.execFileSync("sha256sum", [NodePath.join(fixture, name)], {
+          encoding: "utf8",
+        }).split(" ")[0];
+        let sums = `${scenario === "corrupt" ? "0".repeat(64) : sum}  ${name}\n`;
+        if (scenario === "code-version")
+          sums = `${sum}  t3-1.2.3-nightly.20261012.4-linux-${arch}.tar.gz\n`;
+        if (scenario === "duplicate") sums += sums;
+        if (scenario !== "missing-sums")
+          await NodeFSP.writeFile(NodePath.join(fixture, "SHA256SUMS"), sums);
+        await NodeFSP.writeFile(
+          NodePath.join(bin, "curl"),
+          `#!/bin/bash\nset -eu\nwhile (($#)); do\n case "$1" in\n -o) out="$2"; shift 2 ;;\n http*) url="$1"; shift ;;\n --retry) shift 2 ;;\n *) shift ;;\n esac\ndone\necho "$url" >> '${root}/requests'\ncp '${fixture}/'"\${url##*/}" "$out"\n`,
+          { mode: 0o755 },
+        );
+        // A fixture unit/state avoids any service command: the selected build
+        // is already the active version, but is deliberately not installed yet.
+        const unit = NodePath.join(root, ".config/systemd/user/otter-code.service");
+        await NodeFSP.mkdir(NodePath.dirname(unit), { recursive: true });
+        await NodeFSP.writeFile(unit, `Environment=T3CODE_HOME=${home}\n`);
+        await NodeFSP.mkdir(NodePath.join(home, "runtime"), { recursive: true });
+        await NodeFSP.writeFile(
+          NodePath.join(home, "runtime/service-state.json"),
+          `{\n  "activeVersion": "${version}"\n}\n`,
+        );
+        // A newer installed build must not override the version from this feed.
+        const newer = NodePath.join(home, "runtime/versions/9.9.9-otterware.20261012.99");
+        await NodeFSP.mkdir(newer, { recursive: true });
+        await NodeFSP.writeFile(NodePath.join(newer, "t3"), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+        await NodeFSP.writeFile(
+          NodePath.join(newer, ".install-complete"),
+          "9.9.9-otterware.20261012.99",
+        );
+        await NodeFSP.writeFile(
+          NodePath.join(bin, "systemctl"),
+          "#!/bin/sh\necho 'unexpected service mutation' >&2\nexit 99\n",
+          { mode: 0o755 },
+        );
+        const script = NodeURL.fileURLToPath(new URL("./fleet-server.sh", import.meta.url));
+        const result = await spawn("bash", [script, "update", "--channel", "feature-mail"], env)
+          .result;
+        if (scenario === "valid") {
+          expect(result.code, result.output).toBe(0);
+          expect(result.output).toContain("checksum verified");
+          expect(result.output).toContain(`${version} (otterware) is already active`);
+          expect(await NodeFSP.readFile(NodePath.join(target, ".install-complete"), "utf8")).toBe(
+            `${version}\n`,
+          );
+          expect(await NodeFSP.readFile(NodePath.join(root, "requests"), "utf8")).toContain(
+            `/channel-feature-mail/SHA256SUMS\n`,
+          );
+        } else {
+          expect(result.code, result.output).not.toBe(0);
+          expect(await NodeFSP.stat(target).catch(() => null)).toBeNull();
+        }
+      } finally {
+        await NodeFSP.rm(root, { recursive: true, force: true });
+      }
+    },
+  );
+});

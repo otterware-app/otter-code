@@ -1,3 +1,5 @@
+import { isOtterwareVersion } from "@t3tools/shared/otterware";
+import { OtterwareWordmark } from "../OtterwareLogo";
 import { SettingsGroup } from "./SettingsGroup";
 import { useScopedSettingsWriteAllowed } from "./useScopedSettings";
 import { Spinner } from "~/components/ui/spinner";
@@ -271,7 +273,7 @@ function backgroundActivityProfileSettings(profile: BackgroundActivityProfile) {
 function AboutVersionTitle() {
   return (
     <span className="inline-flex items-baseline gap-2">
-      <span>Version</span>
+      <OtterwareWordmark />
       <code className="text-2xs font-medium text-muted-foreground">{APP_VERSION}</code>
     </span>
   );
@@ -448,7 +450,7 @@ function AboutVersionSection() {
           </Tooltip>
         }
       />
-      {hasDesktopBridge ? (
+      {hasDesktopBridge && !isOtterwareVersion(updateState?.currentVersion) ? (
         <SettingsRow
           {...searchableSetting("update-track")}
           description="Use stable releases or nightly builds. Switch back anytime."

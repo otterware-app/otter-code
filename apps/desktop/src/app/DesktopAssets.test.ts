@@ -50,7 +50,7 @@ describe("DesktopAssets", () => {
         ),
       );
       const layerFileSystem = FileSystem.layerNoop({
-        exists: (path) => Effect.succeed(String(path).includes("/assets/otter-dev/")),
+        exists: (path) => Effect.succeed(String(path).includes("/assets/otterware/")),
       });
       const assets = yield* DesktopAssets.DesktopAssets.pipe(
         Effect.provide(
@@ -62,10 +62,10 @@ describe("DesktopAssets", () => {
 
       const icons = yield* assets.iconPaths;
 
-      assert.match(Option.getOrThrow(icons.ico), /assets\/otter-dev\/otter-dev-windows\.ico$/);
+      assert.match(Option.getOrThrow(icons.ico), /assets\/otterware\/otterware-web-favicon\.ico$/);
       assert.match(
         Option.getOrThrow(icons.png),
-        /assets\/otter-dev\/otter-dev-universal-1024\.png$/,
+        /assets\/otterware\/otterware-universal-1024\.png$/,
       );
       assert.isTrue(Option.isNone(icons.icns));
     }),

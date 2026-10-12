@@ -20,7 +20,7 @@ import {
   useThreadShells,
 } from "../state/entities";
 import { useEnvironments } from "../state/environments";
-import { APP_DISPLAY_NAME } from "~/branding";
+import { OtterwareWordmark } from "~/components/OtterwareLogo";
 import { hasCloudPublicConfig } from "~/cloud/publicConfig";
 import { consumeSuiteLanding } from "~/suite/modules";
 
@@ -151,7 +151,7 @@ function HostedStaticOnboardingState() {
         <WorkspacePageHeader electron={isElectron} className="border-b border-border">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-foreground md:text-muted-foreground/60">
-              {APP_DISPLAY_NAME}
+              <OtterwareWordmark />
             </span>
           </div>
         </WorkspacePageHeader>

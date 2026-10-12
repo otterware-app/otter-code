@@ -17,6 +17,7 @@ import { fromYaml } from "@t3tools/shared/schemaYaml";
 import * as HostProcess from "@t3tools/shared/HostProcess";
 import { resolveSpawnCommand } from "@t3tools/shared/shell";
 import {
+  resolveOtterwarePublishConfig,
   OTTERWARE_APP_ID,
   OTTERWARE_ARTIFACT_NAME,
   OTTERWARE_DEV_URL_SCHEME,
@@ -134,6 +135,7 @@ export const readWorkspaceConfig = Effect.fn("readWorkspaceConfig")(function* ()
 
 interface DesktopBuildIconAssets {
   readonly macIconPng: string;
+  readonly macIconIcns?: string;
   readonly linuxIconPng: string;
   readonly windowsIconIco: string;
 }
@@ -2403,6 +2405,7 @@ export function resolveDesktopBuildIconAssets(version: string): DesktopBuildIcon
 
   return {
     macIconPng: BRAND_ASSET_PATHS.otterwareMacIconPng,
+    macIconIcns: BRAND_ASSET_PATHS.otterwareMacIconIcns,
     linuxIconPng: BRAND_ASSET_PATHS.otterwareLinuxIconPng,
     windowsIconIco: BRAND_ASSET_PATHS.productionWindowsIconIco,
   };
@@ -2480,10 +2483,13 @@ export const createBuildConfig = Effect.fn("createBuildConfig")(function* (
     ],
   };
   const updateChannel = resolveDesktopUpdateChannel(version);
-  // Otterware never gets a GitHub update feed: this repository's releases are
-  // Otter Code's, and electron-updater must never offer one to Otterware. No
-  // publish config means no app-update.yml, so the updater reports itself
-  // disabled. Only the local mock update server is allowed.
+  const bakedChannel = yield* Config.String("OTTERWARE_UPDATE_CHANNEL").pipe(Config.option);
+  const suiteFeed = resolveOtterwarePublishConfig(version, Option.getOrUndefined(bakedChannel));
+  if (suiteFeed) {
+    buildConfig.publish = [suiteFeed];
+    buildConfig.detectUpdateChannel = false;
+  }
+  // Local builds without a channel have no feed. Mock updates stay local.
   if (mockUpdates && !isDesktopPreviewVersion(version)) {
     buildConfig.publish = [
       {
@@ -2659,7 +2665,14 @@ const assertPlatformBuildResources = Effect.fn("assertPlatformBuildResources")(f
   verbose: boolean,
 ) {
   if (platform === "mac") {
-    yield* stageMacIcons(stageResourcesDir, iconAssets.macIconPng, verbose);
+    if (iconAssets.macIconIcns) {
+      const fs = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      yield* fs.copyFile(iconAssets.macIconIcns, path.join(stageResourcesDir, "icon.icns"));
+      yield* fs.copyFile(iconAssets.macIconPng, path.join(stageResourcesDir, "icon.png"));
+    } else {
+      yield* stageMacIcons(stageResourcesDir, iconAssets.macIconPng, verbose);
+    }
     return;
   }
 
@@ -3471,6 +3484,9 @@ const buildDesktopArtifact = Effect.fn("buildDesktopArtifact")(function* (
     stageResourcesDir,
     {
       macIconPng: path.join(repoRoot, iconAssets.macIconPng),
+      ...(iconAssets.macIconIcns
+        ? { macIconIcns: path.join(repoRoot, iconAssets.macIconIcns) }
+        : {}),
       linuxIconPng: path.join(repoRoot, iconAssets.linuxIconPng),
       windowsIconIco: path.join(repoRoot, iconAssets.windowsIconIco),
     },

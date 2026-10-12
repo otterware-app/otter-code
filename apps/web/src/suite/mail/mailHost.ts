@@ -96,27 +96,38 @@ export function openExternalUrl(url: string): Promise<void> {
 
 export type OtterMailHostHandle = OtterMailHost & {
   readonly clientId: string;
+  readonly cancelRequests: () => void;
   readonly dispose: () => void;
 };
 
-export async function invokeMailAccount(
+/** Settings and shared account sync use the same Mail core without making another frame. */
+export async function invokeMailChannel(
   environmentId: EnvironmentId,
-  token: string | null,
-): Promise<void> {
+  channel: string,
+  params?: unknown,
+): Promise<unknown> {
   const result = await runAtomCommand(
     appAtomRegistry,
     invokeCommand,
     {
       environmentId,
       input: {
-        clientId: "otterware-account",
-        channel: "otterware:accountSession",
-        params: { token },
+        clientId: "otterware-settings",
+        channel,
+        ...(params === undefined ? {} : { params }),
       },
     },
     { reportFailure: false },
   );
   if (result._tag !== "Success") throw new Error(failureMessage(squashAtomCommandFailure(result)));
+  return result.value;
+}
+
+export async function invokeMailAccount(
+  environmentId: EnvironmentId,
+  token: string | null,
+): Promise<void> {
+  await invokeMailChannel(environmentId, "otterware:accountSession", { token });
 }
 
 /** A host for one frame, talking to `environmentId`. `dispose` ends its subscription. */
@@ -147,8 +158,20 @@ export function createOtterMailHost(options: {
     mailEventsAtom({ environmentId: options.environmentId, input: { clientId } }),
   );
 
+  const cancelRequests = () => {
+    // End the frame's prompt first so a rejected native listener cannot reopen consent
+    // after navigation away from Mail. This also clears pending web-only prompts.
+    for (const id of oauthRequestIds) {
+      for (const listener of frameListeners) listener({ type: "requestCancelled", id });
+    }
+    oauthRequestIds.clear();
+    for (const url of googleRequests) void desktop?.cancelGoogleAuthCallback?.(url).catch(() => {});
+    googleRequests.clear();
+  };
+
   return {
     clientId,
+    cancelRequests,
     async invoke(channel, params) {
       if (options.account?.available() && channel === "otter:signIn") {
         await options.account.ensure();
@@ -204,15 +227,7 @@ export function createOtterMailHost(options: {
     navigated: options.onNavigate,
     showing: options.onShowing,
     dispose() {
-      // End the frame's prompt first so a rejected native listener cannot reopen consent
-      // after navigation away from Mail. This also clears pending web-only prompts.
-      for (const id of oauthRequestIds) {
-        for (const listener of frameListeners) listener({ type: "requestCancelled", id });
-      }
-      oauthRequestIds.clear();
-      for (const url of googleRequests)
-        void desktop?.cancelGoogleAuthCallback?.(url).catch(() => {});
-      googleRequests.clear();
+      cancelRequests();
       unmount();
       listeners.delete(clientId);
       frameListeners.clear();

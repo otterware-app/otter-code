@@ -9,6 +9,7 @@
  * in the preview get nothing from it, except the Chrome Web Store (below).
  */
 
+import { installPasskeyFallbackBridge } from "./suite/browser/PasskeyFallbackBridge.ts";
 import { contextBridge, ipcRenderer } from "electron";
 
 import { installNativeMessaging } from "./preview-native-messaging-preload.ts";
@@ -43,6 +44,16 @@ function ownExtensionId(): string | null {
 }
 
 const extensionId = ownExtensionId();
+if (extensionId && typeof document !== "undefined") {
+  contextBridge.executeInMainWorld({
+    func: installPasskeyFallbackBridge,
+    args: [
+      (rpId: unknown) => {
+        void ipcRenderer.invoke("otterware:passkey-browser-fallback", rpId).catch(() => {});
+      },
+    ],
+  });
+}
 
 if (extensionId) {
   const nativeListeners = new Map<string, (kind: string, payload: unknown) => void>();

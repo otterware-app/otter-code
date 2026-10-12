@@ -11,6 +11,7 @@ import { Button } from "../components/ui/button";
 import { SidebarInset } from "../components/ui/sidebar";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../components/ui/tooltip";
 import { WorkspacePageHeader } from "../components/WorkspacePageHeader";
+import { useSuitePageActive } from "./SuitePageActivity";
 import { SUITE_WEB_MODULES } from "./modules";
 import { SuiteModuleUnavailable } from "./SuiteModuleUnavailable";
 import {
@@ -39,11 +40,12 @@ export function SuiteModuleLayout({
   readonly headerActions?: ReactNode;
   readonly children: ReactNode;
 }) {
+  const active = useSuitePageActive();
   const module = SUITE_WEB_MODULES.find((entry) => entry.id === moduleId);
   const capabilities = useSuiteCapabilities();
   const [sideChatOpen, setSideChatOpen] = useSuiteSideChatOpen();
   const available = module !== undefined && suiteHasModule(capabilities, module.serverModule);
-  useSuiteSideChatShortcut(sideChat);
+  useSuiteSideChatShortcut(sideChat && active);
   const label = module?.label ?? moduleId;
 
   return (
@@ -96,7 +98,7 @@ export function SuiteModuleLayout({
             )}
           </div>
         </div>
-        {sideChat ? <SuiteSideChatSlot moduleId={moduleId} /> : null}
+        {sideChat && active ? <SuiteSideChatSlot moduleId={moduleId} /> : null}
       </div>
     </SidebarInset>
   );

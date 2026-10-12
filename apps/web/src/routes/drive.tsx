@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { DrivePage } from "../suite/drive/DrivePage";
 import { requireSuiteRouteAuth } from "../suite/routeGuards";
 
 /** `?url=` opens a Drive document (Home items, thread links). */
@@ -9,8 +8,8 @@ function validateDriveSearch(search: Record<string, unknown>): { url?: string } 
 }
 
 function DriveRoute() {
-  const { url } = Route.useSearch();
-  return <DrivePage requestedUrl={url ?? null} />;
+  // The app shell owns the retained list/native view.
+  return null;
 }
 
 export const Route = createFileRoute("/drive")({

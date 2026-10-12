@@ -13,7 +13,7 @@ import * as TestClock from "effect/testing/TestClock";
 import * as ServerSecretStore from "../../auth/ServerSecretStore.ts";
 import * as SuiteDatabase from "../SuiteDatabase.ts";
 import { runSuiteMigrations } from "../SuiteMigrations.ts";
-import { makeDriveApi } from "./DriveApi.ts";
+import { DriveApiError, makeDriveApi, type DriveApi } from "./DriveApi.ts";
 import { DRIVE_SESSION_SECRET } from "./DriveConnection.ts";
 import { makeWith } from "./DriveService.ts";
 import { DRIVE_MIGRATIONS, makeDriveStore } from "./DriveStore.ts";
@@ -186,7 +186,7 @@ function makeFakeDrive() {
       ),
     ),
   );
-  return { http, documents, state };
+  return { http, documents, state, artifactOf, folders };
 }
 
 function makeSecretStore(initial: Record<string, string> = {}) {
@@ -216,6 +216,7 @@ const database = SuiteDatabase.layerSqlClient.pipe(Layer.provideMerge(SuiteDatab
 const setup = (
   fake: ReturnType<typeof makeFakeDrive>,
   secrets = makeSecretStore(connectedSession),
+  adaptApi: (api: DriveApi) => DriveApi = (api) => api,
 ) =>
   Effect.gen(function* () {
     yield* runSuiteMigrations(DRIVE_MIGRATIONS);
@@ -223,12 +224,129 @@ const setup = (
       Effect.provideService(HttpClient.HttpClient, fake.http),
     );
     const store = yield* makeDriveStore;
-    return yield* makeWith({ api, store }).pipe(Effect.provide(secrets));
+    return yield* makeWith({ api: adaptApi(api), store }).pipe(Effect.provide(secrets));
   });
 
 const testLayer = Layer.mergeAll(database, NodeServices.layer);
 
 describe("DriveService", () => {
+  it.effect(
+    "uploads to a named shared drive or My Drive and returns document URL/version/kind",
+    () =>
+      Effect.gen(function* () {
+        const fake = makeFakeDrive();
+        const folders: Array<string | undefined> = [];
+        const uploads: Array<{ id: string; ifVersion: number }> = [];
+        const resultArtifact = {
+          ...fake.artifactOf(DOC_ID),
+          currentVersion: {
+            ...fake.artifactOf(DOC_ID).currentVersion!,
+            entryPath: "movie.mov",
+            number: 1,
+          },
+        };
+        const drive = yield* setup(fake, makeSecretStore(connectedSession), (api) => ({
+          ...api,
+          createArtifact: (_input, options) =>
+            Effect.sync(() => {
+              folders.push(options.folderId);
+              return resultArtifact;
+            }),
+          uploadFile: (id, _name, _source, ifVersion) =>
+            Effect.sync(() => {
+              uploads.push({ id, ifVersion });
+              return { artifact: resultArtifact, version: resultArtifact.currentVersion };
+            }),
+        }));
+        const input = { name: "movie.mov", contentBase64: "YQ==" };
+        const shared = yield* drive.uploadFile({ ...input, folder: "Team" });
+        expect(shared).toMatchObject({
+          artifactId: DOC_ID,
+          url: `${BASE}/team-docs/a/q3-plan`,
+          version: 1,
+          kind: "video",
+        });
+        yield* drive.uploadFile(input);
+        expect(folders).toEqual(["folder-team", "p"]);
+        expect(uploads).toEqual([
+          { id: DOC_ID, ifVersion: 0 },
+          { id: DOC_ID, ifVersion: 0 },
+        ]);
+        expect(
+          (yield* drive.uploadFile({ ...input, folder: "missing" }).pipe(Effect.result))._tag,
+        ).toBe("Failure");
+        fake.folders.push({ ...fake.folders[0]!, id: "other", slug: "other" });
+        const ambiguous = yield* setup(fake);
+        expect(
+          (yield* ambiguous.uploadFile({ ...input, folder: "Team" }).pipe(Effect.result))._tag,
+        ).toBe("Failure");
+      }).pipe(Effect.scoped, Effect.provide(testLayer)),
+  );
+
+  it.effect("resolves an existing document and passes ifVersion without creating metadata", () =>
+    Effect.gen(function* () {
+      const fake = makeFakeDrive();
+      let inspectedVersion: number | undefined;
+      const artifact = fake.artifactOf(DOC_ID);
+      const drive = yield* setup(fake, makeSecretStore(connectedSession), (api) => ({
+        ...api,
+        createArtifact: () => Effect.die("Existing versions must not create artifacts"),
+        uploadFile: (id, _name, _source, ifVersion) =>
+          Effect.sync(() => {
+            expect(id).toBe(DOC_ID);
+            inspectedVersion = ifVersion;
+            return { artifact, version: artifact.currentVersion! };
+          }),
+      }));
+      yield* drive.uploadFile({
+        name: "update.mov",
+        contentBase64: "YQ==",
+        documentRef: `${BASE}/team-docs/a/q3-plan`,
+        ifVersion: 2,
+      });
+      expect(inspectedVersion).toBe(2);
+      expect(
+        (yield* drive
+          .uploadFile({ name: "update.mov", contentBase64: "YQ==", documentRef: DOC_ID })
+          .pipe(Effect.result))._tag,
+      ).toBe("Failure");
+    }).pipe(Effect.scoped, Effect.provide(testLayer)),
+  );
+
+  it.effect(
+    "cleans up a failed new document's draft and leaves existing versions intact on conflict",
+    () =>
+      Effect.gen(function* () {
+        const fake = makeFakeDrive();
+        const removed: Array<string> = [];
+        const artifact = fake.artifactOf(DOC_ID);
+        const drive = yield* setup(fake, makeSecretStore(connectedSession), (api) => ({
+          ...api,
+          createArtifact: () => Effect.succeed(artifact),
+          uploadFile: () =>
+            Effect.fail(
+              new DriveApiError({
+                status: 409,
+                code: "version_conflict",
+                detail: "Current version changed",
+              }),
+            ),
+          deleteDraft: (id) =>
+            Effect.sync(() => {
+              removed.push(id);
+            }),
+        }));
+        const input = { name: "movie.mov", contentBase64: "YQ==" };
+        expect((yield* drive.uploadFile(input).pipe(Effect.result))._tag).toBe("Failure");
+        const conflict = yield* drive
+          .uploadFile({ ...input, documentRef: DOC_ID, ifVersion: 1 })
+          .pipe(Effect.result);
+        expect(conflict._tag).toBe("Failure");
+        if (conflict._tag === "Failure") expect(conflict.failure.reason).toBe("conflict");
+        expect(removed).toEqual([DOC_ID]);
+      }).pipe(Effect.scoped, Effect.provide(testLayer)),
+  );
+
   it.effect("creates its tables in suite.sqlite", () =>
     Effect.gen(function* () {
       yield* runSuiteMigrations(DRIVE_MIGRATIONS);

@@ -567,6 +567,7 @@ export interface DriveDesktopState {
 export interface DriveDesktopBridge {
   syncAccount: (token: string | null | undefined) => Promise<void>;
   onSignOut: (listener: () => void) => () => void;
+  onRenewAccount?: (listener: (recover: boolean) => Promise<void>) => () => void;
   show: (initialUrl: string, baseUrl: string) => Promise<DriveDesktopState>;
   openDriveUrl: (url: string, baseUrl: string) => Promise<DriveDesktopState>;
   setBounds: (

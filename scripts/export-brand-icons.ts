@@ -691,6 +691,7 @@ const isCurrent = Effect.fn("iconExport.isCurrent")(function* (
 
 export const exportBrandIcons = Effect.fn("exportBrandIcons")(function* (checkOnly: boolean) {
   const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
   const repositoryRoot = yield* RepositoryRoot;
   const tool = yield* resolveIconComposerTool();
   const temporaryDirectory = yield* fs
@@ -726,7 +727,21 @@ export const exportBrandIcons = Effect.fn("exportBrandIcons")(function* (checkOn
   }
 
   for (const override of DEVELOPMENT_PUBLIC_ICON_OVERRIDES) {
-    const sourceContents = generated.get(override.sourceRelativePath);
+    // The adaptive favicon.svg is drawn by hand rather than exported; copy it as is.
+    const sourceContents = override.sourceRelativePath.endsWith(".svg")
+      ? Buffer.from(
+          yield* fs.readFile(path.join(repositoryRoot, override.sourceRelativePath)).pipe(
+            Effect.mapError(
+              (cause) =>
+                new IconExportFileSystemError({
+                  operation: "read-file",
+                  path: override.sourceRelativePath,
+                  cause,
+                }),
+            ),
+          ),
+        )
+      : generated.get(override.sourceRelativePath);
     if (sourceContents === undefined) {
       return yield* Effect.die(
         new Error(`Generated development web icon is missing: ${override.sourceRelativePath}`),

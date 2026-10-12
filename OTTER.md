@@ -152,12 +152,26 @@ list text that must keep matching what the server or agents emit.
 
 Secrets live in the repository's Actions secrets and its `production` environment.
 
-The three Icon Composer projects mirror upstream's `assets/prod`, `assets/nightly` and
-`assets/dev`. Production is the otter artwork on black. Nightly and dev reuse upstream's night-sky
-and blueprint layers and shadows, with the otter in place of the T3 mark: a white glyph whose alpha
-is the artwork's brightness, made a little more opaque. `vp run icons:export` regenerates their
-iOS, Linux, Windows and web exports as `assets/README.md` describes; the macOS PNGs still need Icon
-Composer's `macOS pre-Tahoe` export.
+The icons come from the Otterware brand kit (October 2026): the Otter Code symbol, a charcoal
+(`#2c2f31`) "‹›" swoosh, on an ivory (`#f8f5ec`) tile. Each Icon Composer project has two layers,
+`background.svg` and `symbol.svg`, both full 1024pt canvases. Production is the kit's light icon,
+with a dark appearance (ivory symbol on charcoal) set through `fill-specializations`; iOS derives
+the tinted one. Dev is the blueprint variant (blue gradient, grid and crop marks, white symbol) and
+nightly the night sky (indigo to violet, stars and clouds, ivory symbol). Each folder also holds
+`<name>-web-favicon.svg`, drawn by hand and copied as is: production's switches with
+`prefers-color-scheme`. `vp run icons:export` regenerates the iOS, Linux, Windows and web exports
+as `assets/README.md` describes; the macOS PNGs still need Icon Composer's `macOS pre-Tahoe`
+export (an 824pt tile inset 100, with shadow). The tracked exports were rendered from the kit's
+SVGs with resvg, which matches those framings: rounded tiles (radius 230 of 1024) for the iOS,
+universal and web files.
+
+`apps/mobile/assets/otter/` holds the Android art, rendered from the same layers: the symbol as the
+adaptive foreground at half the 108dp canvas (inside the 66dp safe circle), on ivory for production
+and on the variant's background image for dev and nightly (`-dev` and `-nightly` files), the
+Android 12+ splash as both layers on the 288dp canvas, and a white symbol for the monochrome
+launcher layer and the notification icon. The in-app symbol (`T3Wordmark` on web and mobile, the
+widget's `T3Mark.svg`, `agent_activity_mark.xml`, the DMG backgrounds) is the kit's
+`symbol-tight.svg`: viewBox `123 127 780 780`, coordinates rounded to 0.1.
 
 ## Releases
 

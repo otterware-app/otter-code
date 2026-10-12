@@ -1,0 +1,487 @@
+/*
+ * Calendar engine styles. Keyed on data attributes, not classes: the gesture controller toggles
+ * drag and ghost states on the DOM without React renders, and each event's look derives from
+ * one inline variable, --event-color. Everything else comes from the theme tokens in index.css.
+ *
+ * Built for hundreds of events on screen: event elements have a fixed size and strict
+ * containment, no container queries (the layout comes from data-size, set at render), no
+ * shadows unless selected, and no transitions. During a gesture only the shield element
+ * changes style, never the events.
+ */
+
+[data-calendar-surface] {
+  --cal-line: var(--contrast-border);
+  --cal-hour-line: color-mix(in srgb, var(--contrast-border) 72%, transparent);
+  --cal-offhours: color-mix(in oklab, var(--contrast-foreground) 2.5%, transparent);
+  --cal-now: var(--destructive);
+  --cal-event-tint: 15%;
+  --cal-event-tint-hover: 21%;
+  --cal-event-tint-past: 8%;
+  --cal-event-tint-free: 8%;
+  --cal-event-ink-mix: 40%;
+  --cal-bar-height: 20px;
+  --cal-bar-gap: 2px;
+  --event-min-height: 18px;
+}
+
+.dark [data-calendar-surface] {
+  --cal-offhours: color-mix(in oklab, var(--contrast-foreground) 2%, transparent);
+  --cal-event-tint: 28%;
+  --cal-event-tint-hover: 34%;
+  --cal-event-tint-past: 15%;
+  --cal-event-tint-free: 16%;
+  --cal-event-ink-mix: 32%;
+}
+
+[data-calendar-surface="timegrid"],
+[data-calendar-surface="month"] {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y;
+}
+
+/* Covers the surface while a gesture runs: it carries the cursor and the pointer capture, so
+   starting or ending a drag restyles one element instead of every event under the pointer. */
+[data-gesture-shield] {
+  position: absolute;
+  inset: 0;
+  z-index: 90;
+  display: none;
+  touch-action: none;
+}
+
+[data-calendar-surface][data-gesture] > [data-gesture-shield] {
+  display: block;
+  cursor: default;
+}
+
+[data-calendar-surface][data-gesture="move"] > [data-gesture-shield] {
+  cursor: grabbing;
+}
+
+[data-calendar-surface][data-gesture="resize"] > [data-gesture-shield] {
+  cursor: ns-resize;
+}
+
+[data-calendar-surface][data-gesture="resize-x"] > [data-gesture-shield] {
+  cursor: ew-resize;
+}
+
+/* ── Time grid ─────────────────────────────────────────────────────── */
+
+[data-calendar-column] {
+  position: relative;
+  /* Grid tracks size the column, so its contents never affect the rest of the grid. */
+  contain: strict;
+  border-inline-start: 1px solid var(--cal-line);
+  background-image:
+    linear-gradient(to bottom, var(--cal-hour-line) 0 1px, transparent 1px),
+    linear-gradient(
+      to bottom,
+      var(--cal-offhours) 0 calc(var(--hour-height) * var(--work-start, 0)),
+      transparent 0 calc(var(--hour-height) * var(--work-end, 24)),
+      var(--cal-offhours) 0
+    );
+  background-size:
+    100% var(--hour-height),
+    100% 100%;
+}
+
+[data-calendar-now] {
+  position: absolute;
+  height: 2px;
+  margin-top: -1px;
+  z-index: 45;
+  pointer-events: none;
+  background: var(--cal-now);
+}
+
+[data-calendar-now]::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: -5px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: var(--cal-now);
+}
+
+/* ── Events ────────────────────────────────────────────────────────── */
+
+[data-calendar-event] {
+  --event-tint: var(--cal-event-tint);
+  --event-ink: color-mix(
+    in oklab,
+    var(--event-color) var(--cal-event-ink-mix),
+    var(--contrast-foreground)
+  );
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  overflow: hidden;
+  border-radius: 5px;
+  border-inline-start: 3px solid var(--event-color);
+  background-color: color-mix(in oklab, var(--event-color) var(--event-tint), var(--background));
+  color: var(--event-ink);
+  outline: none;
+  cursor: default;
+  -webkit-touch-callout: none;
+  /* Every event has an explicit size: nothing inside it affects layout or paint outside. */
+  contain: strict;
+}
+
+[data-calendar-event]:hover {
+  --event-tint: var(--cal-event-tint-hover);
+}
+
+/* Inline z-index comes from the overlap layout; focus and selection lift the event above it. */
+[data-calendar-event]:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+  z-index: 40 !important;
+}
+
+[data-calendar-event][data-selected] {
+  z-index: 41 !important;
+  box-shadow:
+    0 0 0 1px var(--background),
+    0 0 0 3px var(--event-color),
+    0 4px 12px -4px rgb(0 0 0 / 30%);
+}
+
+[data-calendar-event][data-free] {
+  --event-tint: var(--cal-event-tint-free);
+}
+
+[data-calendar-event][data-past] {
+  --event-tint: var(--cal-event-tint-past);
+  --event-ink: color-mix(in oklab, var(--event-color) 28%, var(--contrast-muted-foreground));
+  border-inline-start-color: color-mix(in oklab, var(--event-color) 55%, var(--background));
+}
+
+[data-calendar-event][data-response="needsAction"] {
+  background-color: var(--background);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--event-color) 65%, transparent);
+}
+
+[data-calendar-event][data-response="tentative"],
+[data-calendar-event][data-tentative] {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent 0 4px,
+    color-mix(in oklab, var(--event-color) 18%, transparent) 4px 8px
+  );
+  background-color: color-mix(
+    in oklab,
+    var(--event-color) calc(var(--event-tint) / 2),
+    var(--background)
+  );
+}
+
+[data-calendar-event][data-response="declined"] {
+  background-color: var(--background);
+  color: var(--contrast-muted-foreground);
+  border-inline-start-color: color-mix(in oklab, var(--event-color) 40%, var(--background));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--event-color) 30%, transparent);
+  opacity: 0.8;
+}
+
+[data-calendar-event][data-response="declined"] > [data-event-title] {
+  text-decoration: line-through;
+}
+
+[data-calendar-event][data-pending] {
+  opacity: 0.7;
+}
+
+[data-calendar-event][data-dragging] {
+  opacity: 0.35;
+}
+
+/* Titles wrap between words only; a word wider than a narrow block is clipped, not split. */
+[data-event-title] {
+  font-weight: 500;
+  overflow: hidden;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+/* ── Timed blocks ──
+   The title span, then the time from data-time (::before, moved after the title with `order`),
+   then the location span on large blocks. data-size picks one line (xs, sm) or a column. */
+
+/* Overlapping events cascade (each later column sits on top and reaches further right), so a
+   background-colored edge keeps stacked blocks apart. Borders, not shadows: they paint cheaply. */
+[data-calendar-event][data-timed] {
+  min-height: var(--event-min-height);
+  flex-direction: column;
+  border-block: 1px solid var(--background);
+  border-inline-end: 1px solid var(--background);
+  padding: 1px 4px;
+  font-size: 12px;
+  line-height: 15px;
+}
+
+[data-calendar-event][data-timed]::before {
+  content: attr(data-time);
+  order: 1;
+  flex: none;
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 14px;
+  opacity: 0.85;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-event-location] {
+  order: 2;
+  flex: none;
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 14px;
+  opacity: 0.85;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+[data-calendar-event][data-size="md"] > [data-event-title] {
+  flex: none;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+[data-calendar-event][data-size="sm"],
+[data-calendar-event][data-size="xs"] {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 5px;
+  padding-block: 1px;
+}
+
+[data-calendar-event][data-size="xs"] {
+  padding-block: 0;
+  font-size: 11px;
+  line-height: 14px;
+}
+
+[data-calendar-event][data-size="sm"] > [data-event-title],
+[data-calendar-event][data-size="xs"] > [data-event-title] {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* On one line the time gives way before the title does. */
+[data-calendar-event][data-size="sm"]::before,
+[data-calendar-event][data-size="xs"]::before {
+  flex: 0 10 auto;
+  min-width: 0;
+}
+
+[data-calendar-event][data-narrow]::before {
+  content: none;
+}
+
+/* Blocks continuing from or into another day lose the corners on that side. */
+[data-calendar-event][data-timed][data-continues-before] {
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+}
+
+[data-calendar-event][data-timed][data-continues-after] {
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+}
+
+/* Resize edges have no elements: the gesture controller hit-tests bands by the pointer's offset
+   in the block (6 px, or 12 px on a selected block with touch) and sets the hover cursor. */
+
+/* ── Bars: all-day lane and month multi-day events ── */
+
+[data-calendar-event][data-bar] {
+  height: var(--cal-bar-height);
+  align-items: center;
+  gap: 4px;
+  padding-inline: 5px;
+  font-size: 12px;
+  line-height: var(--cal-bar-height);
+  white-space: nowrap;
+}
+
+[data-calendar-event][data-bar][data-time]::before {
+  content: attr(data-time);
+  flex: none;
+  font-size: 11px;
+  opacity: 0.85;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-calendar-event][data-bar] > [data-event-title],
+[data-calendar-event][data-chip] > [data-event-title] {
+  min-width: 0;
+  text-overflow: ellipsis;
+}
+
+[data-calendar-event][data-bar][data-continues-before] {
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+  border-inline-start-width: 0;
+}
+
+[data-calendar-event][data-bar][data-continues-after] {
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+
+/* ── Month chips: single-day timed events as a dot, the time and the title, no fill ── */
+
+[data-calendar-event][data-chip] {
+  height: var(--cal-bar-height);
+  align-items: center;
+  gap: 5px;
+  padding-inline: 4px;
+  border-inline-start: 0;
+  background-color: transparent;
+  background-image: none;
+  color: var(--contrast-foreground);
+  box-shadow: none;
+  font-size: 12px;
+  line-height: var(--cal-bar-height);
+  white-space: nowrap;
+}
+
+[data-calendar-event][data-chip]::before {
+  content: "";
+  order: -2;
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: var(--event-color);
+}
+
+[data-calendar-event][data-chip]::after {
+  content: attr(data-time);
+  order: -1;
+  flex: none;
+  color: var(--contrast-muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-calendar-event][data-chip] > [data-event-title] {
+  font-weight: 400;
+}
+
+[data-calendar-event][data-chip][data-selected] {
+  background-color: color-mix(in oklab, var(--event-color) 14%, transparent);
+  box-shadow: inset 0 0 0 1.5px var(--event-color);
+}
+
+[data-calendar-event][data-chip]:hover {
+  background-color: color-mix(in oklab, var(--contrast-foreground) 6%, transparent);
+}
+
+[data-calendar-event][data-chip][data-past] {
+  color: var(--contrast-muted-foreground);
+}
+
+[data-calendar-event][data-chip][data-response="declined"],
+[data-calendar-event][data-chip][data-response="needsAction"] {
+  box-shadow: none;
+}
+
+[data-calendar-event][data-chip][data-response="needsAction"]::before,
+[data-calendar-event][data-chip][data-response="declined"]::before {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--event-color);
+}
+
+[data-calendar-event][data-chip][data-response="tentative"]::before,
+[data-calendar-event][data-chip][data-tentative]::before {
+  background: repeating-linear-gradient(-45deg, var(--event-color) 0 1.5px, transparent 1.5px 3px);
+  box-shadow: inset 0 0 0 1px var(--event-color);
+}
+
+/* The agenda's rows use a real dot element. */
+[data-event-dot] {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: var(--event-color);
+}
+
+[data-response="needsAction"] > [data-event-dot],
+[data-response="declined"] > [data-event-dot] {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--event-color);
+}
+
+[data-response="tentative"] > [data-event-dot] {
+  background: repeating-linear-gradient(-45deg, var(--event-color) 0 1.5px, transparent 1.5px 3px);
+  box-shadow: inset 0 0 0 1px var(--event-color);
+}
+
+/* ── Drag ghosts ───────────────────────────────────────────────────── */
+
+[data-calendar-ghost] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  display: none;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 2px 6px;
+  border: 1px solid var(--event-color, var(--primary));
+  border-radius: 5px;
+  background-color: color-mix(in oklab, var(--event-color, var(--primary)) 24%, var(--background));
+  color: var(--contrast-foreground);
+  box-shadow: 0 8px 20px -8px rgb(0 0 0 / 40%);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 14px;
+  white-space: nowrap;
+  pointer-events: none;
+  contain: layout paint style;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-calendar-ghost][data-active] {
+  display: block;
+  will-change: transform;
+}
+
+[data-calendar-ghost][data-duplicate]::after {
+  content: "+";
+  position: absolute;
+  top: 0;
+  inset-inline-end: 4px;
+  font-weight: 700;
+}
+
+/* ── Month grid ────────────────────────────────────────────────────── */
+
+[data-month-row] {
+  contain: layout paint style;
+}
+
+/* ── Agenda ────────────────────────────────────────────────────────── */
+
+[data-agenda-row] [data-event-dot] {
+  width: 8px;
+  height: 8px;
+}
+
+[data-agenda-row][data-response="declined"] [data-event-title] {
+  text-decoration: line-through;
+}
+
+[data-agenda-row][data-response="declined"],
+[data-agenda-row][data-past] {
+  color: var(--contrast-muted-foreground);
+}

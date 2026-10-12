@@ -1,0 +1,14 @@
+{
+  // Mail's worker thread: Otterware code over vendored Otter Mail, checked with
+  // Mail's compiler settings. apps/server's program leaves this folder out.
+  "extends": "../../../../../../vendor/otter-mail/tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+    "paths": {
+      "@otter-mail/core": ["../../../../../../vendor/otter-mail/packages/core/src/index.ts"]
+    }
+  },
+  "include": ["."],
+  "exclude": ["*.test.ts"]
+}

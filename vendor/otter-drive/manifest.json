@@ -1,0 +1,15 @@
+{
+  "upstream": "https://github.com/otterware-app/otter-drive",
+  "commit": "24ad5d4696d87c488cfa708bf8492ef0685d7226",
+  "syncedAt": "2026-10-12T08:12:20.099Z",
+  "files": [
+    {
+      "path": "packages/contracts/src/index.ts",
+      "sha256": "d4bca6aa5983d822939cbca6bcabcdc061ba5178201e9ea4143c69b413f16c76"
+    }
+  ],
+  "notes": [
+    "Files are verbatim copies of the upstream commit; edit them only through this sync.",
+    "packages/contracts/package.json is Otterware's own: renamed to @otterware/drive-contracts, zod as ^4.4.3 (upstream pins 4.4.3; the range shares the workspace's zod), upstream scripts and devDependencies dropped."
+  ]
+}

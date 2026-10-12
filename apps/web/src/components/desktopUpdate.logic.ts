@@ -1,3 +1,4 @@
+import { isOtterwareVersion, OTTERWARE_RELEASE_REPOSITORY } from "@t3tools/shared/otterware";
 import type { DesktopUpdateActionResult, DesktopUpdateState } from "@t3tools/contracts";
 
 export type DesktopUpdateButtonAction = "download" | "install" | "none";
@@ -36,7 +37,9 @@ export function getDesktopUpdateReleaseUrl(
 ): string | null {
   const normalizedVersion = version?.trim();
   if (!normalizedVersion) return null;
-  return `${desktopReleaseRepositoryUrl(repository)}/tag/v${encodeURIComponent(normalizedVersion)}`;
+  return isOtterwareVersion(normalizedVersion)
+    ? `https://github.com/${OTTERWARE_RELEASE_REPOSITORY}/releases/tag/otterware-v${encodeURIComponent(normalizedVersion)}`
+    : `${desktopReleaseRepositoryUrl(repository)}/tag/v${encodeURIComponent(normalizedVersion)}`;
 }
 
 export function getDesktopUpdateReleaseHistoryUrl(

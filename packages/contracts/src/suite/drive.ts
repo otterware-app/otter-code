@@ -565,8 +565,9 @@ export interface DriveDesktopState {
 }
 
 export interface DriveDesktopBridge {
-  syncAccount: (token: string | null) => Promise<void>;
+  syncAccount: (token: string | null | undefined) => Promise<void>;
   onSignOut: (listener: () => void) => () => void;
+  show: (initialUrl: string, baseUrl: string) => Promise<DriveDesktopState>;
   openDriveUrl: (url: string, baseUrl: string) => Promise<DriveDesktopState>;
   setBounds: (
     bounds: { x: number; y: number; width: number; height: number } | null,

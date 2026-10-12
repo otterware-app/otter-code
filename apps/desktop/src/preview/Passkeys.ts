@@ -7,6 +7,7 @@ import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
 
+import { attachPasskeyFallback } from "../suite/browser/PasskeyFallback.ts";
 import * as DesktopEnvironment from "../app/DesktopEnvironment.ts";
 import { PASSKEY_CREATE_CHANNEL, PASSKEY_GET_CHANNEL } from "./GuestProtocol.ts";
 import type { PasskeyBackend, PasskeyCeremonyContext } from "./PasskeyBackend.ts";
@@ -136,6 +137,7 @@ const make = Effect.gen(function* () {
   const backend = metadata?.browserPasskeys === true ? backendFor(environment.platform) : undefined;
   const bridgeEnabled = backend !== undefined;
   const sessionsWithHandlers = new WeakSet<Session>();
+  let observingBrowserContents = false;
 
   return PreviewPasskeys.of({
     bridgeEnabled,
@@ -149,6 +151,13 @@ const make = Effect.gen(function* () {
     installSessionHandlers: (session) => {
       if (sessionsWithHandlers.has(session)) return;
       sessionsWithHandlers.add(session);
+      // Extension popups/options are separate WebContents in this browser session.
+      if (environment.platform !== "win32" && !observingBrowserContents) {
+        observingBrowserContents = true;
+        app.on("web-contents-created", (_event, contents) => {
+          if (sessionsWithHandlers.has(contents.session)) attachPasskeyFallback(contents);
+        });
+      }
       session.on("select-webauthn-account", (_event, details, callback) => {
         // The request stays pending until the callback runs, so it must run once.
         void chooseAccount(details).then(
@@ -158,6 +167,7 @@ const make = Effect.gen(function* () {
       });
     },
     attachGuest: (guest) => {
+      if (environment.platform !== "win32") attachPasskeyFallback(guest);
       if (backend === undefined) return () => {};
       let ceremonyPending = false;
       const serve = async (

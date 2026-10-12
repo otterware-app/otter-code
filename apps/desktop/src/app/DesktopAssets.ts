@@ -63,16 +63,16 @@ const resolveResourcePath = Effect.fn("desktop.assets.resolveResourcePath")(func
 
 const sourceTreeIconFileNames = {
   dev: {
-    dir: "otter-dev",
-    ico: "otter-dev-windows.ico",
-    macPng: "otter-dev-macos-1024.png",
-    universalPng: "otter-dev-universal-1024.png",
+    dir: "otterware",
+    ico: "otterware-web-favicon.ico",
+    macPng: "otterware-macos-1024.png",
+    universalPng: "otterware-universal-1024.png",
   },
   prod: {
-    dir: "otter",
-    ico: "otter-windows.ico",
-    macPng: "otter-macos-1024.png",
-    universalPng: "otter-universal-1024.png",
+    dir: "otterware",
+    ico: "otterware-web-favicon.ico",
+    macPng: "otterware-macos-1024.png",
+    universalPng: "otterware-universal-1024.png",
   },
 } as const;
 

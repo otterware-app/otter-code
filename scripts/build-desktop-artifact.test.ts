@@ -470,7 +470,54 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
     }),
   );
 
-  it.effect("omits update feeds from every build, including where Otter Code has one", () =>
+  it.effect("packages the branch feed only for Otterware versions", () =>
+    Effect.gen(function* () {
+      const suite = yield* createBuildConfig(
+        "mac",
+        "dmg",
+        "0.0.46-otterware.20261012.1",
+        true,
+        false,
+        undefined,
+        undefined,
+      );
+      const code = yield* createBuildConfig(
+        "linux",
+        "AppImage",
+        "0.0.46-nightly.20261012.1",
+        false,
+        false,
+        undefined,
+        undefined,
+      );
+      assert.deepEqual(suite.publish, [
+        {
+          provider: "generic",
+          url: "https://github.com/otterware-app/otterware-releases/releases/download/channel-feature-mail/",
+          channel: "latest",
+          useMultipleRangeRequest: false,
+        },
+      ]);
+      assert.equal(suite.detectUpdateChannel, false);
+      assert.notProperty(code, "publish");
+    }).pipe(
+      Effect.provide(
+        Layer.merge(
+          ConfigProvider.layer(
+            ConfigProvider.fromEnv({
+              env: {
+                OTTERWARE_UPDATE_CHANNEL: "feature-mail",
+                GITHUB_REPOSITORY: "otterware-app/otter-code",
+              },
+            }),
+          ),
+          NodeServices.layer,
+        ),
+      ),
+    ),
+  );
+
+  it.effect("omits feeds from local builds even when the Code repository is configured", () =>
     Effect.gen(function* () {
       const preview = yield* createBuildConfig(
         "mac",

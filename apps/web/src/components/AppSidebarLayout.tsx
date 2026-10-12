@@ -38,6 +38,7 @@ import { SettingsSidebarNav } from "./settings/SettingsSidebarNav";
 import { SidebarChromeHeader, SidebarSpaceTitle } from "./sidebar/SidebarChrome";
 import { MainAppLocationTracker } from "./sidebar/mainAppLocation";
 import { SpaceRail } from "./sidebar/SpaceRail";
+import { PersistentSuitePages } from "../suite/PersistentSuitePages";
 import { isSuiteModulePath } from "../suite/modules";
 import { useAppFrame } from "./sidebar/appFrame";
 import {
@@ -482,7 +483,7 @@ export function AppSidebarLayout({ children }: { children: ReactNode }) {
               <SidebarRail onDoubleClick={resetSidebarWidth} />
             </Sidebar>
           </div>
-          {children}
+          <PersistentSuitePages>{children}</PersistentSuitePages>
           {frame ? <AppFramePanelEdge /> : null}
         </div>
         {sidebarHidden ? null : <SidebarControl onWidthChange={setTitlebarControlsWidth} />}

@@ -69,6 +69,7 @@ import { RailCustomizePopover } from "./RailCustomizePopover";
 import { RailMoreMenu } from "./RailMoreMenu";
 import { isSuiteModulePath } from "../../suite/modules";
 import { SuiteRailButtons } from "../../suite/SuiteRail";
+import { OtterwareLogo } from "../OtterwareLogo";
 import { SidebarUpdatePill } from "./SidebarUpdatePill";
 import {
   activeRailShortcutKey,
@@ -371,6 +372,13 @@ export const SpaceRail = memo(function SpaceRail({ className }: { className?: st
         className="drag-region hidden h-(--workspace-topbar-height) w-full shrink-0 in-data-[app-frame=window]:block"
       />
       <div className="flex min-h-0 w-full flex-1 flex-col items-center gap-1.5 overflow-y-auto pt-2.5 [scrollbar-width:none]">
+        <span
+          className="flex size-9 shrink-0 items-center justify-center"
+          role="img"
+          aria-label="Otterware"
+        >
+          <OtterwareLogo className="size-8" />
+        </span>
         <SuiteRailButtons rail="start" />
         {visibleItems.map((id) => {
           const Icon = RAIL_GLYPHS[id];

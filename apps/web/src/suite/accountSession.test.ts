@@ -1,5 +1,9 @@
 import { expect, it, vi } from "vite-plus/test";
-import { createSuiteAccountSession, isLocalSuiteTarget } from "./accountSession";
+import {
+  createSuiteAccountSession,
+  isLocalSuiteTarget,
+  shouldClearSuiteAccount,
+} from "./accountSession";
 
 const user = { id: "same-otter-user", email: "user@example.com", name: "User", image: null };
 const credential = () => ({ token: "native-token", user, expiresAt: Date.now() + 900_000 });
@@ -61,4 +65,13 @@ it("discards an exchange that finishes after sign-out", async () => {
   await expect(exchange).rejects.toThrow("account changed");
   await clear;
   expect(apply).toHaveBeenCalledExactlyOnceWith(null);
+});
+
+it("does not clear a persisted Drive account on initial auth discovery", () => {
+  expect(shouldClearSuiteAccount(undefined, "user-a")).toBe(false);
+  expect(shouldClearSuiteAccount(undefined, null)).toBe(false);
+  expect(shouldClearSuiteAccount("user-a", "user-a")).toBe(false);
+  expect(shouldClearSuiteAccount("user-a", null)).toBe(true);
+  expect(shouldClearSuiteAccount("user-a", "user-b")).toBe(true);
+  expect(shouldClearSuiteAccount(null, "user-a")).toBe(false);
 });

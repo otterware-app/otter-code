@@ -30,7 +30,7 @@ Object.assign(globalThis, {
 });
 
 /** Mail's settings panes Otterware leaves out, and what they fall back to. */
-const HIDDEN_SETTINGS_PANES = ["agents", "otter", "browser"] as const;
+const HIDDEN_SETTINGS_PANES = ["appearance", "agents", "otter", "browser"] as const;
 
 type Listener = (params: unknown) => void;
 

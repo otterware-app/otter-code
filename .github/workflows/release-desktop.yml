@@ -81,6 +81,10 @@ on:
       ref:
         required: true
         type: string
+      otterware_update_channel:
+        required: false
+        default: ""
+        type: string
       release_channel:
         required: true
         type: string
@@ -118,6 +122,7 @@ jobs:
     # "Wait for Linux CLI archive"), so it gets that wait on top of the usual 30.
     timeout-minutes: ${{ inputs.platform == 'win' && 70 || 30 }}
     env:
+      OTTERWARE_UPDATE_CHANNEL: ${{ inputs.otterware_update_channel }}
       T3CODE_ACCOUNTS_URL: ${{ inputs.accounts_url }}
       T3CODE_ACCOUNTS_CLI_CLIENT_ID: ${{ inputs.accounts_cli_client_id }}
       T3CODE_RELAY_URL: ${{ inputs.relay_url }}
@@ -508,6 +513,10 @@ jobs:
               echo "macOS signing enabled."
               args+=(--signed)
             else
+              if [[ -n "$OTTERWARE_UPDATE_CHANNEL" ]]; then
+                echo "::error::Otterware macOS channel updates require CSC_LINK, CSC_KEY_PASSWORD, APPLE_API_KEY, APPLE_API_KEY_ID and APPLE_API_ISSUER."
+                exit 1
+              fi
               echo "macOS signing disabled (missing one or more Apple signing secrets)."
             fi
           elif [[ "${{ inputs.platform }}" == "win" ]]; then

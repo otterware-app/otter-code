@@ -8,7 +8,11 @@ import {
   type DesktopUpdateState,
 } from "@t3tools/contracts";
 import { errorTag } from "@t3tools/shared/observability";
-import { OTTERWARE_UPDATE_NOTICE } from "@t3tools/shared/otterware";
+import {
+  OTTERWARE_UPDATE_NOTICE,
+  isOtterwareVersion,
+  isOtterwareUpdateFeed,
+} from "@t3tools/shared/otterware";
 import * as Cause from "effect/Cause";
 import * as Context from "effect/Context";
 import * as DateTime from "effect/DateTime";
@@ -413,7 +417,12 @@ export const make = Effect.gen(function* () {
       : false;
 
   const hasUpdateFeedConfig = Ref.get(appUpdateYmlConfigRef).pipe(
-    Effect.map((appUpdateYmlConfig) => Option.isSome(appUpdateYmlConfig) || config.mockUpdates),
+    Effect.map(
+      (feed) =>
+        config.mockUpdates ||
+        (Option.isSome(feed) &&
+          (!isOtterwareVersion(environment.appVersion) || isOtterwareUpdateFeed(feed.value))),
+    ),
   );
 
   const resolveDisabledReason = Effect.gen(function* () {
@@ -458,15 +467,16 @@ export const make = Effect.gen(function* () {
     channel: DesktopUpdateChannel,
   ) {
     yield* Effect.annotateCurrentSpan({ channel });
-    const allowsPrerelease = channel === "nightly";
-    yield* electronUpdater.setChannel(channel);
+    const suite = isOtterwareVersion(environment.appVersion);
+    const allowsPrerelease = suite || channel === "nightly";
+    yield* electronUpdater.setChannel(suite ? "latest" : channel);
     yield* electronUpdater.setAllowPrerelease(allowsPrerelease);
-    yield* electronUpdater.setAllowDowngrade(allowsPrerelease);
+    yield* electronUpdater.setAllowDowngrade(suite ? false : allowsPrerelease);
     yield* electronUpdater.setFullChangelog(allowsPrerelease);
     yield* logUpdaterInfo("using update channel", {
       channel,
       allowPrerelease: allowsPrerelease,
-      allowDowngrade: allowsPrerelease,
+      allowDowngrade: suite ? false : allowsPrerelease,
       fullChangelog: allowsPrerelease,
     });
   });
@@ -861,7 +871,12 @@ export const make = Effect.gen(function* () {
       Effect.flatMap(
         Effect.fn("desktop.updates.applyUpdateAvailable")(function* (info) {
           const state = yield* Ref.get(updateStateRef);
-          if (resolveDefaultDesktopUpdateChannel(info.version) !== state.channel) {
+          if (
+            isOtterwareVersion(environment.appVersion)
+              ? !isOtterwareVersion(info.version)
+              : isOtterwareVersion(info.version) ||
+                resolveDefaultDesktopUpdateChannel(info.version) !== state.channel
+          ) {
             yield* logUpdaterInfo("ignoring update that does not match selected channel", {
               version: info.version,
               channel: state.channel,
@@ -998,6 +1013,8 @@ export const make = Effect.gen(function* () {
       Effect.flatMap(
         Effect.fn("desktop.updates.applyUpdateDownloaded")(function* (info) {
           const state = yield* Ref.get(updateStateRef);
+          if (isOtterwareVersion(environment.appVersion) !== isOtterwareVersion(info.version))
+            return;
           yield* setState(reduceDesktopUpdateStateOnDownloadComplete(state, info.version));
           yield* logUpdaterInfo("update downloaded", { version: info.version });
         }),
@@ -1058,7 +1075,7 @@ export const make = Effect.gen(function* () {
 
       const settings = yield* desktopSettings.get;
       const disabledReason = yield* resolveDisabledReason;
-      yield* setState(yield* baseUpdateState(settings.updateChannel, disabledReason));
+      yield* setState(yield* baseUpdateState(isOtterwareVersion(environment.appVersion) ? "latest" : settings.updateChannel, disabledReason));
       if (Option.isSome(disabledReason)) {
         return;
       }
@@ -1105,6 +1122,7 @@ export const make = Effect.gen(function* () {
     setChannel: Effect.fn("desktop.updates.setChannel")(function* (
       nextChannel: DesktopUpdateChannel,
     ) {
+      if (isOtterwareVersion(environment.appVersion)) return yield* Ref.get(updateStateRef);
       yield* Effect.annotateCurrentSpan({ channel: nextChannel });
       const activeAction = yield* tryStartChannelChange;
       if (Option.isSome(activeAction)) {

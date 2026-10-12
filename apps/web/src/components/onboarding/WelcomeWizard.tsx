@@ -1,3 +1,4 @@
+import { OtterwareWordmark } from "../OtterwareLogo";
 import { useAuth } from "../../accounts/AccountProvider";
 import { useAtomValue } from "@effect/atom-react";
 import type {
@@ -230,16 +231,7 @@ export function WelcomeWizard({
       >
         <WizardHeader
           title="Set up Otterware"
-          identity={
-            <div className="flex items-baseline" role="img" aria-label="Otterware">
-              <span className="shrink-0 text-2xl font-medium tracking-tight" aria-hidden>
-                Otter
-              </span>
-              <span className="text-2xl font-medium tracking-tight text-muted-foreground">
-                ware
-              </span>
-            </div>
-          }
+          identity={<OtterwareWordmark className="text-2xl" />}
         >
           <WizardSteps
             steps={ONBOARDING_STAGES}

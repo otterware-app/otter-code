@@ -6,6 +6,7 @@ import * as Layer from "effect/Layer";
 import { afterEach, beforeEach, vi } from "vite-plus/test";
 
 const electron = vi.hoisted(() => ({
+  on: vi.fn(),
   configureWebAuthn: vi.fn(),
   showMessageBox: vi.fn(),
   fromWebContents: vi.fn(),
@@ -13,7 +14,8 @@ const electron = vi.hoisted(() => ({
 const webauthn = vi.hoisted(() => ({ createCredential: vi.fn(), getCredential: vi.fn() }));
 
 vi.mock("electron", () => ({
-  app: { configureWebAuthn: electron.configureWebAuthn },
+  app: { on: electron.on, configureWebAuthn: electron.configureWebAuthn },
+  shell: { openExternal: vi.fn() },
   dialog: { showMessageBox: electron.showMessageBox },
   BrowserWindow: { fromWebContents: electron.fromWebContents },
   webContents: { fromFrame: () => undefined },
@@ -49,9 +51,10 @@ type Handler = (event: { readonly senderFrame: object | null }, publicKey: unkno
 const makeGuest = (origin = "https://accounts.example.com") => {
   const handlers = new Map<string, Handler>();
   const state = { focused: true };
-  const mainFrame = { origin, isDestroyed: () => false };
+  const mainFrame = { url: origin, origin, isDestroyed: () => false };
   const guest = {
     mainFrame,
+    isDestroyed: () => false,
     hostWebContents: {},
     isFocused: () => state.focused,
     ipc: {
@@ -87,8 +90,10 @@ const attestationObject = (authData: ReadonlyArray<number>) => {
 describe("PreviewPasskeys", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    electron.showMessageBox.mockResolvedValue({ response: 1 });
     electron.fromWebContents.mockReturnValue({
       isDestroyed: () => false,
+      getParentWindow: () => null,
       getNativeWindowHandle: () => Buffer.from([1]),
     });
   });
@@ -131,7 +136,7 @@ describe("PreviewPasskeys", () => {
       assert.strictEqual(webauthn.createCredential.mock.calls.length, 0);
 
       detach();
-      assert.strictEqual(handlers.size, 0);
+      assert.strictEqual(handlers.size, 1); // Fallback IPC is available even without the native bridge.
     }).pipe(Effect.provide(bridgeLayer)),
   );
 
@@ -291,7 +296,7 @@ describe("PreviewPasskeys", () => {
       assert.isFalse(entitled.bridgeEnabled);
       const { guest, handlers } = makeGuest();
       entitled.attachGuest(guest);
-      assert.strictEqual(handlers.size, 0);
+      assert.strictEqual(handlers.size, 1); // Fallback IPC is available even without the native bridge.
 
       const unpackaged = yield* PreviewPasskeys.PreviewPasskeys.pipe(
         Effect.provide(
@@ -305,6 +310,23 @@ describe("PreviewPasskeys", () => {
       assert.strictEqual(electron.configureWebAuthn.mock.calls.length, 1);
       assert.isFalse(unpackaged.bridgeEnabled);
     }),
+  );
+
+  it.effect("wires fallback IPC to extension windows in the browser session only", () =>
+    Effect.gen(function* () {
+      const passkeys = yield* PreviewPasskeys.PreviewPasskeys;
+      const session = { on: () => {} } as unknown as Electron.Session;
+      passkeys.installSessionHandlers(session);
+      const listener = electron.on.mock.calls.find(
+        ([event]) => event === "web-contents-created",
+      )![1];
+      const { guest, handlers } = makeGuest("chrome-extension://bitwarden/popup.html");
+      listener({}, Object.assign(guest, { session }));
+      assert.isTrue(handlers.has("otterware:passkey-browser-fallback"));
+      const other = makeGuest();
+      listener({}, Object.assign(other.guest, { session: {} }));
+      assert.strictEqual(other.handlers.size, 0);
+    }).pipe(Effect.provide(bridgeLayer)),
   );
 
   it.effect("asks which passkey to use only when a site has several", () =>

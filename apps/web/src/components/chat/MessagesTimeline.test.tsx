@@ -2587,7 +2587,7 @@ describe("MessagesTimeline", () => {
     );
 
     // The Otter Code mark replaces the generic tool icon for its MCP calls.
-    expect(markup).toContain('d="M8.6 5.2 1.8 12l6.8 6.8');
+    expect(markup).toContain('viewBox="123 127 780 780"');
     expect(markup).toContain("Read an Otter Code thread");
     expect(markup).not.toContain("mcp__t3-code__t3_thread_read");
   });

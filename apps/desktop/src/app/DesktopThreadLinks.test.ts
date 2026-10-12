@@ -4,22 +4,22 @@ import { threadPathFromDeepLink } from "./DesktopThreadLinks.ts";
 
 describe("threadPathFromDeepLink", () => {
   it("reads a thread link for this app's scheme", () => {
-    expect(threadPathFromDeepLink("ottercode://app/env-1/linear-session%3Aabc", "ottercode")).toBe(
+    expect(threadPathFromDeepLink("otterware://app/env-1/linear-session%3Aabc", "otterware")).toBe(
       "/env-1/linear-session%3Aabc",
     );
   });
 
   it("ignores unrelated callbacks, other schemes, and other paths", () => {
     for (const url of [
-      "ottercode://app/",
-      "ottercode://app/?code=1",
-      "ottercode-dev://app/env-1/thread-1",
-      "ottercode://other/env-1/thread-1",
-      "ottercode://app/env-1/thread-1/extra",
+      "otterware://app/",
+      "otterware://app/?code=1",
+      "otterware-dev://app/env-1/thread-1",
+      "otterware://other/env-1/thread-1",
+      "otterware://app/env-1/thread-1/extra",
       "/Applications/Otter Code.app",
       "--inspect",
     ]) {
-      expect(threadPathFromDeepLink(url, "ottercode"), url).toBeNull();
+      expect(threadPathFromDeepLink(url, "otterware"), url).toBeNull();
     }
   });
 });

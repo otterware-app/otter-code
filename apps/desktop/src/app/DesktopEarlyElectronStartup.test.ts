@@ -24,6 +24,40 @@ describe("DesktopEarlyElectronStartup", () => {
     assert.equal(preference, "kwallet6");
   });
 
+  it("prefers the Otterware client settings and falls back to the shared Otter Code copy", () => {
+    const read: string[] = [];
+    const preference = resolveEarlyLinuxPasswordStorePreference({
+      env: {},
+      homeDirectory: "/home/user",
+      joinPath,
+      readFileString: (path) => {
+        read.push(path);
+        if (path.startsWith("/home/user/.otterware/")) throw new Error("not migrated yet");
+        return JSON.stringify({ linuxPasswordStore: "kwallet6" });
+      },
+    });
+
+    assert.equal(preference, "kwallet6");
+    assert.deepEqual(read, [
+      "/home/user/.otterware/userdata/desktop-settings.json",
+      "/home/user/.otter-code/userdata/desktop-settings.json",
+    ]);
+  });
+
+  it("reads client settings from OTTERWARE_HOME when set", () => {
+    const preference = resolveEarlyLinuxPasswordStorePreference({
+      env: { OTTERWARE_HOME: "/tmp/ow", VITE_DEV_SERVER_URL: "http://127.0.0.1:5173" },
+      homeDirectory: "/home/user",
+      joinPath,
+      readFileString: (path) => {
+        assert.equal(path, "/tmp/ow/userdata/desktop-settings.json");
+        return JSON.stringify({ linuxPasswordStore: "kwallet" });
+      },
+    });
+
+    assert.equal(preference, "kwallet");
+  });
+
   it("accepts JSONC in the early desktop settings file", () => {
     const preference = resolveEarlyLinuxPasswordStorePreference({
       env: { T3CODE_HOME: "/home/user/.t3-test" },
@@ -82,8 +116,8 @@ describe("DesktopEarlyElectronStartup", () => {
 
     assert.deepEqual(options, {
       isDevelopment: true,
-      linuxWmClass: "otter-code-dev",
-      linuxDesktopEntryName: "dev.otterware.code.dev.desktop",
+      linuxWmClass: "otterware-dev",
+      linuxDesktopEntryName: "dev.otterware.suite.dev.desktop",
       passwordStore: "gnome-libsecret",
     });
   });

@@ -7,6 +7,14 @@ import * as NodeOS from "node:os";
 import * as NodePath from "node:path";
 import * as NodeURL from "node:url";
 import { ensureElectronRuntime } from "./ensure-electron-runtime.mjs";
+import {
+  OTTERWARE_APP_ID,
+  OTTERWARE_DEV_APP_ID,
+  OTTERWARE_DEV_PRODUCT_NAME,
+  OTTERWARE_DEV_URL_SCHEME,
+  OTTERWARE_PRODUCT_NAME,
+  OTTERWARE_URL_SCHEME,
+} from "../../../packages/shared/src/otterware.ts";
 
 const isDevelopment = Boolean(process.env.VITE_DEV_SERVER_URL);
 const __dirname = NodePath.dirname(NodeURL.fileURLToPath(import.meta.url));
@@ -15,11 +23,11 @@ const repoRoot = NodePath.resolve(desktopDir, "..", "..");
 const devBundleIdSuffix = NodePath.basename(repoRoot)
   .toLowerCase()
   .replaceAll(/[^a-z0-9]+/g, "");
-const APP_DISPLAY_NAME = isDevelopment ? "Otter Code (Dev)" : "Otter Code";
+const APP_DISPLAY_NAME = isDevelopment ? OTTERWARE_DEV_PRODUCT_NAME : OTTERWARE_PRODUCT_NAME;
 const APP_BUNDLE_ID = isDevelopment
-  ? `dev.otterware.code.dev.${devBundleIdSuffix || "local"}`
-  : "dev.otterware.code";
-const APP_PROTOCOL_SCHEMES = isDevelopment ? ["ottercode-dev"] : ["ottercode"];
+  ? `${OTTERWARE_DEV_APP_ID}.${devBundleIdSuffix || "local"}`
+  : OTTERWARE_APP_ID;
+const APP_PROTOCOL_SCHEMES = isDevelopment ? [OTTERWARE_DEV_URL_SCHEME] : [OTTERWARE_URL_SCHEME];
 const LAUNCHER_VERSION = 19;
 const developmentMacIconPngPath = NodePath.join(
   repoRoot,
@@ -27,7 +35,12 @@ const developmentMacIconPngPath = NodePath.join(
   "otter-dev",
   "otter-dev-macos-1024.png",
 );
-const productionMacIconPngPath = NodePath.join(repoRoot, "assets", "otter", "otter-macos-1024.png");
+const productionMacIconPngPath = NodePath.join(
+  repoRoot,
+  "assets",
+  "otterware",
+  "otterware-macos-1024.png",
+);
 // oxlint-disable-next-line t3code/no-global-process-runtime -- Standalone launcher script has no Effect runtime.
 const hostPlatform = NodeOS.platform();
 
@@ -269,10 +282,8 @@ export function resolveMacBundleInfoPlistStrings(executableName) {
     CFBundleIdentifier: APP_BUNDLE_ID,
     CFBundleExecutable: executableName,
     CFBundleIconFile: "icon.icns",
-    NSScreenCaptureUsageDescription:
-      "Otter Code captures the active window when you use the snapshot shortcut.",
-    NSDocumentsFolderUsageDescription:
-      "Otter Code reads project files you open in the desktop app.",
+    NSScreenCaptureUsageDescription: `${OTTERWARE_PRODUCT_NAME} captures the active window when you use the snapshot shortcut.`,
+    NSDocumentsFolderUsageDescription: `${OTTERWARE_PRODUCT_NAME} reads project files you open in the desktop app.`,
   };
 }
 

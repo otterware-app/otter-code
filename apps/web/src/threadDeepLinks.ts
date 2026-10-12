@@ -1,7 +1,8 @@
 import { EnvironmentId, ThreadId } from "@t3tools/contracts";
+import { OTTERWARE_URL_SCHEME } from "@t3tools/shared/otterware";
 
-/** Desktop app scheme on every OS; `ottercode://app/<path>` opens that path in the app. */
-const DESKTOP_APP_SCHEME = "ottercode";
+/** Desktop app scheme on every OS; `otterware://app/<path>` opens that path in the app. */
+const DESKTOP_APP_SCHEME = OTTERWARE_URL_SCHEME;
 /** Set on links that should hand off from the hosted app to the desktop app, like Linear's. */
 export const OPEN_IN_DESKTOP_PARAM = "open";
 

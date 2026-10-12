@@ -14,6 +14,7 @@ export const BRAND_ASSET_PATHS = {
   productionWebAppleTouchIconPng: "assets/otter/otter-web-apple-touch-180.png",
   productionWebIcon192Png: "assets/otter/otter-web-icon-192x192.png",
   productionWebIcon512Png: "assets/otter/otter-web-icon-512x512.png",
+  productionWebFaviconSvg: "assets/otter/otter-web-favicon.svg",
 
   nightlyIconComposerProject: "assets/otter-nightly/app-icon.icon",
   nightlyIosIconPng: "assets/otter-nightly/otter-nightly-ios-1024.png",
@@ -26,6 +27,7 @@ export const BRAND_ASSET_PATHS = {
   nightlyWebAppleTouchIconPng: "assets/otter-nightly/otter-nightly-web-apple-touch-180.png",
   nightlyWebIcon192Png: "assets/otter-nightly/otter-nightly-web-icon-192x192.png",
   nightlyWebIcon512Png: "assets/otter-nightly/otter-nightly-web-icon-512x512.png",
+  nightlyWebFaviconSvg: "assets/otter-nightly/otter-nightly-web-favicon.svg",
 
   developmentDesktopIconPng: "assets/otter-dev/otter-dev-macos-1024.png",
   developmentWindowsIconIco: "assets/otter-dev/otter-dev-windows.ico",
@@ -35,6 +37,7 @@ export const BRAND_ASSET_PATHS = {
   developmentWebAppleTouchIconPng: "assets/otter-dev/otter-dev-web-apple-touch-180.png",
   developmentWebIcon192Png: "assets/otter-dev/otter-dev-web-icon-192x192.png",
   developmentWebIcon512Png: "assets/otter-dev/otter-dev-web-icon-512x512.png",
+  developmentWebFaviconSvg: "assets/otter-dev/otter-dev-web-favicon.svg",
 } as const;
 
 export type WebAssetBrand = "development" | "nightly" | "production";
@@ -59,6 +62,7 @@ const WEB_ICON_TARGET_FILENAMES = {
   appleTouchIconPng: "apple-touch-icon.png",
   icon192Png: "icon-192x192.png",
   icon512Png: "icon-512x512.png",
+  faviconSvg: "favicon.svg",
 } as const;
 
 const WEB_ICON_SOURCE_PATHS_BY_BRAND = {
@@ -69,6 +73,7 @@ const WEB_ICON_SOURCE_PATHS_BY_BRAND = {
     appleTouchIconPng: BRAND_ASSET_PATHS.developmentWebAppleTouchIconPng,
     icon192Png: BRAND_ASSET_PATHS.developmentWebIcon192Png,
     icon512Png: BRAND_ASSET_PATHS.developmentWebIcon512Png,
+    faviconSvg: BRAND_ASSET_PATHS.developmentWebFaviconSvg,
   },
   nightly: {
     faviconIco: BRAND_ASSET_PATHS.nightlyWebFaviconIco,
@@ -77,6 +82,7 @@ const WEB_ICON_SOURCE_PATHS_BY_BRAND = {
     appleTouchIconPng: BRAND_ASSET_PATHS.nightlyWebAppleTouchIconPng,
     icon192Png: BRAND_ASSET_PATHS.nightlyWebIcon192Png,
     icon512Png: BRAND_ASSET_PATHS.nightlyWebIcon512Png,
+    faviconSvg: BRAND_ASSET_PATHS.nightlyWebFaviconSvg,
   },
   production: {
     faviconIco: BRAND_ASSET_PATHS.productionWebFaviconIco,
@@ -85,6 +91,7 @@ const WEB_ICON_SOURCE_PATHS_BY_BRAND = {
     appleTouchIconPng: BRAND_ASSET_PATHS.productionWebAppleTouchIconPng,
     icon192Png: BRAND_ASSET_PATHS.productionWebIcon192Png,
     icon512Png: BRAND_ASSET_PATHS.productionWebIcon512Png,
+    faviconSvg: BRAND_ASSET_PATHS.productionWebFaviconSvg,
   },
 } as const satisfies Record<WebAssetBrand, Record<keyof typeof WEB_ICON_TARGET_FILENAMES, string>>;
 
@@ -117,6 +124,10 @@ export function resolveWebIconOverrides(
     {
       sourceRelativePath: sourcePaths.icon512Png,
       targetRelativePath: `${targetDirectory}/${WEB_ICON_TARGET_FILENAMES.icon512Png}`,
+    },
+    {
+      sourceRelativePath: sourcePaths.faviconSvg,
+      targetRelativePath: `${targetDirectory}/${WEB_ICON_TARGET_FILENAMES.faviconSvg}`,
     },
   ];
 }

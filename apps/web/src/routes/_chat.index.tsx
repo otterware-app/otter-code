@@ -1,6 +1,6 @@
 import { RefreshIcon } from "~/components/ui/refresh-icon";
 import { scopeProjectRef } from "@t3tools/client-runtime/environment";
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 
 import { isElectron } from "../env";
@@ -19,6 +19,7 @@ import {
   useThreadShells,
 } from "../state/entities";
 import { useEnvironments } from "../state/environments";
+import { consumeSuiteLanding } from "~/suite/modules";
 
 function ChatIndexRouteView() {
   const { authGateState } = Route.useRouteContext();
@@ -108,5 +109,8 @@ function DraftStartError({ onRetry }: { readonly onRetry: () => void }) {
 }
 
 export const Route = createFileRoute("/_chat/")({
+  beforeLoad: () => {
+    if (consumeSuiteLanding()) throw redirect({ to: "/home", replace: true });
+  },
   component: ChatIndexRouteView,
 });

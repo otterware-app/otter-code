@@ -7,10 +7,11 @@ import packageJson from "./package.json" with { type: "json" };
 import { WeightedShardSequencer } from "./src/testUtils/weightedShardSequencer.ts";
 
 // NSIS install time tracks file count, not bytes.
+import { shouldBundleCliDependency } from "../../scripts/lib/cli-external-packages.ts";
 import {
-  isExternalCliDependency,
-  shouldBundleCliDependency,
-} from "../../scripts/lib/cli-external-packages.ts";
+  DRIVE_RUNTIME_ALIASES,
+  SERVER_RUNTIME_DEPENDENCY_OPTIONS,
+} from "../../scripts/lib/drive-runtime-packaging.ts";
 
 export { shouldBundleCliDependency };
 
@@ -91,17 +92,18 @@ export default mergeConfig(
         : {}),
       // Its UMD entry hides relative require calls inside a factory. Bundle the ESM entry.
       alias: {
+        ...DRIVE_RUNTIME_ALIASES,
         "vscode-json-languageservice": "vscode-json-languageservice/lib/esm/jsonLanguageService.js",
         "jsonc-parser": "jsonc-parser/lib/esm/main.js",
       },
       deps: {
-        // `neverBundle` forces the native packages out: returning false from
-        // `alwaysBundle` only means "no opinion", so a transitive dependency
-        // would still be bundled — which silently inlined native loaders such
-        // as node-gyp-build, losing native acceleration.
-        alwaysBundle: shouldBundleCliDependency,
-        neverBundle: (id: string) => isExternalCliDependency(id),
-        onlyBundle: false,
+        // Both halves are required. `alwaysBundle` forces the JS dependencies in
+        // (declared deps are external by default, which is what this change is
+        // undoing). `neverBundle` forces the native packages out: returning
+        // false from `alwaysBundle` only means "no opinion", so a transitive
+        // dependency would still be bundled — which silently inlined native
+        // loaders such as node-gyp-build, losing native acceleration.
+        ...SERVER_RUNTIME_DEPENDENCY_OPTIONS,
       },
       banner: {
         js: "#!/usr/bin/env node\n",
@@ -122,6 +124,13 @@ export default mergeConfig(
         ),
         __T3CODE_BUILD_RELAY_CLIENT_OTLP_TRACES_TOKEN__: JSON.stringify(
           repoEnv.T3CODE_RELAY_CLIENT_OTLP_TRACES_TOKEN?.trim() ?? "",
+        ),
+        // Otterware Calendar: a Google "Desktop app" OAuth client (calendar/google/GoogleOAuthClientConfig.ts).
+        __T3CODE_BUILD_GOOGLE_CLIENT_ID__: JSON.stringify(
+          repoEnv.T3CODE_GOOGLE_CLIENT_ID?.trim() ?? "",
+        ),
+        __T3CODE_BUILD_GOOGLE_CLIENT_SECRET__: JSON.stringify(
+          repoEnv.T3CODE_GOOGLE_CLIENT_SECRET?.trim() ?? "",
         ),
       },
     },

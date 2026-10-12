@@ -12,11 +12,13 @@ import {
   type ResolvedSettingsScope,
   type SettingsScopeSearch,
 } from "./settingsScope";
+import { CALENDAR_SETTINGS_SEARCH_ITEMS } from "../../suite/calendar/calendarSettingsSearch";
 
 export type SettingsPath =
   | "/settings/projects"
   | "/settings/project-groups"
   | "/settings/general"
+  | "/settings/calendar"
   | "/settings/diagnostics"
   | "/settings/appearance"
   | "/settings/keybindings"
@@ -29,6 +31,8 @@ export type SettingsPath =
   | "/settings/code-intelligence"
   | "/settings/storage"
   | "/settings/connections"
+  // Otterware modules (suite/<module>/).
+  | "/settings/drive"
   | "/settings/archived";
 
 export type SettingsSearchScope =
@@ -78,6 +82,7 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   "/settings/diagnostics": "Diagnostics",
   "/settings/projects": "Project",
   "/settings/general": "General",
+  "/settings/calendar": "Calendar",
   "/settings/project-groups": "Spaces",
   "/settings/appearance": "Appearance",
   "/settings/keybindings": "Keybindings",
@@ -90,6 +95,7 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   "/settings/code-intelligence": "Code intelligence",
   "/settings/storage": "Storage",
   "/settings/connections": "Connections",
+  "/settings/drive": "Drive",
   "/settings/archived": "Archived threads",
 };
 
@@ -1088,11 +1094,18 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["pull request trusted environments shared credentials permissions read actions"],
   },
   {
+    id: "drive-connection",
+    title: "Otter Drive",
+    to: "/settings/drive",
+    searchTerms: ["drive otter drive documents files connect sign in device code otterware"],
+  },
+  {
     id: "archive",
     title: "Archived threads",
     to: "/settings/archived",
     searchTerms: ["restore reopen deleted history projects"],
   },
+  ...CALENDAR_SETTINGS_SEARCH_ITEMS,
 ] as const satisfies ReadonlyArray<SettingsSearchItem>;
 
 export type SettingsSearchItemId = (typeof SETTINGS_SEARCH_ITEMS)[number]["id"];
@@ -1104,6 +1117,7 @@ const SETTINGS_CATEGORY_SCOPES: Readonly<Record<SettingsPath, SettingsSearchScop
   "/settings/projects": "project",
   "/settings/project-groups": null,
   "/settings/general": null,
+  "/settings/calendar": null,
   "/settings/appearance": null,
   "/settings/snap-shot": null,
   "/settings/keybindings": null,
@@ -1114,6 +1128,7 @@ const SETTINGS_CATEGORY_SCOPES: Readonly<Record<SettingsPath, SettingsSearchScop
   "/settings/code-intelligence": "environment-defaults",
   "/settings/storage": "project-defaults",
   "/settings/connections": "connections",
+  "/settings/drive": null,
   "/settings/scheduled-tasks": null,
   "/settings/archived": "project-defaults",
 };

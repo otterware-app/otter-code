@@ -30,6 +30,7 @@ import * as DesktopObservability from "../app/DesktopObservability.ts";
 import * as DesktopTelemetryPublisher from "../telemetry/DesktopTelemetryPublisher.ts";
 import * as DesktopBrowserHost from "../preview/DesktopBrowserHost.ts";
 import * as DesktopWslEnvironment from "../wsl/DesktopWslEnvironment.ts";
+import { makeStateDirInUseScanner, type StateDirInUse } from "./OtterwareStateDirInUse.ts";
 
 const INITIAL_RESTART_DELAY = Duration.millis(500);
 const MAX_RESTART_DELAY = Duration.seconds(10);
@@ -243,6 +244,9 @@ export interface BackendInstanceSpec {
   readonly onShutdown?: () => Effect.Effect<void>;
   readonly onPreflightFailed?: (failure: PreflightFailure) => Effect.Effect<boolean>;
   readonly onStateDirOwned?: () => Effect.Effect<void>;
+  // Fired when the backend exited because another live server owns its data
+  // dir. The restart loop stops; returning true starts the backend again.
+  readonly onStateDirInUse?: (info: StateDirInUse) => Effect.Effect<boolean>;
 }
 
 interface ActiveBackendRun {
@@ -794,6 +798,7 @@ export const makeBackendInstance = Effect.fn("makeBackendInstance")(function* (
           },
         ]);
 
+        const stateDirInUseScanner = makeStateDirInUseScanner();
         const finalizeRun = Effect.fn("desktop.backendInstance.finalizeRun")(function* (
           reason: string,
           exitCode?: number,
@@ -873,7 +878,12 @@ export const makeBackendInstance = Effect.fn("makeBackendInstance")(function* (
                   yield* (spec.onStateDirOwned?.() ?? Effect.void).pipe(Effect.ignore);
                   return;
                 }
-                yield* scheduleRestart(reason);
+                const inUse = stateDirInUseScanner.finish();
+                if (Option.isSome(inUse)) {
+                  yield* stopForStateDirInUse(inUse.value);
+                } else {
+                  yield* scheduleRestart(reason);
+                }
               }
             }),
           );
@@ -941,7 +951,11 @@ export const makeBackendInstance = Effect.fn("makeBackendInstance")(function* (
               });
             },
           ),
-          onOutput: (streamName, chunk) => backendOutputLog.writeOutputChunk(streamName, chunk),
+          onOutput: (streamName, chunk) =>
+            Effect.suspend(() => {
+              if (streamName === "stderr") stateDirInUseScanner.push(chunk);
+              return backendOutputLog.writeOutputChunk(streamName, chunk);
+            }),
         }).pipe(
           Effect.provideService(ChildProcessSpawner.ChildProcessSpawner, spawner),
           Effect.provideService(HttpClient.HttpClient, httpClient),
@@ -961,6 +975,24 @@ export const makeBackendInstance = Effect.fn("makeBackendInstance")(function* (
       }),
     ),
   ).pipe(Effect.withSpan("desktop.backendInstance.start", { attributes: { id: spec.id } }));
+
+  // Restarting cannot help while another server owns the data dir, so stop
+  // instead of crash-looping and let the spec ask the person what to do.
+  const stopForStateDirInUse = Effect.fn("desktop.backendInstance.stopForStateDirInUse")(function* (
+    info: StateDirInUse,
+  ) {
+    yield* logInstanceError("backend data directory is in use by another server; not restarting", {
+      pid: info.pid,
+      stateDir: info.stateDir,
+    });
+    yield* Ref.update(state, (latest) => ({ ...latest, desiredRunning: false, ready: false }));
+    const onStateDirInUse = spec.onStateDirInUse;
+    if (onStateDirInUse === undefined) return;
+    yield* Effect.forkIn(
+      onStateDirInUse(info).pipe(Effect.flatMap((retry) => (retry ? start : Effect.void))),
+      parentScope,
+    );
+  });
 
   const scheduleRestart = Effect.fn("desktop.backendInstance.scheduleRestart")(function* (
     reason: string,

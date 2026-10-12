@@ -1028,6 +1028,7 @@ export const SystemSettingsPaneSchema = Schema.Literals(["full-disk-access"]);
 export type SystemSettingsPane = typeof SystemSettingsPaneSchema.Type;
 
 export interface DesktopBridge {
+  drive?: import("./suite/drive.ts").DriveDesktopBridge;
   getAppBranding: () => DesktopAppBranding | null;
   getRelayTelemetryEnabled?: () => boolean;
   getPathForFile?: (file: File) => string;
@@ -1121,6 +1122,12 @@ export interface DesktopBridge {
   ) => Promise<T | null>;
   receiveProviderAuthCallback?: (authorizationUrl: string) => Promise<string>;
   cancelProviderAuthCallback?: (authorizationUrl: string) => Promise<void>;
+  /**
+   * Catches Google's loopback redirect on this computer for a calendar sign-in owned by a
+   * remote environment; resolves with the redirect URL for `suite.calendar.google.connectComplete`.
+   */
+  receiveGoogleAuthCallback?: (authorizationUrl: string) => Promise<string>;
+  cancelGoogleAuthCallback?: (authorizationUrl: string) => Promise<void>;
   openExternal: (url: string) => Promise<boolean>;
   openSystemSettings?: (pane: SystemSettingsPane) => Promise<boolean>;
   checkSystemPermission?: (pane: SystemSettingsPane) => Promise<boolean>;

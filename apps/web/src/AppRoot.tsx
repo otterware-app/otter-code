@@ -9,6 +9,7 @@ import { BrowserProfileReporter } from "./browser/BrowserProfileReporter";
 import { ElectronBrowserHost } from "./browser/ElectronBrowserHost";
 import { QuitHoldOverlay } from "./components/QuitHoldOverlay";
 import { appAtomRegistry, AppAtomRegistryProvider } from "./rpc/atomRegistry";
+import { SuiteAccountProvider } from "./suite/SuiteAccountProvider";
 import type { AppRouter } from "./router";
 
 /**
@@ -29,10 +30,12 @@ export function AppRoot({ router }: { readonly router: AppRouter }) {
   );
   return (
     <AppAtomRegistryProvider>
-      <RouterProvider router={router} />
-      <ElectronBrowserHost />
-      <BrowserProfileReporter />
-      <QuitHoldOverlay />
+      <SuiteAccountProvider>
+        <RouterProvider router={router} />
+        <ElectronBrowserHost />
+        <BrowserProfileReporter />
+        <QuitHoldOverlay />
+      </SuiteAccountProvider>
     </AppAtomRegistryProvider>
   );
 }

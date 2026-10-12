@@ -25,6 +25,8 @@ import { ThreadPullRequestsPanel } from "../pullRequest/ThreadPullRequestsPanel"
 import { ThreadLinearIssuesPanel } from "../linear/ThreadLinearIssuesPanel";
 import { LinearIssueDetailPanel } from "../linear/LinearIssueDetailPanel";
 
+import { DriveRightPanelSurface } from "~/suite/drive/driveRightPanel";
+
 const PreviewPanel = lazy(() =>
   import("../preview/PreviewPanel").then((module) => ({ default: module.PreviewPanel })),
 );
@@ -181,6 +183,9 @@ export function RightPanelSurfaceContent(props: {
           {...props.linearIssues}
         />
       );
+    case "drive-documents":
+    case "drive-document":
+      return <DriveRightPanelSurface surface={surface} threadRef={threadRef} onCite={props.linearIssues.onCite} />;
     case "device":
       return (
         <Suspense fallback={null}>

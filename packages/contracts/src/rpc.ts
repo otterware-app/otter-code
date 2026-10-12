@@ -32,6 +32,7 @@ import * as Rpc from "effect/rpc/Rpc";
 import * as RpcGroup from "effect/rpc/RpcGroup";
 import * as RpcMiddleware from "effect/rpc/RpcMiddleware";
 import { NonNegativeInt, TrimmedNonEmptyString } from "./baseSchemas.ts";
+import { SuiteRpcGroup } from "./suite/index.ts";
 import {
   CodexAuthCallbackInput,
   CodexAuthCallbackState,
@@ -2133,7 +2134,7 @@ export const WsRpcGroup = RpcGroup.make(
   WsOrchestrationV2SubscribeShellRpc,
   WsOrchestrationV2SubscribeThreadRpc,
   WsOrchestrationV2SubscribeCommandOutputRpc,
-).middleware(RpcScopeAuthorization);
+).merge(SuiteRpcGroup).middleware(RpcScopeAuthorization);
 
 // Otter's own methods, also part of WsRpcGroup. The server builds their
 // handlers apart from upstream's handler object, which sits at TypeScript's

@@ -303,6 +303,7 @@ import { WorkflowOpeningBlock } from "./WorkflowOpeningBlock";
 import { SkillChipIcon } from "./SkillInlineText";
 import * as DateTime from "effect/DateTime";
 import { formatWorkspaceRelativePath } from "../../filePathDisplay";
+import { renderSuitePageContextChip } from "../../suite/sideChat/suitePageContextReference";
 import { forwardWheelToTimeline } from "./timelineMinimapWheel";
 import {
   buildReviewCommentRenderablePatch,
@@ -4585,7 +4586,10 @@ const userMessageContextPresentationRegistry = createContextPresentationRegistry
         ),
     },
   ],
-  fallback: (_kind, _record, context) => <UnavailableUserMessageContextChip {...context} />,
+  fallback: (kind, _record, context) =>
+    renderSuitePageContextChip(kind, context.reference.label, context.copyMarkdown) ?? (
+      <UnavailableUserMessageContextChip {...context} />
+    ),
 });
 function UserMessageContextReferenceChip(props: {
   reference: ChatMarkdownContextReference;

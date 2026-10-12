@@ -21,9 +21,9 @@ const defaultEnvironmentInput = {
   platform: "darwin",
   processArch: "arm64",
   appVersion: "1.2.3",
-  appPath: "/Applications/Otter Code.app/Contents/Resources/app.asar",
+  appPath: "/Applications/Otterware.app/Contents/Resources/app.asar",
   isPackaged: true,
-  resourcesPath: "/Applications/Otter Code.app/Contents/Resources",
+  resourcesPath: "/Applications/Otterware.app/Contents/Resources",
   runningUnderArm64Translation: false,
 } satisfies DesktopEnvironment.MakeDesktopEnvironmentInput;
 
@@ -40,7 +40,7 @@ interface ElectronAppCalls {
 const layerElectronApp = (calls: ElectronAppCalls) =>
   Layer.succeed(ElectronApp.ElectronApp, {
     metadata: Effect.die("unexpected metadata read"),
-    name: Effect.succeed("Otter Code"),
+    name: Effect.succeed("Otterware"),
     systemLocale: Effect.succeed("en-US"),
 
     whenReady: Effect.void,
@@ -133,7 +133,7 @@ const withIdentity = <A, E, R>(
               input.pathProbeError
                 ? Effect.fail(input.pathProbeError)
                 : Effect.succeed(
-                    input.legacyPathExists === true && /Otter Code( \(Dev\))?$/.test(path),
+                    input.legacyPathExists === true && /Otterware( \(Dev\))?$/.test(path),
                   ),
             readFileString: () =>
               Effect.succeed(input.packageJson ?? '{"t3codeCommitHash":"abcdef1234567890"}'),
@@ -154,7 +154,7 @@ describe("DesktopAppIdentity", () => {
         const identity = yield* DesktopAppIdentity.DesktopAppIdentity;
         const userDataPath = yield* identity.resolveUserDataPath;
 
-        assert.equal(userDataPath, "/Users/alice/Library/Application Support/otter-code");
+        assert.equal(userDataPath, "/Users/alice/Library/Application Support/otterware");
       }),
       { legacyPathExists: true },
     ),
@@ -190,17 +190,17 @@ describe("DesktopAppIdentity", () => {
   );
 
   it.effect.each([
-    { stage: "Beta", name: "Otter Code", aboutName: "Otter Code", environment: {} },
+    { stage: "Beta", name: "Otterware", aboutName: "Otterware", environment: {} },
     {
       stage: "Nightly",
-      name: "Otter Code",
-      aboutName: "Otter Code",
+      name: "Otterware",
+      aboutName: "Otterware",
       environment: { appVersion: "0.0.43-nightly.20260929.2428" },
     },
     {
       stage: "Dev",
-      name: "Otter Code Dev",
-      aboutName: "Otter Code (Dev)",
+      name: "Otterware Dev",
+      aboutName: "Otterware (Dev)",
       environment: { env: { VITE_DEV_SERVER_URL: "http://localhost:5173" } },
     },
   ])(

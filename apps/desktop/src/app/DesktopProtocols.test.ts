@@ -227,13 +227,13 @@ it.effect(
       assert.equal(event.preventDefault.mock.calls.length, 0);
       listeners.get("second-instance")!({}, [
         "t3",
-        "ottercode-dev://app/settings/providers?instanceId=work&code=never-forward",
+        "otterware-dev://app/settings/providers?instanceId=work&code=never-forward",
       ]);
       yield* Effect.promise(() => revealed.promise);
       assert.deepEqual(loadURL.mock.calls, [
-        ["ottercode-dev://app/settings/providers?instanceId=work"],
+        ["otterware-dev://app/settings/providers?instanceId=work"],
       ]);
-      listeners.get("open-url")!(event, "ottercode-dev://app/welcome#agents:machine-id");
+      listeners.get("open-url")!(event, "otterware-dev://app/welcome#agents:machine-id");
       assert.equal(event.preventDefault.mock.calls.length, 1);
     }).pipe(
       Effect.scoped,

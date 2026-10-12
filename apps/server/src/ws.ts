@@ -97,6 +97,7 @@ import {
   OTTER_WS_RPC_TAGS,
   WsRpcGroup,
 } from "@t3tools/contracts";
+import { SUITE_RPC_TAGS } from "@t3tools/contracts/suite";
 import {
   HttpRouter,
   HttpServerRequest,
@@ -222,6 +223,7 @@ import * as BackgroundPolicy from "./background/BackgroundPolicy.ts";
 import * as EnvironmentAuth from "./auth/EnvironmentAuth.ts";
 import { requiredScopeForDeviceList, rpcAuthorizationError } from "./auth/RpcAuthorization.ts";
 import * as RpcAuthorization from "./auth/RpcAuthorization.ts";
+import * as SuiteServer from "./suite/SuiteServer.ts";
 import { RpcInstrumentation, rpcInstrumentationLayer } from "./observability/RpcInstrumentation.ts";
 import * as ProcessDiagnostics from "./diagnostics/ProcessDiagnostics.ts";
 import * as ProcessResourceMonitor from "./diagnostics/ProcessResourceMonitor.ts";
@@ -546,7 +548,9 @@ function projectFileFailureContext(
 const PROVIDER_STATUS_DEBOUNCE_MS = 200;
 
 // Middleware added later wraps middleware added earlier, so instrumentation wraps authorization.
-const ServerWsRpcGroup = WsRpcGroup.omit(...OTTER_WS_RPC_TAGS).middleware(RpcInstrumentation);
+const ServerWsRpcGroup = WsRpcGroup.omit(...OTTER_WS_RPC_TAGS, ...SUITE_RPC_TAGS).middleware(
+  RpcInstrumentation,
+);
 // Replaying each intervening event costs a shell refetch; past this gap a
 // single O(active-threads) snapshot is cheaper and bounded.
 const SHELL_RESUME_MAX_GAP = 1_000;
@@ -3223,6 +3227,7 @@ export const layer = Layer.unwrap(
               serverBrowser,
             ).pipe(
               Layer.merge(layerOtterWsRpc(workspaceLanguage)),
+              Layer.merge(SuiteServer.layerRpcHandlers),
               Layer.provideMerge(RpcSerialization.layerJson),
               // Request fibers run in the handlers' context, so this reporter sees
               // their defects, not the rest of the server's.

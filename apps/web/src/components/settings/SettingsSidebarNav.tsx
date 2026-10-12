@@ -51,6 +51,8 @@ const SETTINGS_NAV_GROUPS: ReadonlyArray<{
     paths: [
       "/settings/snap-shot",
       "/settings/integrations",
+      "/settings/calendar",
+      "/settings/drive",
       "/settings/extensions",
       "/settings/connections",
     ],

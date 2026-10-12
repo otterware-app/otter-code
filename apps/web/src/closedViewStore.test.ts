@@ -41,6 +41,18 @@ describe("closedViewStore", () => {
     { id: "bad", kind: "panel-tab", threadRef: refA },
     { id: "bad", kind: "panel-tab", threadRef: {}, surface: { kind: "diff", id: "diff" } },
     { id: "bad", kind: "panel-tab", threadRef: refA, surface: {} },
+    {
+      id: "bad",
+      kind: "panel-tab",
+      threadRef: refA,
+      surface: { kind: "drive-document", id: "drive-document:other", reference: "doc-a" },
+    },
+    {
+      id: "bad",
+      kind: "panel-tab",
+      threadRef: refA,
+      surface: { kind: "drive-document", id: "drive-document:doc-a" },
+    },
     { id: "bad", kind: "panel-tab", threadRef: refA, surface: { kind: "file", id: "file:x" } },
     {
       id: "bad",

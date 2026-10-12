@@ -18,6 +18,8 @@ export type ChatShortcutHandler = (context: {
 
 export interface ChatShortcutsInput {
   readonly enabled: boolean;
+  readonly acceptsEvent?: (event: KeyboardEvent) => boolean;
+  readonly acceptsCommand?: (command: KeybindingCommand) => boolean;
   readonly keybindings: ResolvedKeybindingsConfig;
   readonly scriptKeybindings: ResolvedKeybindingsConfig;
   readonly getShortcutContext: (target: EventTarget | null) => ShortcutMatchContext & {
@@ -46,6 +48,7 @@ export function useChatShortcuts(input: ChatShortcutsInput) {
     const handler = (event: KeyboardEvent) => {
       const current = latest.current;
       const { keybindings } = current;
+      if (current.acceptsEvent?.(event) === false) return;
       if (preventRepeatedTerminalCloseShortcut(event, keybindings)) {
         event.stopPropagation();
         return;
@@ -74,7 +77,7 @@ export function useChatShortcuts(input: ChatShortcutsInput) {
       const command = resolveChatShortcutCommand(event, keybindings, current.scriptKeybindings, {
         context: shortcutContext,
       });
-      if (!command) return;
+      if (!command || current.acceptsCommand?.(command) === false) return;
       const run = current.commands[command] ?? current.fallback(command);
       if (!run || run({ event, terminalFocusOwner }) === false) return;
       event.preventDefault();
@@ -83,6 +86,7 @@ export function useChatShortcuts(input: ChatShortcutsInput) {
     const dismissFind = (event: KeyboardEvent) => {
       const current = latest.current;
       if (
+        current.acceptsEvent?.(event) === false ||
         event.key !== "Escape" ||
         !current.threadFindActive ||
         event.defaultPrevented ||

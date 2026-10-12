@@ -11,10 +11,11 @@ import * as Schema from "effect/Schema";
 import * as Scope from "effect/Scope";
 
 import * as Electron from "electron";
+import { OTTERWARE_DEV_URL_SCHEME, OTTERWARE_URL_SCHEME } from "@t3tools/shared/otterware";
 
 export const DESKTOP_HOST = "app";
-const DESKTOP_PRODUCTION_SCHEME = "ottercode";
-const DESKTOP_DEVELOPMENT_SCHEME = "ottercode-dev";
+const DESKTOP_PRODUCTION_SCHEME = OTTERWARE_URL_SCHEME;
+const DESKTOP_DEVELOPMENT_SCHEME = OTTERWARE_DEV_URL_SCHEME;
 
 export function getDesktopScheme(isDevelopment: boolean): string {
   return isDevelopment ? DESKTOP_DEVELOPMENT_SCHEME : DESKTOP_PRODUCTION_SCHEME;

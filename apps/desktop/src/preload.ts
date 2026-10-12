@@ -9,6 +9,8 @@ import type {
 } from "@t3tools/contracts";
 import { contextBridge, ipcRenderer, webFrame, webUtils } from "electron";
 
+import { createDriveBridge } from "./suite/drive/preload.ts";
+
 import * as IpcChannels from "./ipc/channels.ts";
 import { mergeLegacyLocalStorage } from "./legacyLocalStorageMerge.ts";
 import * as PreviewExtensionChannels from "./preview/extensions/channels.ts";
@@ -73,6 +75,7 @@ function unwrapEnsureSshEnvironmentResult(result: unknown) {
 }
 
 contextBridge.exposeInMainWorld("desktopBridge", {
+  drive: createDriveBridge(ipcRenderer),
   getAppBranding: () => {
     const result = ipcRenderer.sendSync(IpcChannels.GET_APP_BRANDING_CHANNEL);
     if (typeof result !== "object" || result === null) {
@@ -202,6 +205,10 @@ contextBridge.exposeInMainWorld("desktopBridge", {
     ipcRenderer.invoke(IpcChannels.RECEIVE_PROVIDER_AUTH_CALLBACK_CHANNEL, url),
   cancelProviderAuthCallback: (url: string) =>
     ipcRenderer.invoke(IpcChannels.CANCEL_PROVIDER_AUTH_CALLBACK_CHANNEL, url),
+  receiveGoogleAuthCallback: (url: string) =>
+    ipcRenderer.invoke(IpcChannels.RECEIVE_GOOGLE_AUTH_CALLBACK_CHANNEL, url),
+  cancelGoogleAuthCallback: (url: string) =>
+    ipcRenderer.invoke(IpcChannels.CANCEL_GOOGLE_AUTH_CALLBACK_CHANNEL, url),
   openExternal: (url: string) => ipcRenderer.invoke(IpcChannels.OPEN_EXTERNAL_CHANNEL, url),
   checkSystemPermission: (pane: string) =>
     ipcRenderer.invoke(IpcChannels.CHECK_SYSTEM_PERMISSION_CHANNEL, pane),

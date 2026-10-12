@@ -492,8 +492,8 @@ const layerTest = (
           DesktopEnvironment.DesktopEnvironment,
           DesktopEnvironment.DesktopEnvironment.of({
             platform,
-            displayName: "Otter Code (Dev)",
-            stateDir: "/state",
+            displayName: "Otterware (Dev)",
+            clientStateDir: "/state",
             linuxDesktopEntryName: "com.t3tools.T3Code.desktop",
             appRoot: "/repo",
             linuxApplicationsDir: "/test-data/applications",

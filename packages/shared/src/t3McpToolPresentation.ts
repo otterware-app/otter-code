@@ -1,3 +1,5 @@
+import { SUITE_MCP_TOOLS } from "./suite/mcpToolPresentation.ts";
+
 export type T3McpToolLogo = "t3-code";
 
 export interface T3McpToolPresentation {
@@ -64,13 +66,17 @@ export type T3McpToolSummaryAction =
   | "browser"
   | "device"
   | "html-preview"
-  | "html-render";
+  | "html-render"
+  | "calendar-read"
+  | "calendar-change"
+  // Otterware module tools (suite/mcpToolPresentation.ts).
+  | "drive";
 
 export interface T3McpToolDefinition {
   readonly displayName: string;
   readonly labels: readonly [action: string, running: string, completed: string, detail: string];
   readonly icon: "t3-code" | "browser" | "device" | "pull-request";
-  readonly summaryAction: T3McpToolSummaryAction;
+  readonly summaryAction: T3McpToolSummaryAction | null;
 }
 
 function tool(
@@ -85,6 +91,7 @@ function tool(
 const T3_MCP_SERVER_ALIASES = new Set(["t3-code", "t3_code", "t3code"]);
 
 const T3_MCP_TOOLS: Readonly<Record<string, T3McpToolDefinition>> = {
+  ...SUITE_MCP_TOOLS,
   link_pull_request: tool(
     ["Link", "Linking", "Linked", "a pull request"],
     "link-pr",

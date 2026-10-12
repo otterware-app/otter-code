@@ -28,7 +28,7 @@ it.effect("isolates Chromium dev profiles without inspecting or migrating the sh
 );
 
 it.effect("identifies a failed source read and preserves its cause", () => {
-  const sourceState = "/profiles/Otter Code/Local State";
+  const sourceState = "/profiles/Otterware/Local State";
   const cause = PlatformError.systemError({
     _tag: "PermissionDenied",
     module: "FileSystem",
@@ -57,7 +57,7 @@ it.effect("identifies a failed source read and preserves its cause", () => {
   );
 });
 
-it.effect.each(["Otter Code"])(
+it.effect.each(["Otterware"])(
   "preserves Windows credential keys from %s without copying browser databases",
   (sourceName) =>
     Effect.gen(function* () {
@@ -65,9 +65,9 @@ it.effect.each(["Otter Code"])(
       const path = yield* Path.Path;
       const directory = yield* fs.makeTempDirectoryScoped({ prefix: "t3-v2-profile-" });
       const source = path.join(directory, sourceName);
-      const destination = path.join(directory, "otter-code");
+      const destination = path.join(directory, "otterware");
       const state = '{"os_crypt":{"encrypted_key":"test-encrypted-key"}}';
-      yield* fs.makeDirectory(path.join(directory, "Otter Code"), { recursive: true });
+      yield* fs.makeDirectory(path.join(directory, "Otterware"), { recursive: true });
       yield* fs.makeDirectory(path.join(source, "IndexedDB"), { recursive: true });
       yield* fs.writeFileString(path.join(source, "Local State"), state);
       yield* fs.writeFileString(path.join(source, "IndexedDB", "LOCK"), "V1 owns this database");

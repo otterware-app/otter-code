@@ -23,6 +23,8 @@ const RIGHT_PANEL_KINDS = [
   "pull-requests",
   "linear-issues",
   "linear-issue",
+  "drive-documents",
+  "drive-document",
 ] as const;
 export type RightPanelKind = (typeof RIGHT_PANEL_KINDS)[number];
 
@@ -87,7 +89,11 @@ export type RightPanelSurface =
   /** The thread's linked Linear issues, a singleton tab like `pull-requests`. */
   | { id: "linear-issues"; kind: "linear-issues" }
   /** One Linear issue's page, keyed by identifier like `pull-request` tabs by reference. */
-  | { id: `linear-issue:${string}`; kind: "linear-issue"; identifier: string; url?: string };
+  | { id: `linear-issue:${string}`; kind: "linear-issue"; identifier: string; url?: string }
+  /** The thread's linked Otter Drive documents (Otterware), a singleton like `linear-issues`. */
+  | { id: "drive-documents"; kind: "drive-documents" }
+  /** One Drive document's page, keyed by its artifact id or URL (`suite/drive/driveRightPanel`). */
+  | { id: `drive-document:${string}`; kind: "drive-document"; reference: string; title?: string };
 
 const RIGHT_PANEL_STORAGE_KEY = "t3code:right-panel-state:v2";
 const RIGHT_PANEL_STORAGE_VERSION = 14;
@@ -136,7 +142,10 @@ interface RightPanelStoreState {
   ) => boolean;
   open: (
     ref: ScopedThreadRef,
-    kind: Exclude<RightPanelKind, "file" | "terminal" | "pull-request" | "linear-issue">,
+    kind: Exclude<
+      RightPanelKind,
+      "file" | "terminal" | "pull-request" | "linear-issue" | "drive-document"
+    >,
   ) => void;
   openDevice: (ref: ScopedThreadRef, target: DeviceTabTarget, automatic?: boolean) => void;
   renameDevice: (ref: ScopedThreadRef, surfaceId: string, title: string) => void;
@@ -177,6 +186,10 @@ interface RightPanelStoreState {
     ref: ScopedThreadRef,
     target: { readonly identifier: string; readonly url?: string },
   ) => void;
+  openDriveDocument: (
+    ref: ScopedThreadRef,
+    target: { readonly reference: string; readonly title?: string },
+  ) => void;
   openTerminal: (ref: ScopedThreadRef, terminalId: string) => void;
   splitTerminal: (
     ref: ScopedThreadRef,
@@ -204,7 +217,10 @@ interface RightPanelStoreState {
   toggleVisibility: (ref: ScopedThreadRef) => void;
   toggle: (
     ref: ScopedThreadRef,
-    kind: Exclude<RightPanelKind, "file" | "terminal" | "pull-request" | "linear-issue">,
+    kind: Exclude<
+      RightPanelKind,
+      "file" | "terminal" | "pull-request" | "linear-issue" | "drive-document"
+    >,
   ) => void;
   setThreadPanelOpen: (
     ref: ScopedThreadRef,
@@ -227,7 +243,10 @@ const DEFAULT_THREAD_PANEL_VISIBILITY: ThreadPanelVisibility = {
 };
 
 const singletonSurface = (
-  kind: Exclude<RightPanelKind, "file" | "preview" | "terminal" | "pull-request" | "linear-issue">,
+  kind: Exclude<
+    RightPanelKind,
+    "file" | "preview" | "terminal" | "pull-request" | "linear-issue" | "drive-document"
+  >,
 ): RightPanelSurface => {
   switch (kind) {
     case "diff":
@@ -238,6 +257,8 @@ const singletonSurface = (
       return { id: "pull-requests", kind };
     case "linear-issues":
       return { id: "linear-issues", kind };
+    case "drive-documents":
+      return { id: "drive-documents", kind };
     case "device":
       return { id: "device", kind };
   }
@@ -288,6 +309,20 @@ function linearIssueSurface(target: {
     kind: "linear-issue",
     identifier: target.identifier.toUpperCase(),
     ...(typeof target.url === "string" ? { url: target.url } : {}),
+  };
+}
+
+export type DriveDocumentSurface = Extract<RightPanelSurface, { kind: "drive-document" }>;
+
+export function driveDocumentSurface(target: {
+  readonly reference: string;
+  readonly title?: string;
+}): DriveDocumentSurface {
+  return {
+    id: `drive-document:${target.reference}`,
+    kind: "drive-document",
+    reference: target.reference,
+    ...(typeof target.title === "string" ? { title: target.title } : {}),
   };
 }
 
@@ -542,6 +577,11 @@ export function migratePersistedRightPanelState(persistedState: unknown): {
                           ]
                         : [];
                     }
+                    if (surface.kind === "drive-document") {
+                      return typeof surface.reference === "string" && surface.reference.length > 0
+                        ? [driveDocumentSurface(surface)]
+                        : [];
+                    }
                     if (surface.kind !== "terminal") return [surface];
                     if (
                       !("resourceId" in surface) ||
@@ -781,6 +821,17 @@ export const useRightPanelStore = create<RightPanelStoreState>()(
         set((state) =>
           userAction(state, scopedThreadKey(ref), (current) => {
             const surface = linearIssueSurface(target);
+            const next = upsertSurface(current, surface);
+            return {
+              ...next,
+              surfaces: next.surfaces.map((entry) => (entry.id === surface.id ? surface : entry)),
+            };
+          }),
+        ),
+      openDriveDocument: (ref, target) =>
+        set((state) =>
+          userAction(state, scopedThreadKey(ref), (current) => {
+            const surface = driveDocumentSurface(target);
             const next = upsertSurface(current, surface);
             return {
               ...next,

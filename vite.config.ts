@@ -2,6 +2,8 @@ import "vite-plus/test/config";
 import { defineConfig } from "vite-plus";
 import * as NodeURL from "node:url";
 
+import { OTTERWARE_VENDORED_FILES } from "./scripts/otterware/vendoredFiles.ts";
+
 const DOM_TEST_ENVIRONMENT_ALLOWLIST: Array<string> = [];
 
 const RESTRICTED_IMPORT_PATHS = [
@@ -58,6 +60,7 @@ export default defineConfig({
     environment: "node",
     exclude: [
       "**/.repos/**",
+      "**/vendor/**",
       "**/.t3/**",
       "**/node_modules/**",
       "**/dist/**",
@@ -97,6 +100,7 @@ export default defineConfig({
   fmt: {
     ignorePatterns: [
       ".repos/**",
+      "vendor/**",
       // Macroscope's glob-per-line ignore grammar, not Markdown: formatting
       // it rewrites `*` as `_` and joins lines.
       ".macroscope/ignore.md",
@@ -114,6 +118,7 @@ export default defineConfig({
       "apps/mobile/ios/**",
       "apps/mobile/uniwind-types.d.ts",
       "*.icon/**",
+      ...OTTERWARE_VENDORED_FILES,
     ],
     sortPackageJson: {},
     overrides: [
@@ -129,6 +134,7 @@ export default defineConfig({
     ignorePatterns: [
       ".repos",
       ".repos/**",
+      "vendor/**",
       "dist",
       "dist-electron",
       "node_modules",
@@ -141,6 +147,7 @@ export default defineConfig({
       "apps/mobile/android/**",
       "apps/mobile/ios/**",
       "apps/mobile/uniwind-types.d.ts",
+      ...OTTERWARE_VENDORED_FILES,
     ],
     plugins: ["eslint", "oxc", "react", "unicorn", "typescript"],
     jsPlugins: ["./oxlint-plugin-t3code/index.ts", "@shadcn/lint"],

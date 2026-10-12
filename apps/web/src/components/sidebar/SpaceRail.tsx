@@ -67,6 +67,8 @@ import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { isSidebarUtilityPage, useNavigateToMainApp } from "./mainAppLocation";
 import { RailCustomizePopover } from "./RailCustomizePopover";
 import { RailMoreMenu } from "./RailMoreMenu";
+import { isSuiteModulePath } from "../../suite/modules";
+import { SuiteRailButtons } from "../../suite/SuiteRail";
 import { SidebarUpdatePill } from "./SidebarUpdatePill";
 import {
   activeRailShortcutKey,
@@ -93,7 +95,7 @@ const RAIL_GLYPHS: Readonly<Record<RailItemId, LucideIcon>> = {
   automations: ClockIcon,
 };
 
-function RailButton({
+export function RailButton({
   label,
   selected = false,
   onClick,
@@ -215,7 +217,7 @@ export const SpaceRail = memo(function SpaceRail({ className }: { className?: st
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
   const moreButtonRef = useRef<HTMLButtonElement | null>(null);
-  const threadsShowing = !isSidebarUtilityPage(pathname);
+  const threadsShowing = !isSidebarUtilityPage(pathname) && !isSuiteModulePath(pathname);
   const environmentLabels = new Map(
     environmentIdentities.map((entry) => [entry.environmentId, entry.label]),
   );
@@ -369,6 +371,7 @@ export const SpaceRail = memo(function SpaceRail({ className }: { className?: st
         className="drag-region hidden h-(--workspace-topbar-height) w-full shrink-0 in-data-[app-frame=window]:block"
       />
       <div className="flex min-h-0 w-full flex-1 flex-col items-center gap-1.5 overflow-y-auto pt-2.5 [scrollbar-width:none]">
+        <SuiteRailButtons rail="start" />
         {visibleItems.map((id) => {
           const Icon = RAIL_GLYPHS[id];
           return (
@@ -471,6 +474,8 @@ export const SpaceRail = memo(function SpaceRail({ className }: { className?: st
           buttonClassName={RAIL_BUTTON}
           tooltipDisabled={draggingShortcut}
         />
+        <div aria-hidden className="my-0.5 h-px w-5 shrink-0 bg-sidebar-border" />
+        <SuiteRailButtons rail="end" />
       </div>
       <div className="flex shrink-0 flex-col items-center gap-1.5 pt-1">
         <SidebarUpdatePill />

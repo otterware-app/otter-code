@@ -246,6 +246,7 @@ jobs:
     env:
       VERSION: ${{ needs.preflight.outputs.version }}
       CHANNEL: ${{ needs.preflight.outputs.channel }}
+      HAS_RELEASES_TOKEN: ${{ secrets.OTTERWARE_RELEASES_TOKEN != '' }}
       SOURCE_SHA: ${{ needs.preflight.outputs.ref }}
     steps:
       - uses: actions/checkout@v6
@@ -259,8 +260,11 @@ jobs:
             !/.repos/
           sparse-checkout-cone-mode: false
 
+      # A fine-grained token limited to otterware-app/otterware-releases
+      # (Contents: read and write). The release app is only a fallback.
       - name: Mint release repository token
         id: release_token
+        if: ${{ env.HAS_RELEASES_TOKEN != 'true' }}
         continue-on-error: true
         uses: actions/create-github-app-token@v2
         with:
@@ -270,10 +274,10 @@ jobs:
           repositories: otterware-releases
           permission-contents: write
 
-      - name: Require release app installation
-        if: ${{ steps.release_token.outcome != 'success' }}
+      - name: Require a releases token
+        if: ${{ env.HAS_RELEASES_TOKEN != 'true' && steps.release_token.outcome != 'success' }}
         run: |
-          echo "::error::Install the release app on otterware-app/otterware-releases with Contents write permission; configure RELEASE_APP_ID and RELEASE_APP_PRIVATE_KEY."
+          echo "::error::Set the OTTERWARE_RELEASES_TOKEN secret (fine-grained token, Contents read and write on otterware-app/otterware-releases), or install a release app with RELEASE_APP_ID and RELEASE_APP_PRIVATE_KEY."
           exit 1
 
       - name: Download builds
@@ -307,5 +311,5 @@ jobs:
 
       - name: Publish immutable build and rolling feed
         env:
-          GH_TOKEN: ${{ steps.release_token.outputs.token }}
+          GH_TOKEN: ${{ secrets.OTTERWARE_RELEASES_TOKEN || steps.release_token.outputs.token }}
         run: bash scripts/otterware/publish-release.sh assets

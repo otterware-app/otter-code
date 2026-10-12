@@ -70,7 +70,7 @@ export function PullRequestToolbar(props: { readonly onRequestVisibility?: () =>
         onCloseSearch={closeSearch}
         onOpenSearch={openSearch}
         searchAccessibilityLabel="Search pull requests"
-        titleAccessibilityLabel="T3 Code, Pull requests"
+        titleAccessibilityLabel="Otter Code, Pull requests"
         onOpenEnvironments={() =>
           navigation.navigate("SettingsSheet", {
             screen: "SettingsContent",

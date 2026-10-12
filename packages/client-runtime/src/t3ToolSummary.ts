@@ -440,6 +440,15 @@ export function summarizeT3ToolCalls(
     case "capabilities":
       label = phrase("Checked", "check", `orchestration capabilities ${times}`);
       break;
+    case "calendar-read":
+      label = phrase("Checked", "check", `the calendar ${times}`);
+      break;
+    case "calendar-change":
+      label = phrase("Changed", "change", quantity(selected.length, "calendar event"));
+      break;
+    case "drive":
+      label = phrase("Used", "use", `Otter Drive ${times}`);
+      break;
   }
   return { label, failedCount };
 }

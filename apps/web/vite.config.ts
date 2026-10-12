@@ -16,6 +16,7 @@ import {
 
 import { loadRepoEnv } from "../../scripts/lib/public-config";
 import { thirdPartyLicensesPlugin } from "../../scripts/lib/third-party-licenses";
+import { otterMailFrame } from "./vite/otterMailFrame";
 import { tailwindPlugins } from "./vite/tailwind";
 
 const repoEnv = loadRepoEnv();
@@ -183,6 +184,7 @@ export default defineConfig(() => {
         presets: [reactCompilerPreset()],
       }),
       tailwindPlugins(bundledDev),
+      otterMailFrame(),
     ],
     optimizeDeps: {
       include: [

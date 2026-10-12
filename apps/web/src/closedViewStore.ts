@@ -63,6 +63,8 @@ const isClosedViewEntry = (entry: unknown): entry is ClosedViewEntry => {
     case "diff":
     case "files":
     case "pull-requests":
+    case "linear-issues":
+    case "drive-documents":
       return surface.id === surface.kind;
     case "preview":
       return surface.resourceId === null || typeof surface.resourceId === "string";
@@ -92,6 +94,18 @@ const isClosedViewEntry = (entry: unknown): entry is ClosedViewEntry => {
         (surface.environmentId === undefined || typeof surface.environmentId === "string") &&
         (surface.host === undefined || typeof surface.host === "string") &&
         (surface.url === undefined || typeof surface.url === "string")
+      );
+    case "linear-issue":
+      return (
+        typeof surface.identifier === "string" &&
+        surface.id === `linear-issue:${surface.identifier}` &&
+        (surface.url === undefined || typeof surface.url === "string")
+      );
+    case "drive-document":
+      return (
+        typeof surface.reference === "string" &&
+        surface.id === `drive-document:${surface.reference}` &&
+        (surface.title === undefined || typeof surface.title === "string")
       );
     default:
       return false;

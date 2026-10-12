@@ -302,24 +302,24 @@ jobs:
           EXPECT_MAC: ${{ needs.desktop_mac_arm64.result == 'success' }}
         run: |
           set -euo pipefail
-          mkdir -p assets
-          find downloads -type f \( -name '*.AppImage' -o -name '*.deb' -o -name '*.dmg' -o -name '*.zip' -o -name 't3-*.tar.gz' -o -name '*.blockmap' -o -name 'latest*.yml' \) -exec cp {} assets/ \;
-          test -s assets/latest-linux.yml
+          mkdir -p release-assets
+          find downloads -type f \( -name '*.AppImage' -o -name '*.deb' -o -name '*.dmg' -o -name '*.zip' -o -name 't3-*.tar.gz' -o -name '*.blockmap' -o -name 'latest*.yml' \) -exec cp {} release-assets/ \;
+          test -s release-assets/latest-linux.yml
           if [[ "$EXPECT_MAC" == "true" ]]; then
-            test -s assets/latest-mac.yml
-            test -s "assets/Otterware-${VERSION}-arm64.zip"
-            test -s "assets/Otterware-${VERSION}-arm64.dmg"
+            test -s release-assets/latest-mac.yml
+            test -s "release-assets/Otterware-${VERSION}-arm64.zip"
+            test -s "release-assets/Otterware-${VERSION}-arm64.dmg"
           fi
-          (cd assets && sha256sum -- * > SHA256SUMS)
+          (cd release-assets && sha256sum -- * > SHA256SUMS)
 
       - name: Upload Otterware bundle
         uses: actions/upload-artifact@v7
         with:
           name: otterware-${{ needs.preflight.outputs.version }}
-          path: assets/*
+          path: release-assets/*
           if-no-files-found: error
 
       - name: Publish immutable build and rolling feed
         env:
           GH_TOKEN: ${{ secrets.OTTERWARE_RELEASES_TOKEN || steps.release_token.outputs.token }}
-        run: bash scripts/otterware/publish-release.sh assets
+        run: bash scripts/otterware/publish-release.sh release-assets

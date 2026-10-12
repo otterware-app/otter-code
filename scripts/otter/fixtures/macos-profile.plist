@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+  <dict>
+    <key>Entitlements</key>
+    <dict>
+      <key>com.apple.application-identifier</key>
+      <string>YNJ5WLH965.dev.otterware.code</string>
+      <key>com.apple.developer.team-identifier</key>
+      <string>YNJ5WLH965</string>
+      <key>keychain-access-groups</key>
+      <array><string>YNJ5WLH965.*</string></array>
+      <key>com.apple.developer.associated-domains</key>
+      <array><string>*</string></array>
+      <key>aps-environment</key>
+      <string>production</string>
+      <key>com.apple.security.application-groups</key>
+      <array><string>group.dev.otterware.code</string></array>
+    </dict>
+  </dict>
+</plist>

@@ -156,10 +156,11 @@ releases. Immutable version releases cannot be overwritten; rerunning an already
 version fails. Run artifacts are retained too. Source-repository drafts are redundant and
 are no longer created. No npm, Cloudflare, relay, or Otter Code feed is published.
 
-The existing release GitHub App must be installed on **otterware-app/otterware-releases** with
-Contents write permission. Configure `RELEASE_APP_ID` and `RELEASE_APP_PRIVATE_KEY` in the
-source repository; the workflow requests a token restricted to the releases repository and
-fails with the installation fix if token creation fails. No personal token is used. Existing
+Publishing uses the `OTTERWARE_RELEASES_TOKEN` secret: a fine-grained token owned by
+otterware-app, limited to **otterware-app/otterware-releases** with Contents read and write.
+It expires, so renew it before its expiry date. Without it, the workflow falls back to a
+release GitHub App (`RELEASE_APP_ID`, `RELEASE_APP_PRIVATE_KEY`) installed on that repository,
+and fails with the fix if neither is available. Existing
 `CSC_LINK`, `CSC_KEY_PASSWORD`, Apple API secrets and `APPLE_TEAM_ID` sign/notarize macOS.
 A macOS channel build requires those secrets: an ad-hoc signed update cannot safely replace
 a Developer ID installation.

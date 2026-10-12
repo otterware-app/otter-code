@@ -16,7 +16,8 @@ final class T3LayoutMetricsView: ExpoView {
     }
     #if compiler(>=6.4)
     if #available(iOS 27.1, *) {
-      hasHinge = nil
+      // Publish as hinge-less right away: phones without a hinge may never get an update,
+      // and the workspace waits for metrics before attaching any screen.
       addInteraction(UIHingeInteraction { [weak self] _, update in
         guard let self, self.window != nil else { return }
         // Capability survives temporary detachment and does not follow the hinge angle.

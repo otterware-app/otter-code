@@ -163,6 +163,102 @@ const UpdateDocumentTool = Tool.make("drive_update_document", {
   .annotate(Tool.Idempotent, false)
   .annotate(Tool.OpenWorld, true);
 
+const ShareRole = Schema.Literals(["viewer", "editor"]);
+const SharingParameters = {
+  linkRole: Schema.optional(Schema.Literals(["none", "viewer", "editor"])),
+  grant: Schema.optional(
+    Schema.Array(Schema.Struct({ email: TrimmedNonEmptyString, role: ShareRole })),
+  ),
+  revoke: Schema.optional(Schema.Array(TrimmedNonEmptyString)),
+};
+const SharingResult = Schema.Struct({
+  resourceId: Schema.String,
+  url: Schema.NullOr(Schema.String),
+  linkRole: Schema.NullOr(ShareRole),
+  people: Schema.Array(
+    Schema.Struct({
+      email: Schema.String,
+      role: ShareRole,
+      inheritedFrom: Schema.NullOr(Schema.String),
+      viaLink: Schema.Boolean,
+    }),
+  ),
+});
+const UploadFileTool = Tool.make("drive_upload_file", {
+  description:
+    "Upload any binary or text file as a new Drive document, or a new immutable version with documentRef and the inspected ifVersion. Provide exactly one of path, url, or contentBase64 (at most 1 MiB). Large files stream, using multipart when Drive requests it. name includes the file extension. folder accepts a folder/drive ID, slug, or unique name (e.g. otterware), defaulting to My Drive. publish defaults to true; this API does not support draft file versions, so false fails before uploading. This never enables sharing; shared-drive members already have access. path must be absolute on the machine running this server; workspace files and its attachments directory are accepted. If the file is on another machine you can reach (e.g. over SSH), copy it to a temporary local path first, then upload that path; only ask the user to attach the file if you can't reach it. Attachments land in the server's attachments directory.",
+  parameters: Schema.Struct({
+    path: Schema.optional(TrimmedNonEmptyString),
+    url: Schema.optional(TrimmedNonEmptyString),
+    contentBase64: Schema.optional(Schema.String),
+    name: TrimmedNonEmptyString,
+    folder: Schema.optional(TrimmedNonEmptyString),
+    documentRef: Schema.optional(DocumentReference),
+    ifVersion: Schema.optional(Schema.Int),
+    publish: Schema.optional(Schema.Boolean),
+  }),
+  success: Schema.Struct({ document: DriveDocumentSummary }),
+  failure: DriveToolError,
+  dependencies,
+})
+  .annotate(Tool.Title, "Upload Drive file")
+  .annotate(Tool.Readonly, false)
+  .annotate(Tool.Destructive, false)
+  .annotate(Tool.Idempotent, false)
+  .annotate(Tool.OpenWorld, true);
+const ShareDocumentTool = Tool.make("drive_share_document", {
+  description:
+    "Change document sharing only when the user asks. linkRole sets anyone-with-the-link access (none/viewer/editor); recipients must sign in to Drive. grant adds emails as viewer/editor, revoke removes direct email grants. Notifications are disabled. Multiple changes commit separately: on failure re-read access instead of retrying. Returns the shareable link, or null when link sharing is off. Requires a user login; API keys cannot share.",
+  parameters: Schema.Struct({ document: DocumentReference, ...SharingParameters }),
+  success: SharingResult,
+  failure: DriveToolError,
+  dependencies,
+})
+  .annotate(Tool.Title, "Share Drive document")
+  .annotate(Tool.Readonly, false)
+  .annotate(Tool.Destructive, true)
+  .annotate(Tool.Idempotent, false)
+  .annotate(Tool.OpenWorld, true);
+const GetShareLinkTool = Tool.make("drive_get_share_link", {
+  description:
+    "Read a document's existing share link and email access without changing sharing. url is null when anyone-with-the-link sharing is off. Use drive_share_document to enable a link only when the user asks.",
+  parameters: Schema.Struct({ document: DocumentReference }),
+  success: SharingResult,
+  failure: DriveToolError,
+  dependencies,
+})
+  .annotate(Tool.Title, "Get Drive share link")
+  .annotate(Tool.Readonly, true)
+  .annotate(Tool.Destructive, false)
+  .annotate(Tool.Idempotent, true)
+  .annotate(Tool.OpenWorld, true);
+const ShareFolderTool = Tool.make("drive_share_folder", {
+  description:
+    "Share a folder and everything recursively inside it, only when requested. folder is an ID, slug, or unique name. grant/revoke also manage shared-drive membership (owner only); drive roots cannot have share links and My Drive cannot be shared. linkRole on a folder sets anyone-with-the-link access. Inherited access must be removed at its source. Changes commit separately; re-read access on failure. Notifications are disabled.",
+  parameters: Schema.Struct({ folder: TrimmedNonEmptyString, ...SharingParameters }),
+  success: SharingResult,
+  failure: DriveToolError,
+  dependencies,
+})
+  .annotate(Tool.Title, "Share Drive folder")
+  .annotate(Tool.Readonly, false)
+  .annotate(Tool.Destructive, true)
+  .annotate(Tool.Idempotent, false)
+  .annotate(Tool.OpenWorld, true);
+const GetFolderSharingTool = Tool.make("drive_get_folder_sharing", {
+  description:
+    "Inspect link sharing, direct email access and inherited access for a folder or shared drive by ID, slug, or unique name. Does not change access.",
+  parameters: Schema.Struct({ folder: TrimmedNonEmptyString }),
+  success: SharingResult,
+  failure: DriveToolError,
+  dependencies,
+})
+  .annotate(Tool.Title, "Get Drive folder sharing")
+  .annotate(Tool.Readonly, true)
+  .annotate(Tool.Destructive, false)
+  .annotate(Tool.Idempotent, true)
+  .annotate(Tool.OpenWorld, true);
+
 const LinkDocumentTool = Tool.make("drive_link_document_to_thread", {
   description:
     "Link an Otter Drive document to this thread so it shows beside the thread, like a linked issue. Link the documents you work on or the user names. Linking an already-linked document succeeds with alreadyLinked=true.",
@@ -211,6 +307,11 @@ export const DriveToolkit = Toolkit.make(
   ReadDocumentTool,
   CreateDocumentTool,
   UpdateDocumentTool,
+  UploadFileTool,
+  ShareDocumentTool,
+  GetShareLinkTool,
+  ShareFolderTool,
+  GetFolderSharingTool,
   LinkDocumentTool,
   UnlinkDocumentTool,
   ListThreadDocumentsTool,
@@ -255,6 +356,19 @@ export const layerHandlers = DriveToolkit.toLayer(
           Effect.andThen(drive.updateDocument({ reference: document, content, ifVersion, label })),
           Effect.map((updated) => ({ document: updated })),
         ),
+      drive_upload_file: (input) =>
+        suite.pipe(
+          Effect.andThen(drive.uploadFile(input)),
+          Effect.map((document) => ({ document })),
+        ),
+      drive_share_document: ({ document, ...input }) =>
+        suite.pipe(Effect.andThen(drive.shareDocument(document, input))),
+      drive_get_share_link: ({ document }) =>
+        suite.pipe(Effect.andThen(drive.getShareLink(document))),
+      drive_share_folder: ({ folder, ...input }) =>
+        suite.pipe(Effect.andThen(drive.shareFolder(folder, input))),
+      drive_get_folder_sharing: ({ folder }) =>
+        suite.pipe(Effect.andThen(drive.getFolderSharing(folder))),
       drive_link_document_to_thread: ({ document }) =>
         callingThread.pipe(
           Effect.flatMap((threadId) =>

@@ -4,6 +4,17 @@
  * snapshots current (like `LinearIssueSyncReactor` does for Linear issues).
  * RPC handlers and MCP tools only decode, call a method here and map errors.
  */
+import {
+  prepareUploadSource,
+  uploadInputError,
+  type DriveUploadInput,
+} from "./DriveUploadSource.ts";
+import {
+  changeSharing,
+  sharingResult,
+  type DriveShareInput,
+  type DriveSharingResult,
+} from "./driveSharing.ts";
 import type { Artifact } from "@otterware/drive-contracts";
 import {
   type DriveConnectionStatus,
@@ -32,7 +43,7 @@ import * as Schedule from "effect/Schedule";
 import type * as Scope from "effect/Scope";
 import * as Stream from "effect/Stream";
 import * as SubscriptionRef from "effect/SubscriptionRef";
-import * as FetchHttpClient from "effect/http/FetchHttpClient";
+import * as NodeHttpClient from "@effect/platform-node/NodeHttpClient";
 
 import { forkParked } from "../../serverActivation.ts";
 import * as SuiteDatabase from "../SuiteDatabase.ts";
@@ -134,6 +145,19 @@ export class DriveService extends Context.Service<
       readonly ifVersion: number;
       readonly label: string;
     }) => Effect.Effect<DriveDocumentSummary, DriveError>;
+    readonly uploadFile: (
+      input: DriveUploadInput,
+    ) => Effect.Effect<DriveDocumentSummary, DriveError>;
+    readonly shareDocument: (
+      reference: string,
+      input: DriveShareInput,
+    ) => Effect.Effect<DriveSharingResult, DriveError>;
+    readonly getShareLink: (reference: string) => Effect.Effect<DriveSharingResult, DriveError>;
+    readonly shareFolder: (
+      reference: string,
+      input: DriveShareInput,
+    ) => Effect.Effect<DriveSharingResult, DriveError>;
+    readonly getFolderSharing: (reference: string) => Effect.Effect<DriveSharingResult, DriveError>;
     readonly markViewed: (artifactId: string, version: number) => Effect.Effect<void, DriveError>;
     readonly linkDocument: (input: {
       readonly threadId: string;
@@ -255,7 +279,9 @@ export const makeWith = (options: { readonly api: DriveApi; readonly store: Driv
         });
       });
 
-    const targetOf = (reference: string) => {
+    const targetOf = (
+      reference: string,
+    ): Effect.Effect<DriveUrlTarget | { readonly id: string }, DriveError> => {
       if (isDriveArtifactId(reference)) return Effect.succeed({ id: reference } as const);
       const target = parseDriveUrl(reference, baseUrl);
       return target === null
@@ -727,6 +753,115 @@ export const makeWith = (options: { readonly api: DriveApi; readonly store: Driv
         return summaryOfArtifact(result.artifact, baseUrl);
       });
 
+    const folderIdFor = (token: string, reference?: string) =>
+      Effect.gen(function* () {
+        if (reference === undefined) return (yield* api.me({ token })).folderId;
+        const listed = yield* folders(token);
+        const normalized = reference.trim().toLowerCase();
+        const exact = listed.filter(
+          (folder) => folder.id === reference || folder.slug.toLowerCase() === normalized,
+        );
+        const matches = exact.length
+          ? exact
+          : listed.filter((folder) => folder.name.toLowerCase() === normalized);
+        if (matches.length !== 1)
+          return yield* uploadInputError(
+            "Folder/drive was not found or is ambiguous; use its ID from drive_list_folders.",
+          );
+        return matches[0]!.id;
+      });
+
+    const uploadFile: DriveService["Service"]["uploadFile"] = (input) =>
+      withSession((token) =>
+        Effect.acquireUseRelease(
+          prepareUploadSource(input),
+          (source) =>
+            Effect.gen(function* () {
+              if (input.documentRef !== undefined) {
+                const target = yield* targetOf(input.documentRef).pipe(
+                  Effect.mapError((error) => uploadInputError(error.detail)),
+                );
+                const artifact = yield* resolveArtifact(token, target).pipe(
+                  Effect.mapError((error) =>
+                    error._tag === "DriveApiError" ? error : uploadInputError(error.detail),
+                  ),
+                );
+                const result = yield* api.uploadFile(
+                  artifact.id,
+                  input.name,
+                  source,
+                  input.ifVersion!,
+                  { token },
+                );
+                yield* recordRead(result.artifact).pipe(
+                  Effect.mapError(() =>
+                    uploadInputError(
+                      "The file was published, but Otterware could not refresh its local snapshot. Inspect the document before retrying.",
+                    ),
+                  ),
+                );
+                return summaryOfArtifact(result.artifact, baseUrl);
+              }
+              const folderId = yield* folderIdFor(token, input.folder);
+              const options = { token, folderId };
+              const stem =
+                input.name
+                  .replace(/\.[^.]+$/u, "")
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]+/gu, "-")
+                  .replace(/^-|-$/gu, "")
+                  .slice(0, 70) || "file";
+              const slug = `${stem.replace(/-$/u, "")}-${(yield* crypto.randomUUIDv4.pipe(Effect.orDie)).slice(0, 8)}`;
+              const artifact = yield* api.createArtifact(
+                {
+                  slug,
+                  title: input.name.slice(0, 200),
+                  description: "",
+                  entryPath: input.name,
+                  label: `Upload ${input.name}`.slice(0, 300),
+                },
+                options,
+              );
+              const result = yield* api
+                .uploadFile(artifact.id, input.name, source, 0, options)
+                .pipe(
+                  Effect.onError(() => api.deleteDraft(artifact.id, options).pipe(Effect.ignore)),
+                );
+              return summaryOfArtifact(result.artifact, baseUrl);
+            }),
+          (source) => Effect.promise(() => source.close()).pipe(Effect.ignore),
+        ),
+      );
+
+    const getShareLink: DriveService["Service"]["getShareLink"] = (reference) =>
+      Effect.gen(function* () {
+        const { artifact } = yield* resolve(reference);
+        return yield* withSession((token) =>
+          api.getSharing("artifacts", artifact.id, { token }).pipe(Effect.map(sharingResult)),
+        );
+      });
+    const shareDocument: DriveService["Service"]["shareDocument"] = (reference, input) =>
+      Effect.gen(function* () {
+        const { artifact } = yield* resolve(reference);
+        return yield* withSession((token) =>
+          changeSharing(api, "artifacts", artifact.id, input, token),
+        );
+      });
+    const getFolderSharing: DriveService["Service"]["getFolderSharing"] = (reference) =>
+      withSession((token) =>
+        Effect.gen(function* () {
+          const id = yield* folderIdFor(token, reference);
+          return sharingResult(yield* api.getSharing("folders", id, { token }));
+        }),
+      );
+    const shareFolder: DriveService["Service"]["shareFolder"] = (reference, input) =>
+      withSession((token) =>
+        Effect.gen(function* () {
+          const id = yield* folderIdFor(token, reference);
+          return yield* changeSharing(api, "folders", id, input, token);
+        }),
+      );
+
     const markViewed: DriveService["Service"]["markViewed"] = (artifactId, version) =>
       Effect.gen(function* () {
         yield* orStoreFailure(store.markViewed(artifactId, version, yield* nowIso));
@@ -825,6 +960,11 @@ export const makeWith = (options: { readonly api: DriveApi; readonly store: Driv
       readDocument,
       createDocument,
       updateDocument,
+      uploadFile,
+      shareDocument,
+      getShareLink,
+      shareFolder,
+      getFolderSharing,
       markViewed,
       linkDocument,
       unlinkDocument,
@@ -864,7 +1004,7 @@ export const make = Effect.gen(function* () {
 
 export const layer = Layer.effect(DriveService, make).pipe(
   Layer.provide(SuiteDatabase.layerSqlClient),
-  Layer.provide(FetchHttpClient.layer),
+  Layer.provide(NodeHttpClient.layerNodeHttp),
 );
 
 /** Starts the sync once the server activates. */

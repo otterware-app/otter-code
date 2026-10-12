@@ -1,0 +1,7 @@
+/* The approved mark colors remain independent of custom accent palettes. */
+.mark {
+  color: #2c2f31;
+}
+:global(.dark) .mark {
+  color: #f8f5ec;
+}

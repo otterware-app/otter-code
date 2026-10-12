@@ -27,6 +27,11 @@ it.effect(
       readDocument: () => unused,
       createDocument: () => unused,
       updateDocument: () => unused,
+      uploadFile: () => unused,
+      shareDocument: () => unused,
+      getShareLink: () => unused,
+      shareFolder: () => unused,
+      getFolderSharing: () => unused,
       markViewed: () => unused,
       linkDocument: () => unused,
       unlinkDocument: () => unused,
@@ -74,19 +79,33 @@ it.effect(
       expect(server.tools.map(({ tool }) => tool.name).toSorted()).toEqual([
         "drive_create_document",
         "drive_get_document",
+        "drive_get_folder_sharing",
+        "drive_get_share_link",
         "drive_link_document_to_thread",
         "drive_list_documents",
         "drive_list_folders",
         "drive_list_thread_documents",
         "drive_read_document",
+        "drive_share_document",
+        "drive_share_folder",
         "drive_unlink_document_from_thread",
         "drive_update_document",
+        "drive_upload_file",
       ]);
       for (const { tool } of server.tools) {
         const readOnly =
           tool.name.startsWith("drive_list_") ||
-          ["drive_get_document", "drive_read_document"].includes(tool.name);
+          [
+            "drive_get_document",
+            "drive_get_folder_sharing",
+            "drive_get_share_link",
+            "drive_read_document",
+          ].includes(tool.name);
         expect(tool.annotations?.readOnlyHint).toBe(readOnly);
+        if (tool.name.startsWith("drive_share_"))
+          expect(tool.annotations?.destructiveHint).toBe(true);
+        if (tool.name === "drive_upload_file")
+          expect(tool.annotations?.destructiveHint).toBe(false);
       }
       const call = (scope: McpInvocationContext.McpInvocationScope) =>
         server

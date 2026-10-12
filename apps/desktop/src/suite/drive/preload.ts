@@ -10,6 +10,7 @@ export const createDriveBridge = (ipc: IpcRenderer): DriveDesktopBridge => ({
       ipc.removeListener(DRIVE_SIGN_OUT, listener);
     };
   },
+  show: (url, baseUrl) => ipc.invoke(DRIVE_COMMAND, { action: "show", url, baseUrl }),
   openDriveUrl: (url, baseUrl) => ipc.invoke(DRIVE_COMMAND, { action: "open", url, baseUrl }),
   setBounds: (bounds) => ipc.invoke(DRIVE_COMMAND, { action: "bounds", bounds }),
   command: (command) => ipc.invoke(DRIVE_COMMAND, { action: command }),

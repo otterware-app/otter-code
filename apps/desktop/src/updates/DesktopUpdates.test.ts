@@ -60,6 +60,79 @@ describe("DesktopUpdates", () => {
     );
   });
 
+  it.effect("suite feed checks, downloads and installs without following Code channels", () => {
+    const harness = makeHarness({
+      appVersion: "1.2.3-otterware.20261012.1",
+      env: { T3CODE_DESKTOP_MOCK_UPDATES: "false" },
+      appUpdateYml:
+        "provider: generic\nurl: https://github.com/otterware-app/otterware-releases/releases/download/channel-feature-mail/\nchannel: latest\n",
+    });
+    return Effect.scoped(
+      Effect.gen(function* () {
+        const updates = yield* DesktopUpdates.DesktopUpdates;
+        yield* updates.configure;
+        assert.isTrue((yield* updates.getState).enabled);
+        assert.isFalse(harness.allowDowngrade());
+        assert.equal((yield* updates.setChannel("nightly")).channel, "latest");
+        yield* updates.check("manual");
+        assert.equal(harness.checkCount(), 1);
+        harness.emit("update-available", { version: "1.2.4-nightly.20261012.2" });
+        yield* flushCallbacks;
+        assert.isNull((yield* updates.getState).availableVersion);
+        const version = "1.2.3-otterware.20261012.2";
+        harness.emit("update-available", { version });
+        yield* flushCallbacks;
+        assert.equal((yield* updates.getState).status, "available");
+        assert.isTrue((yield* updates.download).accepted);
+        harness.emit("update-downloaded", { version: "1.2.4" });
+        yield* flushCallbacks;
+        assert.isNull((yield* updates.getState).downloadedVersion);
+        harness.emit("update-downloaded", { version });
+        yield* flushCallbacks;
+        assert.equal((yield* updates.getState).status, "downloaded");
+        assert.isTrue((yield* updates.install).accepted);
+        assert.equal(harness.quitAndInstalls(), 1);
+      }),
+    ).pipe(Effect.provide(Layer.merge(TestClock.layer(), harness.layer)));
+  });
+
+  it.effect("suite builds reject Code feed configuration and unchanneled builds", () =>
+    Effect.gen(function* () {
+      for (const appUpdateYml of [
+        undefined,
+        "provider: github\nowner: otterware-app\nrepo: otter-code\n",
+        "provider: generic\nurl: https://github.com/otterware-app/otter-code/releases/download/channel-otterware/\nchannel: latest\n",
+      ]) {
+        const harness = makeHarness({
+          appVersion: "1.2.3-otterware.20261012.1",
+          env: { T3CODE_DESKTOP_MOCK_UPDATES: "false" },
+          appUpdateYml,
+        });
+        yield* Effect.scoped(
+          Effect.gen(function* () {
+            const updates = yield* DesktopUpdates.DesktopUpdates;
+            yield* updates.configure;
+            assert.equal((yield* updates.getState).status, "disabled");
+            assert.equal(harness.checkCount(), 0);
+          }),
+        ).pipe(Effect.provide(harness.layer));
+      }
+    }),
+  );
+
+  it.effect("Code builds do not offer suite versions", () => {
+    const harness = makeHarness();
+    return Effect.scoped(
+      Effect.gen(function* () {
+        const updates = yield* DesktopUpdates.DesktopUpdates;
+        yield* updates.configure;
+        harness.emit("update-available", { version: "1.2.4-otterware.20261012.1" });
+        yield* flushCallbacks;
+        assert.isNull((yield* updates.getState).availableVersion);
+      }),
+    ).pipe(Effect.provide(harness.layer));
+  });
+
   it.effect("configures the updater and runs startup checks on the test clock", () => {
     const harness = makeHarness();
 

@@ -4,6 +4,7 @@
  * with its current selection; the side chat reads `useCurrentSuitePageContext()`.
  */
 import { useEffect } from "react";
+import { useSuitePageActive } from "./SuitePageActivity";
 import { create } from "zustand";
 
 /** One thing on screen the agent can be told about, e.g. a mail thread or an event. */
@@ -34,16 +35,18 @@ const useSuitePageContextStore = create<SuitePageContextState>((set) => ({
 
 /** Publishes `context` while the calling page is mounted; pass null to clear it. */
 export function useSuitePageContext(context: SuitePageContext | null): void {
+  const active = useSuitePageActive();
   const publish = useSuitePageContextStore((state) => state.publish);
   // Compared by value, so pages can build the object inline on every render.
   const key = context === null ? null : JSON.stringify(context);
   useEffect(() => {
+    if (!active) return;
     const published: SuitePageContext | null = key === null ? null : JSON.parse(key);
     publish(published);
     return () => {
       if (useSuitePageContextStore.getState().context === published) publish(null);
     };
-  }, [key, publish]);
+  }, [active, key, publish]);
 }
 
 export function useCurrentSuitePageContext(): SuitePageContext | null {

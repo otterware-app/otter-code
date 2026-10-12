@@ -121,15 +121,125 @@ Check the pinned vendor trees with `sync-otter-calendar.ts --check`,
 `sync-otter-drive.ts --check`. For a local Mail checkout, pass `--repo` explicitly. Only run
 typechecks after integrating changes, sequentially; Mail's server worker has its own tsconfig.
 
-Push a tag named `otterware-build-*` from the desired branch commit to run
-`.github/workflows/otterware-release.yml`. It typechecks the integrated packages and Mail worker,
-verifies module integration and shared-home compatibility, then builds Linux x64 and macOS arm64
-artifacts and a draft release. It does not publish an Otter Code update or switch a running server.
-Fleet runtime installation and switching use `scripts/otterware/fleet-server.sh`; mutations are
-serialized, and switching uses the existing launcher's backup and rollback path.
+## Branding and branch releases
+
+The approved production kit lives in `assets/otterware/`: macOS uses its light ivory
+`Otterware.icns` directly; Linux uses the app PNG, and web uses the kit's adaptive SVG
+favicon plus fixed ICO and Apple touch icon (`head.html` choice, so no PNG-theme script).
+The shared `OtterwareLogo` component preserves the kit SVG path with `currentColor`, charcoal
+in light appearance and ivory in dark. Onboarding, the rail, welcome and About reuse it;
+the native About panel inherits the packaged app icon. The old recoloring generator is retired.
+Otter Code's own artwork under `assets/otter`, `otter-dev` and `otter-nightly` is unchanged.
+
+Cut a build by tagging the desired branch commit and pushing only that tag:
+
+```sh
+# Legacy tags always publish the otterware channel, regardless of the source branch.
+git tag otterware-build-20261012-1
+git push origin otterware-build-20261012-1
+# Other branch trains encode the sanitized channel, then --, then a unique build id.
+git tag otterware-build-channel-feature-mail--20261012-1
+git push origin otterware-build-channel-feature-mail--20261012-1
+```
+
+Tag names beginning `otterware-build-channel-` require that explicit separator. For manual
+workflow dispatch, `channel` defaults to the selected branch; an input overrides it. Branch
+names are lowercased, non-alphanumeric runs become `-`, and edge hyphens are removed (maximum
+80 characters). Thus `feature/mail` maps to `feature-mail`: choose distinct names where
+sanitization would collide. Tags do not infer branch ancestry.
+
+`.github/workflows/otterware-release.yml` checks the integrated packages and Mail worker,
+then builds Linux x64 and signed/notarized macOS arm64 artifacts. It publishes **only** to
+[otterware-app/otterware-releases](https://github.com/otterware-app/otterware-releases), with
+visible prereleases `otterware-v<core>-otterware.<yyyymmdd>.<run>` and rolling `channel-<channel>`
+releases. Immutable version releases cannot be overwritten; rerunning an already published
+version fails. Run artifacts are retained too. Source-repository drafts are redundant and
+are no longer created. No npm, Cloudflare, relay, or Otter Code feed is published.
+
+The existing release GitHub App must be installed on **otterware-app/otterware-releases** with
+Contents write permission. Configure `RELEASE_APP_ID` and `RELEASE_APP_PRIVATE_KEY` in the
+source repository; the workflow requests a token restricted to the releases repository and
+fails with the installation fix if token creation fails. No personal token is used. Existing
+`CSC_LINK`, `CSC_KEY_PASSWORD`, Apple API secrets and `APPLE_TEAM_ID` sign/notarize macOS.
+A macOS channel build requires those secrets: an ad-hoc signed update cannot safely replace
+a Developer ID installation.
+
+Packaging bakes `OTTERWARE_UPDATE_CHANNEL` into a generic `app-update.yml` pointing at
+`https://github.com/otterware-app/otterware-releases/releases/download/channel-<channel>/`.
+Each feed has `latest-mac.yml` (zip + dmg), `latest-linux.yml` (AppImage + deb), blockmaps,
+`SHA256SUMS`, and the Linux x64 server CLI tarball. Feed manifests point at immutable version
+assets, allowing downloads to finish across feed replacements. Publishing uploads binaries
+before manifests, removes stale rolling binaries, and refuses to rewind a channel to an older
+version. Linux-only builds preserve the previous macOS feed.
+
+The bottom-left Update button uses the existing Electron check/download/restart flow; startup
+and periodic checks find the baked branch feed. It accepts only Otterware versions, keeps
+prereleases enabled and downgrades off, and ignores Code's latest/nightly selector. Local
+builds without a baked channel have no updates. Existing preview builds with no feed must
+be reinstalled once from a channel build. Otter Code's feed and runtime installer remain on
+`otterware-app/otter-code`; server self-update stays blocked for Otterware to preserve that boundary.
+
+Fleet runtime installation and switching use `scripts/otterware/fleet-server.sh` (the deployed
+copy is `otterware-fleet`):
+
+```sh
+otterware-fleet update                       # channel otterware
+otterware-fleet update --channel feature-mail
+```
+
+`update` downloads mandatory SHA256SUMS from the channel, selects exactly one server archive
+for this host, downloads that version from its immutable release, verifies the checksum and
+executable version, installs it, then calls `use-otterware --version <selected-version>`.
+The entire operation holds the home's fleet lock and retains the launcher's backup/rollback
+path. It does not silently select another installed runtime. The release currently builds
+only Linux x64 server archives; arm64 fleet hosts fail clearly until that artifact is added.
+Test fixtures use disposable homes and stub transports/services, never the live data home.
 
 The server declares Zod 4 as a production dependency because its bundled Drive contracts import
 it as a runtime external. Keep that version compatible with the vendored Drive package; Cursor's
 separate Zod 3 dependency does not provide Drive's schema API.
 The server build maps Drive's bare Zod import to a `createRequire` adapter, so the fleet
 single-executable can load the same staged dependency without a file-backed ESM import.
+
+## Agent file uploads and sharing
+
+`drive_upload_file` accepts any file from an absolute server-local path, an HTTP(S) URL,
+or base64 (up to 1 MiB). Local paths include workspace files and `<stateDir>/attachments/`.
+If the file is on another machine you can reach (e.g. over SSH), copy it to a temporary
+local path first, then upload that path; only ask the user to attach the file if you can't
+reach it. Files stream through the API; large uploads use its requested multipart ranges.
+URL downloads spool to a private temporary file and never receive the Drive token.
+`folder` accepts an ID, slug or unique name; omitted means My Drive. Existing documents
+require `documentRef` and the inspected `ifVersion`; conflicts stop without retries.
+Drive's pinned API finalizes published versions only, so `publish=false` fails before writes.
+Upload alone does not change sharing; shared-drive members already have access.
+
+Use `drive_get_share_link` / `drive_get_folder_sharing` to inspect access. Only when asked,
+use `drive_share_document` / `drive_share_folder` to grant/revoke emails or set `linkRole`
+(`none`, `viewer`, `editor`). A link recipient must sign in to Drive. Folder access is
+recursive; shared-drive email grants change membership, but drive roots cannot have links.
+Notifications are disabled. Changes are separate API transactions: after an error inspect
+access before making another change. Sharing requires a user login, not an API key.
+
+## In-app browser passkeys
+
+Electron 44.4.5's [Touch ID authenticator](https://github.com/electron/electron/blob/v44.4.5/docs/api/app.md#appconfigurewebauthnoptions-macos)
+needs `app.configureWebAuthn` and a matching keychain signing entitlement. Its credentials
+are device-bound and partition-specific, not existing iCloud passkeys. The native
+`preview/Passkeys.ts` bridge needs Apple's [managed browser entitlement](https://developer.apple.com/documentation/authenticationservices/authenticating-people-by-using-passkeys-in-browser-apps)
+and matching profile for arbitrary sites, plus packaged `t3codeWebAuthn.browserPasskeys`
+metadata. The current packager emits neither that metadata nor custom passkey entitlements.
+Electron's extension-origin WebAuthn validation also lacks Chrome's RP permission override;
+a popup cannot use the page's native bridge. Adding a permission name or feature flag does
+not solve those constraints. The account-selection handler already exists.
+
+Failed explicit requests now offer **Continue in your browser** on macOS/Linux in Browser
+pages and extension popups/options. Pages retain their committed URL; extensions use a
+validated RP domain (Bitwarden opens its matching web vault). Cancel opens nothing;
+autofill, aborted requests and successful credentials do not prompt. Browser login starts
+a separate session and does not unlock the extension inside Otterware.
+
+Mac verification: try an existing iCloud passkey on a site and Bitwarden's **Log in with
+passkey**. On failure, verify Cancel stays in Otterware and Continue opens the site/vault
+in Safari or Chrome, where Touch ID completes the login. Check no prompt for successful
+credentials, autofill or aborted requests. Linux tests cannot verify Mac hardware/signing.

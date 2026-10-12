@@ -52,6 +52,11 @@ export const SUITE_MCP_TOOLS: Readonly<Record<string, T3McpToolDefinition>> = {
   drive_read_document: suiteTool(["Read", "Reading", "Read", "Drive document"], "drive"),
   drive_create_document: suiteTool(["Create", "Creating", "Created", "Drive document"], "drive"),
   drive_update_document: suiteTool(["Update", "Updating", "Updated", "Drive document"], "drive"),
+  drive_upload_file: suiteTool(["Upload", "Uploading", "Uploaded", "Drive file"], "drive"),
+  drive_share_document: suiteTool(["Share", "Sharing", "Shared", "Drive document"], "drive"),
+  drive_get_share_link: suiteTool(["Get", "Getting", "Got", "Drive share link"], "drive"),
+  drive_share_folder: suiteTool(["Share", "Sharing", "Shared", "Drive folder"], "drive"),
+  drive_get_folder_sharing: suiteTool(["Get", "Getting", "Got", "Drive folder sharing"], "drive"),
   drive_link_document_to_thread: suiteTool(
     ["Link", "Linking", "Linked", "Drive document"],
     "drive",

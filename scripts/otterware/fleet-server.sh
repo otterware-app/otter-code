@@ -5,6 +5,7 @@
 # user unit (otter-code.service) and the launcher, so only the runtime under
 # runtime/versions/<version> changes, and the unit only ever runs one server.
 #
+#   fleet-server.sh update [--channel <branch-channel>]
 #   fleet-server.sh status
 #   fleet-server.sh install <t3-<version>-linux-x64.tar.gz | URL>
 #   fleet-server.sh use-otterware  [--version <version>]
@@ -198,7 +199,7 @@ cmd_install() {
   [[ -n "$source" ]] || die "usage: install <t3-<version>-linux-x64.tar.gz | URL>"
   work="$(mktemp -d)"
   FLEET_WORK="$work"
-  trap 'rm -rf "${FLEET_WORK:-}"' EXIT
+  trap 'rm -rf "${FLEET_WORK:-}" "${FLEET_UPDATE_WORK:-}"' EXIT
   name="$(basename "${source%%\?*}")"
   if [[ "$source" =~ ^https?:// ]]; then
     log "downloading $source"
@@ -242,6 +243,39 @@ cmd_install() {
   rm -rf "${VERSIONS_DIR:?}/$version"
   mv "$staging" "$VERSIONS_DIR/$version"
   log "installed $version ($(product_of "$version")) in $VERSIONS_DIR/$version"
+}
+
+# SHA256SUMS is mandatory here; install's optional-checksum behavior is only
+# retained for explicitly supplied local archives.
+cmd_update() {
+  local channel=otterware feed arch name version work
+  if (($#)); then
+    [[ "$1" == --channel && $# == 2 && -n "$2" ]] || die "usage: update [--channel C]"
+    channel="$2"
+  fi
+  [[ "$channel" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ && ${#channel} -le 80 ]] || die "channel must be a sanitized branch name"
+  feed="https://github.com/otterware-app/otterware-releases/releases/download/channel-$channel"
+  case "$(uname -m)" in
+    x86_64) arch=x64 ;;
+    aarch64) arch=arm64 ;;
+    *) die "unsupported fleet architecture" ;;
+  esac
+  work="$(mktemp -d)"
+  FLEET_UPDATE_WORK="$work"
+  trap 'rm -rf "${FLEET_WORK:-}" "${FLEET_UPDATE_WORK:-}"' EXIT
+  curl -fsSL --retry 3 -o "$work/SHA256SUMS" "$feed/SHA256SUMS" || die "could not download checksums for channel $channel"
+  name="$(awk -v arch="$arch" '$2 ~ ("^t3-[0-9]+\\.[0-9]+\\.[0-9]+-otterware\\.[0-9]{8}\\.[0-9]+-linux-" arch "\\.tar\\.gz$") { print $2 }' "$work/SHA256SUMS")"
+  # Validate the entire filename before using it as a URL or local path. GNU
+  # awk variants differ on interval support, so selection also has a shell guard.
+  [[ "$name" =~ ^t3-([0-9]+\.[0-9]+\.[0-9]+-otterware\.[0-9]{8}\.[0-9]+)-linux-${arch}\.tar\.gz$ ]] ||
+    die "channel $channel must list exactly one Otterware Linux $arch runtime"
+  version="${BASH_REMATCH[1]}"
+  # Use the immutable version selected by the channel's sums. A concurrent feed
+  # replacement cannot remove the archive while this client downloads it.
+  curl -fsSL --retry 3 -o "$work/$name" \
+    "https://github.com/otterware-app/otterware-releases/releases/download/otterware-v$version/$name" || die "runtime download failed"
+  cmd_install "$work/$name"
+  cmd_use otterware --version "$version"
 }
 
 wait_for_version() {
@@ -401,6 +435,11 @@ cmd_use() {
 
 case "${1:-}" in
   status) cmd_status ;;
+  update)
+    lock_mutation
+    shift
+    cmd_update "$@"
+    ;;
   install)
     lock_mutation
     shift

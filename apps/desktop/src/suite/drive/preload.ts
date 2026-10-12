@@ -1,9 +1,22 @@
 import type { DriveDesktopBridge, DriveDesktopState } from "@t3tools/contracts/suite";
 import type { IpcRenderer } from "electron";
-import { DRIVE_COMMAND, DRIVE_SIGN_OUT, DRIVE_STATE } from "./channels.ts";
+import { DRIVE_COMMAND, DRIVE_SIGN_OUT, DRIVE_STATE, DRIVE_RENEW_ACCOUNT } from "./channels.ts";
 
 export const createDriveBridge = (ipc: IpcRenderer): DriveDesktopBridge => ({
   syncAccount: (token) => ipc.invoke(DRIVE_COMMAND, { action: "account", token }),
+  onRenewAccount: (listener) => {
+    const handler = (_event: Electron.IpcRendererEvent, recover: boolean, id: number) => {
+      void Promise.resolve()
+        .then(() => listener(recover))
+        .then(
+          () => ipc.invoke(DRIVE_COMMAND, { action: "renewal-result", id, ok: true }),
+          () => ipc.invoke(DRIVE_COMMAND, { action: "renewal-result", id, ok: false }),
+        )
+        .catch(() => undefined);
+    };
+    ipc.on(DRIVE_RENEW_ACCOUNT, handler);
+    return () => ipc.removeListener(DRIVE_RENEW_ACCOUNT, handler);
+  },
   onSignOut: (listener) => {
     ipc.on(DRIVE_SIGN_OUT, listener);
     return () => {

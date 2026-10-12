@@ -25,8 +25,8 @@ export const BRAND_ASSET_PATHS = {
   nightlyWebAppleTouchIconPng: "assets/otter-nightly/otter-nightly-web-apple-touch-180.png",
   nightlyWebFaviconSvg: "assets/otter-nightly/otter-nightly-web-favicon.svg",
 
-  // Otterware's teal variant of the production artwork (scripts/otterware/generate-icons.sh),
-  // used in place of production for the desktop app and hosted web icons.
+  // Approved production kit: light ivory app tile and adaptive web favicon.
+  otterwareMacIconIcns: "assets/otterware/Otterware.icns",
   otterwareMacIconPng: "assets/otterware/otterware-macos-1024.png",
   otterwareLinuxIconPng: "assets/otterware/otterware-universal-1024.png",
   otterwareWebFaviconSvg: "assets/otterware/otterware-web-favicon.svg",
@@ -130,3 +130,5 @@ export const DEVELOPMENT_PUBLIC_ICON_OVERRIDES = resolveWebIconOverrides(
   "development",
   "apps/web/public",
 );
+
+export const OTTERWARE_ICON_OVERRIDES = resolveWebIconOverrides("production", "dist/client");

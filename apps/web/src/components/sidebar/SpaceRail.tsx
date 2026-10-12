@@ -25,6 +25,7 @@ import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { isSidebarUtilityPage, useNavigateToMainApp } from "./mainAppLocation";
 import { isSuiteModulePath } from "../../suite/modules";
 import { SuiteRailButtons } from "../../suite/SuiteRail";
+import { OtterwareLogo } from "../OtterwareLogo";
 import { SidebarUpdatePill } from "./SidebarUpdatePill";
 
 /** A rail button: a square that lights up on hover, and stays lit where you are. */
@@ -118,6 +119,13 @@ export const SpaceRail = memo(function SpaceRail({ className }: { className?: st
         className="drag-region hidden h-(--workspace-topbar-height) w-full shrink-0 in-data-[app-frame=window]:block"
       />
       <div className="flex min-h-0 w-full flex-1 flex-col items-center gap-1 overflow-y-auto pt-(--space-rail-top) [scrollbar-width:none]">
+        <span
+          className="flex size-9 shrink-0 items-center justify-center"
+          role="img"
+          aria-label="Otterware"
+        >
+          <OtterwareLogo className="size-8" />
+        </span>
         <SuiteRailButtons rail="start" />
         {legacySidebarEnabled ? null : (
           <>

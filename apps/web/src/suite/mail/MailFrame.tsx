@@ -14,6 +14,7 @@ import { useSuitePageContext } from "../suitePageContext";
 import { createOtterMailHost, type OtterMailHostHandle } from "./mailHost";
 
 import { mailPageRefs } from "./mailPageRefs";
+import { useSuitePageActive } from "../SuitePageActivity";
 import { useSuiteAccount } from "../SuiteAccountProvider";
 
 const FRAME_PATH = "/mail-frame.html";
@@ -33,6 +34,7 @@ function MailFrameForEnvironment({
   readonly at: string | undefined;
   readonly onNavigate: (path: string) => void;
 }) {
+  const active = useSuitePageActive();
   const frameRef = useRef<HTMLIFrameElement>(null);
   const account = useSuiteAccount();
   const accountRef = useRef(account);
@@ -75,11 +77,16 @@ function MailFrameForEnvironment({
     };
   }, [environmentId]);
 
+  useEffect(() => {
+    if (!active) host?.cancelRequests();
+  }, [active, host]);
+
   // A link to /mail?at=… while Mail is open moves the frame there.
   useEffect(() => {
     if (host === null) return;
     const frameWindow = frameRef.current?.contentWindow;
-    const target = at ?? "/";
+    if (at === undefined) return;
+    const target = at;
     if (target === reportedRef.current || !frameWindow) return;
     reportedRef.current = target;
     frameWindow.location.hash = target;
@@ -126,5 +133,12 @@ export function MailFrame({
 }) {
   const environmentId = usePrimaryEnvironmentId();
   if (environmentId === null) return null;
-  return <MailFrameForEnvironment environmentId={environmentId} at={at} onNavigate={onNavigate} />;
+  return (
+    <MailFrameForEnvironment
+      key={environmentId}
+      environmentId={environmentId}
+      at={at}
+      onNavigate={onNavigate}
+    />
+  );
 }

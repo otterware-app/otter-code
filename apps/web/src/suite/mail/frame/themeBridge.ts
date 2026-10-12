@@ -82,11 +82,16 @@ const STYLE_ID = "otterware-mail-theme";
 // Mail keeps its mailbox, view and settings controls in its own rail. Inside
 // Otterware they become a toolbar above the inbox, beside the shared app rail.
 // This adapter stylesheet leaves upstream Mail and every action intact.
-const MAIL_TOOLBAR_CSS = `
+export const MAIL_TOOLBAR_CSS = `
 :root { --workspace-rail-width: 0px; }
+html[data-window-controls] {
+  --workspace-controls-left: 12px;
+  --workspace-titlebar-content-left: 48px;
+}
 [data-mail-layout] { flex-direction: column; }
 nav[aria-label="Spaces"] {
   width: 100%; flex-direction: row; height: 48px; padding: 0 8px;
+  padding-left: 48px;
   gap: 8px; border-bottom: 1px solid var(--border);
 }
 nav[aria-label="Spaces"] > [aria-hidden],

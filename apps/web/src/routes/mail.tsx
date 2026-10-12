@@ -1,23 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { MailFrame } from "../suite/mail/MailFrame";
 import { requireSuiteRouteAuth } from "../suite/routeGuards";
-import { SuiteModuleLayout } from "../suite/SuiteModuleLayout";
 
 /** `?at=` is Mail's own route (`/<mailbox>/<label>/<conversation>`, `/settings/<pane>`). */
 type MailSearch = { readonly at?: string };
 
+// The app shell owns the persistent frame, including its URL mirroring.
 function MailRoute() {
-  const { at } = Route.useSearch();
-  const navigate = Route.useNavigate();
-  return (
-    <SuiteModuleLayout moduleId="mail">
-      <MailFrame
-        at={at}
-        onNavigate={(path) => void navigate({ search: { at: path }, replace: true })}
-      />
-    </SuiteModuleLayout>
-  );
+  return null;
 }
 
 export const Route = createFileRoute("/mail")({

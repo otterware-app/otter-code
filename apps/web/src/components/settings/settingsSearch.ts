@@ -32,6 +32,7 @@ export type SettingsPath =
   | "/settings/storage"
   | "/settings/connections"
   // Otterware modules (suite/<module>/).
+  | "/settings/mail"
   | "/settings/drive"
   | "/settings/archived";
 
@@ -116,6 +117,7 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   "/settings/code-intelligence": "Code Intelligence",
   "/settings/storage": "Storage",
   "/settings/connections": "Connections",
+  "/settings/mail": "Mail",
   "/settings/drive": "Drive",
   "/settings/archived": "Archive",
 };
@@ -1067,6 +1069,18 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["pull request trusted environments shared credentials permissions read actions"],
   },
   {
+    id: "mail-accounts",
+    title: "Mail connected accounts",
+    to: "/settings/mail",
+    searchTerms: ["mail gmail outlook imap mailboxes connected accounts preferences"],
+  },
+  {
+    id: "mail-google-sign-in",
+    title: "Mail Google sign-in",
+    to: "/settings/mail",
+    searchTerms: ["google gmail oauth client secret build configured sign in"],
+  },
+  {
     id: "drive-connection",
     title: "Otter Drive",
     to: "/settings/drive",
@@ -1103,6 +1117,7 @@ const SETTINGS_CATEGORY_SCOPES: Readonly<Record<SettingsPath, SettingsSearchScop
   "/settings/code-intelligence": "environment-defaults",
   "/settings/storage": "project-defaults",
   "/settings/connections": "connections",
+  "/settings/mail": null,
   "/settings/drive": null,
   "/settings/scheduled-tasks": null,
   "/settings/archived": "project-defaults",

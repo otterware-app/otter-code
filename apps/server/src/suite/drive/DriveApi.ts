@@ -18,6 +18,9 @@ import {
   folderListResponseSchema,
   sharedWithMeResponseSchema,
   uploadSessionResponseSchema,
+  multipartUploadPartResponseSchema,
+  sharingResponseSchema,
+  type ShareRole,
   type AcceptLinkResponse,
   type Artifact,
   type ArtifactVersion,
@@ -26,10 +29,12 @@ import {
   type Folder,
   type SharedItem,
 } from "@otterware/drive-contracts";
+import type { DriveUploadSource } from "./DriveUploadSource.ts";
 import * as NodeCrypto from "node:crypto";
 
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
+import * as Stream from "effect/Stream";
 import { HttpClient, HttpClientRequest, type HttpClientResponse } from "effect/http";
 
 /** The CLI client id Drive accepts for Otterware's device authorization. */
@@ -131,9 +136,9 @@ export const makeDriveApi = (baseUrl: string) =>
         }),
       );
 
-    const send = (request: HttpClientRequest.HttpClientRequest) =>
+    const send = (request: HttpClientRequest.HttpClientRequest, transfer = false) =>
       client.execute(request).pipe(
-        Effect.timeout(REQUEST_TIMEOUT),
+        Effect.timeout(transfer ? "30 minutes" : REQUEST_TIMEOUT),
         Effect.mapError(
           () =>
             new DriveApiError({
@@ -245,6 +250,222 @@ export const makeDriveApi = (baseUrl: string) =>
 
     return {
       origin,
+      uploadFile: (
+        artifactId: string,
+        name: string,
+        source: DriveUploadSource,
+        ifVersion: number,
+        options: DriveRequestOptions,
+      ) =>
+        Effect.gen(function* () {
+          const session = (yield* json(
+            HttpClientRequest.post(url(`/api/v1/artifacts/${ref(artifactId)}/uploads`)).pipe(
+              HttpClientRequest.bodyJsonUnsafe({
+                entryPath: name,
+                label: `Upload ${name}`.slice(0, 300),
+                expectedCurrentVersion: ifVersion,
+                files: [
+                  {
+                    path: name,
+                    size: source.size,
+                    sha256: source.sha256,
+                    contentType: source.contentType,
+                  },
+                ],
+              }),
+            ),
+            options,
+            uploadSessionResponseSchema,
+            "upload session",
+          )).data;
+          if (session.files.length !== 1 || session.files[0]?.path !== name)
+            return yield* new DriveApiError({
+              status: 0,
+              code: "invalid_response",
+              detail: "Drive requested an unexpected upload file.",
+            });
+          const remote = session.files[0];
+          if (!URL.canParse(remote.uploadUrl, origin))
+            return yield* new DriveApiError({
+              status: 0,
+              code: "invalid_response",
+              detail: "Drive returned an invalid upload URL.",
+            });
+          const target = new URL(remote.uploadUrl, origin);
+          // Never send the user's token to an arbitrary origin from a malformed API response.
+          if (target.origin !== origin)
+            return yield* new DriveApiError({
+              status: 0,
+              code: "invalid_response",
+              detail: "Drive requested an upload outside its API origin.",
+            });
+          const upload = (start: number, size: number, part?: number) => {
+            const destination = new URL(target);
+            if (part !== undefined) destination.searchParams.set("part", String(part));
+            const stream = size === 0 ? Stream.empty : source.stream(start, start + size - 1);
+            return send(
+              authorized(
+                HttpClientRequest.put(destination.toString()).pipe(
+                  HttpClientRequest.setHeader("x-content-sha256", source.sha256),
+                  HttpClientRequest.bodyStream(stream, {
+                    contentType: source.contentType,
+                    contentLength: size,
+                  }),
+                ),
+                options,
+              ),
+              true,
+            ).pipe(
+              Effect.flatMap((response) =>
+                response.status >= 200 && response.status < 300
+                  ? Effect.succeed(response)
+                  : failureOf(response),
+              ),
+            );
+          };
+          if (remote.multipart) {
+            const size = remote.partSize;
+            if (size === undefined || !Number.isSafeInteger(size) || size < 1)
+              return yield* new DriveApiError({
+                status: 0,
+                code: "invalid_response",
+                detail: "Drive omitted the multipart part size.",
+              });
+            const parts: Array<{ partNumber: number; etag: string }> = [];
+            for (let start = 0; start < source.size; start += size) {
+              const partNumber = parts.length + 1;
+              const response = yield* upload(
+                start,
+                Math.min(size, source.size - start),
+                partNumber,
+              );
+              const body = yield* response.json.pipe(
+                Effect.mapError(
+                  () =>
+                    new DriveApiError({
+                      status: 0,
+                      code: "invalid_response",
+                      detail: "Drive sent an unreadable multipart receipt.",
+                    }),
+                ),
+              );
+              const receipt = yield* parseWith(
+                multipartUploadPartResponseSchema,
+                body,
+                "multipart receipt",
+              );
+              if (receipt.data.partNumber !== partNumber)
+                return yield* new DriveApiError({
+                  status: 0,
+                  code: "invalid_response",
+                  detail: "Drive returned the wrong multipart part number.",
+                });
+              parts.push(receipt.data);
+            }
+            const completed = yield* send(
+              authorized(
+                HttpClientRequest.post(`${target}/complete`).pipe(
+                  HttpClientRequest.bodyJsonUnsafe({ parts }),
+                ),
+                options,
+              ),
+              true,
+            );
+            if (completed.status < 200 || completed.status >= 300)
+              return yield* failureOf(completed);
+          } else {
+            yield* upload(0, source.size);
+          }
+          return (yield* json(
+            HttpClientRequest.post(url(`/api/v1/uploads/${ref(session.id)}/complete`)),
+            options,
+            completeUploadResponseSchema,
+            "published version",
+          )).data;
+        }),
+      createArtifact: (input: CreateArtifactInput, options: DriveRequestOptions) =>
+        json(
+          HttpClientRequest.post(url("/api/v1/artifacts")).pipe(
+            HttpClientRequest.bodyJsonUnsafe(input),
+          ),
+          options,
+          artifactResponseSchema,
+          "document",
+        ).pipe(Effect.map((body) => body.data)),
+      deleteDraft: (id: string, options: DriveRequestOptions) =>
+        send(
+          authorized(HttpClientRequest.delete(url(`/api/v1/artifacts/${ref(id)}/draft`)), options),
+        ).pipe(Effect.asVoid),
+      getSharing: (kind: "artifacts" | "folders", id: string, options: DriveRequestOptions) =>
+        json(
+          HttpClientRequest.get(url(`/api/v1/${kind}/${ref(id)}/sharing`)),
+          options,
+          sharingResponseSchema,
+          "sharing",
+        ).pipe(Effect.map((body) => body.data)),
+      setShareLink: (
+        kind: "artifacts" | "folders",
+        id: string,
+        role: ShareRole | "none",
+        options: DriveRequestOptions,
+      ) =>
+        json(
+          role === "none"
+            ? HttpClientRequest.delete(url(`/api/v1/${kind}/${ref(id)}/sharing/link`))
+            : HttpClientRequest.put(url(`/api/v1/${kind}/${ref(id)}/sharing/link`)).pipe(
+                HttpClientRequest.bodyJsonUnsafe({ role }),
+              ),
+          options,
+          sharingResponseSchema,
+          "sharing",
+        ).pipe(Effect.map((body) => body.data)),
+      grantAccess: (
+        kind: "artifacts" | "folders",
+        id: string,
+        emails: ReadonlyArray<string>,
+        role: ShareRole,
+        options: DriveRequestOptions,
+      ) =>
+        json(
+          HttpClientRequest.post(url(`/api/v1/${kind}/${ref(id)}/sharing/people`)).pipe(
+            HttpClientRequest.bodyJsonUnsafe({ emails, role, notify: false }),
+          ),
+          options,
+          sharingResponseSchema,
+          "sharing",
+        ).pipe(Effect.map((body) => body.data)),
+      revokeAccess: (
+        kind: "artifacts" | "folders",
+        id: string,
+        entryId: string,
+        options: DriveRequestOptions,
+      ) =>
+        send(
+          authorized(
+            HttpClientRequest.delete(
+              url(`/api/v1/${kind}/${ref(id)}/sharing/people/${ref(entryId)}`),
+            ),
+            options,
+          ),
+        ).pipe(
+          Effect.flatMap((response) => {
+            // Removing your own direct grant returns no sharing body (you just lost access).
+            if (response.status === 204) return Effect.succeed(null);
+            if (response.status < 200 || response.status >= 300) return failureOf(response);
+            return response.json.pipe(
+              Effect.mapError(
+                () =>
+                  new DriveApiError({
+                    status: 0,
+                    code: "invalid_response",
+                    detail: "Drive sent unreadable sharing.",
+                  }),
+              ),
+              Effect.flatMap((body) => parseWith(sharingResponseSchema, body, "sharing")),
+              Effect.map((body) => body.data),
+            );
+          }),
+        ),
       deviceCode,
       deviceToken,
       suiteSession: (token: string) =>

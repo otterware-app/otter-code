@@ -1,3 +1,4 @@
+import { installPasskeyFallbackBridge } from "./suite/browser/PasskeyFallbackBridge.ts";
 import { ipcRenderer } from "electron";
 
 import { PASSKEY_BRIDGE_ARGUMENT } from "./preview/GuestProtocol.ts";
@@ -8,3 +9,7 @@ import "./preview/PickPreload.ts";
 if (process.argv.includes(PASSKEY_BRIDGE_ARGUMENT)) {
   installPasskeyBridge((channel, publicKey) => ipcRenderer.invoke(channel, publicKey));
 }
+
+installPasskeyFallbackBridge((rpId) => {
+  void ipcRenderer.invoke("otterware:passkey-browser-fallback", rpId).catch(() => {});
+});

@@ -139,7 +139,7 @@ list text that must keep matching what the server or agents emit.
 | URL scheme           | `ottercode` (`ottercode-dev`, `ottercode-preview`)                                      |
 | Data home            | `~/.otter-code` (never `~/.t3`, so it can sit beside an installed T3 Code)              |
 | Background service   | `otter-code.service` (systemd user unit), `dev.otterware.code.service` (launchd)        |
-| Releases and updates | GitHub Releases of `otterware-app/otter-code`, nightly channel                          |
+| Releases and updates | `otterware-app/otterware` Releases, `channel-code` (bridge release)                     |
 | Relay                | `https://relay.code.otterware.app` (Cloudflare Worker, deployed from `infra/relay`)     |
 | Tunnels              | `prod-<digest>.otterware.app`, one per linked machine                                   |
 | Hosted web app       | `https://code.otterware.app` (Cloudflare Worker `otter-code-web`)                       |
@@ -300,3 +300,12 @@ Without it the relay reports Linear as unavailable and clients hide the section.
   once upstream pins 26.16.1 or later.
 
 The account integration is an Otter-owned boundary. Upstream continues to supply the editor, providers, orchestration and transport; its Clerk dependencies and account screens must not return during a sync. Code uses the shared account IDs through OAuth PKCE on every client, with online session validation at the relay. Keep the OAuth clients and issuer aligned with Otter Accounts when resolving upstream auth changes.
+
+## Monorepo migration bridge (ADR 0015)
+
+This final legacy release bakes `otterware-app/otterware`'s `channel-code` feed into desktop
+apps. The CLI and service launcher resolve only Code-profile immutable releases there;
+`scripts/install.sh` discovers the active version from `channel-code/SHA256SUMS` and verifies
+its download against the immutable build's checksums. npm packages built by this release
+carry that same update logic. The bridge must wait for the developer's go and the first
+all-profile monorepo release. Do not merge or release it automatically.

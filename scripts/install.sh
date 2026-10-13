@@ -17,7 +17,7 @@
 # instead of fetching the release again.
 set -eu
 
-repo="otterware-app/otter-code"
+repo="otterware-app/otterware"
 base_url="${T3CODE_RELEASE_BASE_URL:-https://github.com/${repo}/releases/download}"
 t3_home="${T3CODE_HOME:-$HOME/.otter-code}"
 bin_dir="${T3CODE_INSTALL_BIN_DIR:-$HOME/.local/bin}"
@@ -142,23 +142,21 @@ else
   fail "sha256sum or shasum is required"
 fi
 
-channel="${T3CODE_CHANNEL:-stable}"
+channel="${T3CODE_CHANNEL:-nightly}"
 version="${T3CODE_VERSION:-}"
 if [ -z "$version" ]; then
-  # Tags are v<semver>; the channel is the prerelease identifier, or none for
-  # stable. Only tags of the requested train are considered, so a stable
-  # install can never pick up a nightly or preview build by accident.
-  case "$channel" in
-    stable) tag_pattern='v\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)' ;;
-    nightly | preview) tag_pattern="v\([0-9][^\"]*-${channel}\.[0-9]*\.[0-9]*\)" ;;
-    *) fail "T3CODE_CHANNEL must be stable, nightly, or preview" ;;
-  esac
   tmp_index="$(mktemp)"
-  fetch "https://api.github.com/repos/${repo}/releases?per_page=100" "$tmp_index"
-  version="$(sed -n "s/.*\"tag_name\": *\"${tag_pattern}\".*/\1/p" "$tmp_index" | head -n 1)"
+  fetch "${base_url}/channel-code/SHA256SUMS" "$tmp_index"
+  version="$(sed -n 's/.*  t3-\([0-9][0-9.]*-otterware\.[a-z0-9.]*\)-linux-x64.tar.gz$/\1/p' "$tmp_index")"
   rm -f "$tmp_index"
-  [ -n "$version" ] || fail "could not find a ${channel} release; set T3CODE_VERSION"
+  [ -n "$version" ] || fail "channel-code has no runtime; wait for the monorepo cutover"
 fi
+case "$version" in
+  *-otterware.*) release_tag="otterware-code-v${version}" ;;
+  *) release_tag="v${version}"
+     base_url="${T3CODE_RELEASE_BASE_URL:-https://github.com/otterware-app/otter-code/releases/download}" ;;
+esac
+
 case "$version" in
   *-preview.*)
     printf '%s\n' \
@@ -191,13 +189,13 @@ else
   printf '  %sInstalling%s T3 Code %s%s%s\n\n' "$muted" "$reset" "$bold" "$version" "$reset" >&2
   step "Downloading..."
   fetch_status=0
-  fetch "${base_url}/v${version}/SHA256SUMS" "${staging}/SHA256SUMS" || fetch_status=$?
+  fetch "${base_url}/${release_tag}/SHA256SUMS" "${staging}/SHA256SUMS" || fetch_status=$?
   if [ "$fetch_status" -eq 44 ]; then
     fail "t3 ${version} has no release archive for ${platform}-${arch}; releases before the self-contained CLI can only be installed with \`npm install -g t3@${version}\`"
   elif [ "$fetch_status" -ne 0 ]; then
     fail "could not download the release checksums"
   fi
-  download "${base_url}/v${version}/${archive}" "${staging}/${archive}"
+  download "${base_url}/${release_tag}/${archive}" "${staging}/${archive}"
 
   step "Verifying the download..."
   expected="$(grep " \*\{0,1\}${archive}\$" "${staging}/SHA256SUMS" | cut -d' ' -f1)"

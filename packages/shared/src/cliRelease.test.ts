@@ -64,6 +64,7 @@ describe("cliRelease", () => {
 
   it("derives the release channel from the version alone", () => {
     expect(cliReleaseChannelOf("1.2.3")).toBe("stable");
+    expect(cliReleaseChannelOf("0.14.0-otterware.code.20261013.1")).toBe("nightly");
     expect(cliReleaseChannelOf("1.2.3-nightly.20260911.4")).toBe("nightly");
     expect(cliReleaseChannelOf("1.2.3-preview.20260911.4")).toBe("preview");
     // A prerelease that is not one of our trains is not silently a nightly.
@@ -87,8 +88,21 @@ describe("cliRelease", () => {
 
   it("pages through the release index at the largest page GitHub allows", () => {
     expect(cliReleaseIndexPageUrl(1)).toBe(
-      "https://api.github.com/repos/otterware-app/otter-code/releases?per_page=100&page=1",
+      "https://api.github.com/repos/otterware-app/otterware/releases?per_page=100&page=1",
     );
     expect(cliReleaseIndexPageUrl(3)).toContain("page=3");
+  });
+  it("hands fleet and npm updates only to the main Code profile, never test builds or other profiles", () => {
+    const version = "0.14.0-otterware.20261013.10";
+    const releases = [
+      { tag_name: `otterware-code-v${version}`, name: `code ${version} (code-test)` },
+      { tag_name: `otterware-mail-v${version}`, name: `mail ${version} (mail)` },
+      { tag_name: `otterware-code-v${version}`, name: `code ${version} (code)` },
+    ];
+    expect(newestCliReleaseVersion(releases.slice(0, 2), "nightly")).toBeUndefined();
+    expect(newestCliReleaseVersion(releases, "nightly")).toBe(version);
+    expect(cliReleaseDownloadBaseUrl(version)).toBe(
+      `https://github.com/otterware-app/otterware/releases/download/otterware-code-v${version}`,
+    );
   });
 });

@@ -109,9 +109,9 @@ export const make = ElectronUpdater.of({
       return Effect.void;
     }),
   allowDowngrade: Effect.sync(() => autoUpdater.allowDowngrade),
-  setAllowDowngrade: (value) =>
+  setAllowDowngrade: (_value) =>
     Effect.suspend(() => {
-      autoUpdater.allowDowngrade = value;
+      autoUpdater.allowDowngrade = false;
       return Effect.void;
     }),
   setFullChangelog: (value) =>

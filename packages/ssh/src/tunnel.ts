@@ -64,6 +64,8 @@ const REMOTE_LAUNCH_BASE_TIMEOUT_MS = 90_000;
 // Matches the node-script launch command's ssh run without the launch lock wait.
 const SSH_TUNNEL_CONNECT_TIMEOUT_MS = REMOTE_LAUNCH_BASE_TIMEOUT_MS;
 const SSH_TUNNEL_FORWARD_PROBE_INTERVAL_MS = 100;
+// Otter: a host whose service owns the default home waits for that service, holding the launch lock.
+const REMOTE_SERVICE_WAIT_SECONDS = 120;
 // Cold archive launches download and extract ~70 MB and may wait on an install lock.
 // Lock waits must outlast both downloads and extraction; SSH must outlast install or wait plus readiness.
 // Leave slack for verification and extraction, which have no timeout.
@@ -90,6 +92,7 @@ const REMOTE_LAUNCH_LOCK_WAIT_SECONDS = Math.ceil(
     2 * REMOTE_REUSE_READY_TIMEOUT_MS +
     2 * REMOTE_PID_EXIT_WAIT_MS +
     REMOTE_RUNTIME_RECORD_WAIT_SECONDS * 1000 +
+    REMOTE_SERVICE_WAIT_SECONDS * 1000 +
     4 * SSH_READY_PROBE_TIMEOUT_MS +
     REMOTE_UPDATE_WAIT_MS) /
     1000,
@@ -750,51 +753,62 @@ NODE
 REMOTE_PID="$(cat "$PID_FILE" 2>/dev/null || true)"
 REMOTE_PORT="$(cat "$PORT_FILE" 2>/dev/null || true)"
 REMOTE_MANAGED="$(cat "$MANAGED_FILE" 2>/dev/null || true)"
-adopt_default_server() {
-DEFAULT_RUNTIME_INFO="$(resolve_default_runtime_port 2>/dev/null || true)"
-DEFAULT_RUNTIME_PID=""
-DEFAULT_REMOTE_PORT=""
 ADOPTED_PID=""
-if [ -n "$DEFAULT_RUNTIME_INFO" ]; then
+service_manages_default_home() {
+  # Durable service state reserves this home even while its child is down.
+  # Fail closed on unreadable/malformed state rather than risking two writers.
+  [ -f "$DEFAULT_SERVER_HOME/runtime/service-state.json" ] ||
+    [ -f "$HOME/.config/systemd/user/otter-code.service" ] ||
+    [ -f "$HOME/Library/LaunchAgents/dev.otterware.code.service.plist" ] ||
+    { command -v systemctl >/dev/null 2>&1 && systemctl --user is-enabled otter-code.service >/dev/null 2>&1; }
+}
+connect_default_runtime() {
+  DEFAULT_RUNTIME_INFO="$(resolve_default_runtime_port 2>/dev/null || true)"
+  [ -n "$DEFAULT_RUNTIME_INFO" ] || return 1
   DEFAULT_RUNTIME_PID="\${DEFAULT_RUNTIME_INFO%% *}"
   DEFAULT_REMOTE_PORT="\${DEFAULT_RUNTIME_INFO#* }"
-fi
-# The managed server runs on the default home, so it writes the default
-# runtime file too. When that file names the PID this launcher recorded as
-# managed, it describes our own server and its real port, not one to adopt.
-if [ -n "$DEFAULT_REMOTE_PORT" ] && [ "$REMOTE_MANAGED" = "managed" ] && [ "$DEFAULT_RUNTIME_PID" = "$REMOTE_PID" ]; then
-  REMOTE_PORT="$DEFAULT_REMOTE_PORT"
-  printf '%s\\n' "$REMOTE_PORT" >"$PORT_FILE"
-  return 0
-elif [ -n "$DEFAULT_REMOTE_PORT" ]; then
-  REMOTE_PORT="$DEFAULT_REMOTE_PORT"
-  if wait_ready "@@T3_REUSE_READY_TIMEOUT_MS@@"; then
-    ADOPTED_PID="$DEFAULT_RUNTIME_PID"
-    if [ "$REMOTE_MANAGED" = "managed" ]; then
-      if managed_server_running "$REMOTE_PID"; then
-        kill "$REMOTE_PID" 2>/dev/null || true
-        wait_for_pid_exit "$REMOTE_PID"
-      fi
-      REMOTE_PID=""
-      REMOTE_PORT="$DEFAULT_REMOTE_PORT"
-      REMOTE_MANAGED="external"
-      rm -f "$PID_FILE"
-      printf '%s\\n' "$REMOTE_PORT" >"$PORT_FILE"
-      printf 'external\\n' >"$MANAGED_FILE"
-    else
-      printf '%s\\n' "$REMOTE_PORT" >"$PORT_FILE"
-      printf 'external\\n' >"$MANAGED_FILE"
-      REMOTE_PID=""
-      REMOTE_MANAGED="external"
-    fi
+  if [ "$REMOTE_MANAGED" = "managed" ] && [ "$DEFAULT_RUNTIME_PID" = "$REMOTE_PID" ] && ! service_manages_default_home; then
+    # Our own managed server on the default home wrote this runtime file.
+    REMOTE_PORT="$DEFAULT_REMOTE_PORT"
+    printf '%s\\n' "$REMOTE_PORT" >"$PORT_FILE"
     return 0
-  else
-    REMOTE_PID="$(cat "$PID_FILE" 2>/dev/null || true)"
-    REMOTE_PORT="$(cat "$PORT_FILE" 2>/dev/null || true)"
-    REMOTE_MANAGED="$(cat "$MANAGED_FILE" 2>/dev/null || true)"
   fi
+  REMOTE_PORT="$DEFAULT_REMOTE_PORT"
+  wait_ready "@@T3_REUSE_READY_TIMEOUT_MS@@" || return 1
+  ADOPTED_PID="$DEFAULT_RUNTIME_PID"
+  if [ "$REMOTE_MANAGED" = "managed" ]; then
+    PID_TO_STOP="\${REMOTE_PID:-$DEFAULT_RUNTIME_PID}"
+    # A leftover ownership file must never kill the service's current child.
+    if [ -n "$PID_TO_STOP" ] && [ "$PID_TO_STOP" != "$DEFAULT_RUNTIME_PID" ] && managed_server_running "$PID_TO_STOP"; then
+      kill "$PID_TO_STOP" 2>/dev/null || true
+      wait_for_pid_exit "$PID_TO_STOP"
+    fi
+  fi
+  REMOTE_PID=""
+  REMOTE_PORT="$DEFAULT_REMOTE_PORT"
+  REMOTE_MANAGED="external"
+  rm -f "$PID_FILE"
+  printf '%s\\n' "$REMOTE_PORT" >"$PORT_FILE"
+  printf 'external\\n' >"$MANAGED_FILE"
+}
+if service_manages_default_home; then
+  SERVICE_WAIT_DEADLINE=$(($(date +%s) + @@T3_SERVICE_WAIT_SECONDS@@))
+  while ! connect_default_runtime; do
+    if [ "$(date +%s)" -ge "$SERVICE_WAIT_DEADLINE" ]; then
+      printf "This host's Otter Code service is not running; start it with otter-code service restart (or systemctl --user start otter-code.service on Linux).\\n" >&2
+      exit 1
+    fi
+    sleep 1
+  done
+  printf '{"remotePort":%s,"serverKind":"external"}\\n' "$REMOTE_PORT"
+  exit 0
 fi
-return 1
+adopt_default_server() {
+  connect_default_runtime && return 0
+  REMOTE_PID="$(cat "$PID_FILE" 2>/dev/null || true)"
+  REMOTE_PORT="$(cat "$PORT_FILE" 2>/dev/null || true)"
+  REMOTE_MANAGED="$(cat "$MANAGED_FILE" 2>/dev/null || true)"
+  return 1
 }
 adopt_default_server || true
 if [ "$REMOTE_MANAGED" = "external" ]; then
@@ -1026,6 +1040,7 @@ function buildRemoteLaunchScript(input?: RemoteT3RunnerOptions): string {
     T3_REMOTE_PORT_SCAN_WINDOW: String(REMOTE_PORT_SCAN_WINDOW),
     T3_READY_TIMEOUT_MS: String(REMOTE_READY_TIMEOUT_MS),
     T3_REUSE_READY_TIMEOUT_MS: String(REMOTE_REUSE_READY_TIMEOUT_MS),
+    T3_SERVICE_WAIT_SECONDS: String(REMOTE_SERVICE_WAIT_SECONDS),
     T3_READY_PROBE_TIMEOUT_MS: String(SSH_READY_PROBE_TIMEOUT_MS),
     T3_PID_EXIT_WAIT_TICKS: String(REMOTE_PID_EXIT_WAIT_MS / 100),
     T3_LAUNCH_LOCK_WAIT_SECONDS: String(REMOTE_LAUNCH_LOCK_WAIT_SECONDS),

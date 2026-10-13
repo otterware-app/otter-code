@@ -80,6 +80,52 @@ preview_path.write_text(adapt_job(preview_path.read_text(), 'deploy', 'stage-pre
 ]))
 PY
 
+# Keep upstream's provisioning-profile path, but make it optional for Otter's
+# existing Developer ID releases. Otter Accounts has no Clerk RP domain.
+python3 - <<'PY'
+from pathlib import Path
+
+path = Path('.github/workflows/release-desktop.yml')
+text = path.read_text()
+if '      MACOS_PROVISIONING_PROFILE:\n' not in text:
+    text = text.replace('      AZURE_TENANT_ID:\n',
+        '      MACOS_PROVISIONING_PROFILE:\n        required: false\n      AZURE_TENANT_ID:\n', 1)
+if '          MACOS_PROVISIONING_PROFILE:' not in text:
+    text = text.replace('          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}\n',
+        '          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}\n'
+        '          MACOS_PROVISIONING_PROFILE: ${{ secrets.MACOS_PROVISIONING_PROFILE }}\n', 1)
+text = text.replace('          T3CODE_CLERK_PASSKEY_RP_DOMAINS: ${{ vars.CLERK_PASSKEY_RP_DOMAINS }}\n', '')
+if '          T3CODE_MACOS_PASSKEY_RP_DOMAINS:' not in text:
+    text = text.replace('          MACOS_PROVISIONING_PROFILE: ${{ secrets.MACOS_PROVISIONING_PROFILE }}\n',
+        '          MACOS_PROVISIONING_PROFILE: ${{ secrets.MACOS_PROVISIONING_PROFILE }}\n'
+        '          T3CODE_MACOS_PASSKEY_RP_DOMAINS: ${{ vars.MACOS_PASSKEY_RP_DOMAINS }}\n', 1)
+start_anchor = '            if has_all "$CSC_LINK" "$CSC_KEY_PASSWORD" "$APPLE_API_KEY" "$APPLE_API_KEY_ID" "$APPLE_API_ISSUER"; then\n'
+end_anchor = '              echo "macOS signing enabled."\n'
+start = text.index(start_anchor) + len(start_anchor)
+end = text.index(end_anchor, start)
+text = text[:start] + '''              key_path="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8"
+              printf '%s' "$APPLE_API_KEY" > "$key_path"
+              export APPLE_API_KEY="$key_path"
+
+              if [[ -n "$MACOS_PROVISIONING_PROFILE" ]]; then
+                if [[ -z "$APPLE_TEAM_ID" ]]; then
+                  echo "MACOS_PROVISIONING_PROFILE requires APPLE_TEAM_ID." >&2
+                  exit 1
+                fi
+                profile_path="$RUNNER_TEMP/t3code.provisionprofile"
+                printf '%s' "$MACOS_PROVISIONING_PROFILE" | base64 -D > "$profile_path"
+                security cms -D -i "$profile_path" >/dev/null
+                export T3CODE_APPLE_TEAM_ID="$APPLE_TEAM_ID"
+                export T3CODE_MACOS_PROVISIONING_PROFILE="$profile_path"
+                echo "macOS provisioning profile validated; entitlements selected by the packager."
+              else
+                echo "No macOS provisioning profile; signing and notarization continue without passkey entitlements."
+              fi
+
+''' + text[end:]
+path.write_text(text)
+PY
+
 # Point agents at the fork guide from AGENTS.md, which every agent reads first.
 perl -0pi -e '
   s/\A(# [^\n]*\n)/$1\n> **This is the Otter Code fork.** Read [OTTER.md](OTTER.md) first: it covers how the fork\n> stays in sync with upstream, its identities and infrastructure, releases, and moving machines.\n/

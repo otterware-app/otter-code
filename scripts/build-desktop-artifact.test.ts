@@ -1420,12 +1420,32 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
     ),
   );
 
-  it("derives macOS passkey signing configuration from the Clerk publishable key", () => {
-    const configuration = resolveMacPasskeySigningConfiguration({
-      T3CODE_APPLE_TEAM_ID: "abc1234567",
-      T3CODE_MACOS_PROVISIONING_PROFILE: "/tmp/t3code.provisionprofile",
-      T3CODE_CLERK_PUBLISHABLE_KEY: `pk_test_${btoa("example.clerk.accounts.dev$")}`,
-    });
+  it.effect("keeps default signing when no macOS provisioning profile is configured", () =>
+    Effect.gen(function* () {
+      const config = yield* createBuildConfig(
+        "mac",
+        "dmg",
+        "1.2.3",
+        true,
+        false,
+        undefined,
+        undefined,
+      );
+      const mac = config.mac as Record<string, unknown>;
+      assert.notProperty(mac, "entitlements");
+      assert.notProperty(mac, "provisioningProfile");
+      // electron-builder enables hardened runtime by default.
+      assert.notProperty(mac, "hardenedRuntime");
+      assert.match(String(mac.sign), /[\\/]scripts[\\/]sign-macos\.ts$/);
+    }).pipe(Effect.provide(ConfigProvider.layer(ConfigProvider.fromEnv({ env: {} })))),
+  );
+
+  it.effect("adds signing entitlements and both renderer protocols to signed macOS builds", () =>
+    Effect.gen(function* () {
+      const config = yield* createBuildConfig("mac", "dmg", "1.2.3", true, false, undefined, {
+        entitlementsPath: "/tmp/entitlements.mac.plist",
+        provisioningProfilePath: "/tmp/t3code.provisionprofile",
+      });
 
       const mac = config.mac as Record<string, unknown>;
       assert.equal(config.appId, "dev.otterware.code");

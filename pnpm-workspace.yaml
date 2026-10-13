@@ -186,6 +186,8 @@ overrides:
   "electron-webauthn>@electron-webauthn/macos": "catalog:"
   "@electron-webauthn/macos>objc-js": "catalog:"
   lightningcss: "catalog:"
+  # Micromark extension types must share the parser's catalog version.
+  micromark-util-types: "catalog:"
   tailwindcss: "catalog:"
   # Ranges from @effect/platform-node, jsdom, unifont, Expo and libsql otherwise
   # settle on two patch releases of each major. Older majors stay as they are.
@@ -217,6 +219,7 @@ patchedDependencies:
   "@effect/vitest@4.1.2": patches/@effect__vitest@4.1.2.patch
   expo-sharing@58.0.22: patches/expo-sharing@58.0.22.patch
   expo-widgets@58.0.27: patches/expo-widgets@58.0.27.patch
+  react-native-screens@5.0.0-t3.30: patches/react-native-screens@5.0.0-t3.30.patch
   "@ff-labs/fff-node@0.11.0": patches/@ff-labs__fff-node@0.11.0.patch
   # Exports the dependency-light subpaths mobile and the web diff parser import, and makes find
   # cover folded files and collapsed context (onRevealSearchMatch).

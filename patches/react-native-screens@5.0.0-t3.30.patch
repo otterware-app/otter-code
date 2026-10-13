@@ -1,0 +1,18 @@
+diff --git a/ios/header/RNSHeaderCoordinator.mm b/ios/header/RNSHeaderCoordinator.mm
+--- a/ios/header/RNSHeaderCoordinator.mm
++++ b/ios/header/RNSHeaderCoordinator.mm
+@@ -578,7 +578,10 @@
+ #if RNS_IPHONE_OS_VERSION_AVAILABLE(27_0)
++  // Early iOS 27 betas lack this setter; calling it there crashes on launch.
+   if (@available(iOS 27.0, *)) {
+-    UIBarMinimization *minimization = [UIBarMinimization new];
+-    minimization.minimizationBehavior = _configDataProvider.minimizationBehavior;
+-    minimization.restorationBehavior = _configDataProvider.restorationBehavior;
+-    navItem.navigationBarMinimization = minimization;
++    if ([navItem respondsToSelector:@selector(setNavigationBarMinimization:)]) {
++      UIBarMinimization *minimization = [UIBarMinimization new];
++      minimization.minimizationBehavior = _configDataProvider.minimizationBehavior;
++      minimization.restorationBehavior = _configDataProvider.restorationBehavior;
++      navItem.navigationBarMinimization = minimization;
++    }
+   }

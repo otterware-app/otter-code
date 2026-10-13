@@ -5,7 +5,7 @@
  * platform key, so a rename here is a release-breaking change.
  */
 
-const CLI_RELEASE_REPOSITORY = "otterware-app/otter-code";
+const CLI_RELEASE_REPOSITORY = "otterware-app/otterware";
 export const CLI_RELEASE_CHECKSUMS_FILE = "SHA256SUMS";
 /** Overrides the download origin for mirrors and air-gapped installs. */
 export const CLI_RELEASE_BASE_URL_ENV = "T3CODE_RELEASE_BASE_URL";
@@ -57,11 +57,11 @@ export function cliArchiveFileName(version: string, platformKey: CliArchivePlatf
 const CLI_RELEASE_DEFAULT_BASE_URL = `https://github.com/${CLI_RELEASE_REPOSITORY}/releases/download`;
 
 /** Directory that `releases/download/<tag>/<asset>` lives under. */
-export function cliReleaseDownloadBaseUrl(
-  version: string,
-  baseUrl: string | undefined = CLI_RELEASE_DEFAULT_BASE_URL,
-): string {
-  return `${(baseUrl?.trim() || CLI_RELEASE_DEFAULT_BASE_URL).replace(/\/+$/, "")}/v${version}`;
+export function cliReleaseDownloadBaseUrl(version: string, baseUrl?: string): string {
+  const defaultBase = /^\d+\.\d+\.\d+-otterware\./.test(version)
+    ? CLI_RELEASE_DEFAULT_BASE_URL
+    : "https://github.com/otterware-app/otter-code/releases/download";
+  return `${(baseUrl?.trim() || defaultBase).replace(/\/+$/, "")}/${/^\d+\.\d+\.\d+-otterware\./.test(version) ? `otterware-code-v${version}` : `v${version}`}`;
 }
 
 /**
@@ -88,8 +88,12 @@ export const CLI_RELEASE_CHANNELS: ReadonlyArray<CliReleaseChannel> = [
 
 /** The release train a version was published on, derived from its prerelease tag. */
 export function cliReleaseChannelOf(version: string): CliReleaseChannel {
-  const channel = /^[^-+]+-(nightly|preview)\.\d{8}\.\d+$/.exec(version)?.[1];
-  return channel === "nightly" || channel === "preview" ? channel : "stable";
+  const channel = /^[^-+]+-(nightly|preview|otterware)\.\d{8}\.\d+$/.exec(version)?.[1];
+  return channel === "otterware"
+    ? "nightly"
+    : channel === "nightly" || channel === "preview"
+      ? channel
+      : "stable";
 }
 
 /**
@@ -111,13 +115,22 @@ export function newestCliReleaseVersion(
   releases: ReadonlyArray<{
     readonly tag_name: string;
     readonly draft?: boolean | undefined;
+    readonly name?: string | undefined;
   }>,
   channel: CliReleaseChannel,
 ): string | undefined {
   for (const release of releases) {
     if (release.draft) continue;
-    const version = /^v(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$/.exec(release.tag_name)?.[1];
+    const version = /^(?:v|otterware-code-v)(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$/.exec(
+      release.tag_name,
+    )?.[1];
     if (version === undefined) continue;
+    // Test/branch builds must never become the default fleet update.
+    if (
+      release.tag_name.startsWith("otterware-code-v") &&
+      release.name !== `code ${version} (code)`
+    )
+      continue;
     if (cliReleaseChannelOf(version) === channel) return version;
   }
   return undefined;

@@ -97,14 +97,15 @@ export const make = ElectronUpdater.of({
       autoUpdater.autoInstallOnAppQuit = value;
       return Effect.void;
     }),
-  setChannel: (channel) =>
+  setChannel: (_channel) =>
     Effect.suspend(() => {
-      autoUpdater.channel = channel;
+      // The bridge follows one profile feed, whose manifest is always latest.
+      autoUpdater.channel = "latest";
       return Effect.void;
     }),
-  setAllowPrerelease: (value) =>
+  setAllowPrerelease: (_value) =>
     Effect.suspend(() => {
-      autoUpdater.allowPrerelease = value;
+      autoUpdater.allowPrerelease = true;
       return Effect.void;
     }),
   allowDowngrade: Effect.sync(() => autoUpdater.allowDowngrade),

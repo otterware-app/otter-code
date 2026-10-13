@@ -317,19 +317,13 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
         ),
       );
 
-      assert.deepStrictEqual(latestConfig, {
-        provider: "github",
-        owner: "pingdotgg",
-        repo: "t3code",
-        releaseType: "release",
-      });
-      assert.deepStrictEqual(nightlyConfig, {
-        provider: "github",
-        owner: "pingdotgg",
-        repo: "t3code",
-        releaseType: "prerelease",
-        channel: "nightly",
-      });
+      const feed = {
+        provider: "generic",
+        url: "https://github.com/otterware-app/otterware/releases/download/channel-code/",
+        channel: "latest",
+      };
+      assert.deepStrictEqual(latestConfig, feed);
+      assert.deepStrictEqual(nightlyConfig, feed);
     }),
   );
 
@@ -368,10 +362,9 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
       assert.notProperty(previewChannel, "publish");
       assert.deepStrictEqual(release.publish, [
         {
-          provider: "github",
-          owner: "pingdotgg",
-          repo: "t3code",
-          releaseType: "release",
+          provider: "generic",
+          url: "https://github.com/otterware-app/otterware/releases/download/channel-code/",
+          channel: "latest",
         },
       ]);
     }).pipe(

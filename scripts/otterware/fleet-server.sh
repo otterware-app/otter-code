@@ -182,8 +182,20 @@ pid_running() {
     [[ "$(sed -n 's/.*) \([A-Z]\) .*/\1/p' "/proc/$1/stat" 2>/dev/null)" != Z ]]
 }
 
+# Field 22 of /proc/<pid>/stat. It survives exit, unlike cmdline, which the
+# kernel empties once an exiting server releases its memory, and a reused PID
+# gets a new one.
+pid_start_time() {
+  local stat
+  local -a fields=()
+  stat="$(cat "/proc/$1/stat" 2>/dev/null)" || return 1
+  read -r -a fields <<<"${stat##*) }"
+  [[ "${fields[19]-}" =~ ^[0-9]+$ ]] || return 1
+  echo "${fields[19]}"
+}
+
 stop_ssh_servers() {
-  local dir pid deadline
+  local dir pid deadline started now
   for dir in "$BASE_DIR"/ssh-launch/*; do
     [[ -d "$dir" && "$(cat "$dir/managed" 2>/dev/null)" == managed ]] || continue
     pid="$(cat "$dir/pid" 2>/dev/null || true)"
@@ -194,12 +206,16 @@ stop_ssh_servers() {
       fi
       grep -q "/$SERVICE_UNIT" "/proc/$pid/cgroup" 2>/dev/null &&
         die "SSH record $dir unexpectedly names a service process (pid $pid)"
+      started="$(pid_start_time "$pid")" || die "could not read the start time of pid $pid"
       log "stopping SSH-launched server pid $pid on $BASE_DIR (SIGTERM)"
       kill -TERM "$pid" 2>/dev/null || true
-      deadline=$((SECONDS + ${OTTERWARE_FLEET_SSH_STOP_TIMEOUT:-10}))
+      # A server with live sessions takes several seconds to reconcile and exit.
+      deadline=$((SECONDS + ${OTTERWARE_FLEET_SSH_STOP_TIMEOUT:-30}))
       while pid_running "$pid" && ((SECONDS < deadline)); do sleep 0.1; done
-      if pid_running "$pid"; then
-        pid_owns_home "$pid" || die "pid $pid changed while stopping the SSH server"
+      # The server may be mid-exit with an empty cmdline, so compare start
+      # times instead of re-running pid_owns_home. No start time means it is gone.
+      if pid_running "$pid" && now="$(pid_start_time "$pid")"; then
+        [[ "$now" == "$started" ]] || die "pid $pid changed while stopping the SSH server"
         log "SSH-launched server pid $pid did not stop; sending SIGKILL"
         kill -KILL "$pid" 2>/dev/null || true
         deadline=$((SECONDS + 5))

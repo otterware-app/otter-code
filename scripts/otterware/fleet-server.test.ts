@@ -225,6 +225,7 @@ describe.skipIf(HostProcess.Platform.defaultValue() !== "linux")("fleet SSH hand
     "forward",
     "backward",
     "force-kill",
+    "exiting",
     "unmanaged",
     "unrecorded",
     "reused-pid",
@@ -244,7 +245,8 @@ describe.skipIf(HostProcess.Platform.defaultValue() !== "linux")("fleet SSH hand
         HOME: root,
         T3CODE_HOME: home,
         PATH: `${bin}:${process.env.PATH}`,
-        OTTERWARE_FLEET_SSH_STOP_TIMEOUT: scenario === "force-kill" ? "0" : "2",
+        OTTERWARE_FLEET_SSH_STOP_TIMEOUT:
+          scenario === "force-kill" || scenario === "exiting" ? "0" : "2",
       };
       const children: ReturnType<typeof spawn>[] = [];
       const record = async (pid: number, slot: string, managed = true) => {
@@ -286,9 +288,13 @@ describe.skipIf(HostProcess.Platform.defaultValue() !== "linux")("fleet SSH hand
           { mode: 0o755 },
         );
         const fake = NodePath.join(bin, "t3");
+        // "exiting" keeps its PID and start time but no longer reads as `t3 serve`,
+        // like a real server whose cmdline the kernel empties while it exits.
+        const onTerm =
+          scenario === "force-kill" ? ":" : scenario === "exiting" ? "exec sleep 30" : "exit 0";
         await NodeFSP.writeFile(
           fake,
-          `#!/bin/bash\ntrap '${scenario === "force-kill" ? ":" : "exit 0"}' TERM\necho fake-ready\nwhile read -r input; do :; done\n`,
+          `#!/bin/bash\ntrap '${onTerm}' TERM\necho fake-ready\nwhile read -r input; do :; done\n`,
           { mode: 0o755 },
         );
         const fakeServer = (base: string) => {
@@ -373,7 +379,8 @@ describe.skipIf(HostProcess.Platform.defaultValue() !== "linux")("fleet SSH hand
         await gap.result;
         expect(result.code, result.output).toBe(0);
         expect(result.output).toContain(`stopping SSH-launched server pid ${gap.child.pid}`);
-        if (scenario === "force-kill") expect(result.output).toContain("sending SIGKILL");
+        if (scenario === "force-kill" || scenario === "exiting")
+          expect(result.output).toContain("sending SIGKILL");
         else expect(result.output).not.toContain("sending SIGKILL");
         expect(await NodeFSP.stat(NodePath.join(gapDir, "pid")).catch(() => null)).toBeNull();
       } finally {

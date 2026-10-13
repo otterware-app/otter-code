@@ -52,7 +52,6 @@ sync_date=$(date +%F)
 git merge-base --is-ancestor "$old_base" "$old_main"
 git merge-base --is-ancestor "$old_base" "$new_base"
 last_sync=$(git log -1 --format=%H --grep='^chore(otter): changes before the .* sync' "$old_main")
-git branch "backup/otter-before-$sync_date" "$old_main"
 # Commits since the last sync wait here; they become this sync's squash commit.
 git branch "otter/sync-$sync_date" "$old_main"
 git switch -c "otter/stack-$sync_date" "$last_sync"
@@ -103,12 +102,12 @@ Run focused tests and typechecks for conflicted code and the preserved features 
 
 ### Publishing a prepared sync
 
-A sync rewrites Otter's shared history. Preserve the old `main` as a remote backup, then update
-`main` and `upstream-base` together with explicit leases. If another writer moved either ref, stop
+A sync rewrites Otter's shared history. Update `main` and `upstream-base` together with explicit
+leases; the squash commits are the record of the fork's changes, so no backup branches are kept.
+If another writer moved either ref, stop
 and prepare against the new state instead of overriding it:
 
 ```sh
-git push origin "$old_main:refs/heads/backup/otter-before-$sync_date"
 git push --atomic origin \
   --force-with-lease="refs/heads/main:$old_main" \
   --force-with-lease="refs/heads/upstream-base:$old_base" \
@@ -183,6 +182,17 @@ widget's `T3Mark.svg`, `agent_activity_mark.xml`, the DMG backgrounds) is the ki
   packages with the `NPM_TOKEN` secret (an npm account that is a member of the `otterware` org),
   tagged `nightly` and also `latest`, so `npx otter-code` and `npm i -g otter-code` get the newest
   build. The token is needed because new packages have no npm trusted publisher yet.
+- **macOS passkeys:** `MACOS_PROVISIONING_PROFILE` is the base64 Developer ID profile for
+  `dev.otterware.code`, signed by Clary GmbH's team `YNJ5WLH965` (`APPLE_TEAM_ID`). The
+  Otterware branch must pass its own `OTTERWARE_MACOS_PROVISIONING_PROFILE` secret into the
+  reusable workflow's `MACOS_PROVISIONING_PROFILE` input and use app ID `dev.otterware.suite`.
+  The packager derives the WebAuthn keychain group from the team and app IDs and claims only
+  used profile grants. Apple's managed `com.apple.developer.web-browser.public-key-credential`
+  capability is pending approval; after approval, regenerate both profiles and update their
+  secrets. Associated Domains are optional (`MACOS_PASSKEY_RP_DOMAINS`, comma-separated) and
+  unnecessary for browser passkeys; no Clerk key is required. Without a profile, existing
+  signing and notarization continue. Otter's policy lives in `scripts/otter/macos-profile.ts`;
+  regenerate workflow adaptations with `.github/scripts/otter-adapt-upstream.sh`.
 - **Hosted web:** the release stages a Cloudflare Worker version, then promotes it after the
   desktop/CLI release publishes. `scripts/otter/web/` owns its routing and static assets;
   the adaptation script keeps upstream's Vercel path separate. The `Deploy Otter Code web`

@@ -15,6 +15,14 @@ both leases, since stopping a launcher that waits on a lease would deadlock. A
 running launcher refuses further updates once a local command changes its selection.
 A protocol-3 launcher takes no lease, so a local command can still race its updates.
 
+SSH launch defers to service ownership: durable `runtime/service-state.json`
+(including pending updates or invalid state), an installed Otter systemd unit or
+launchd plist, or an enabled `otter-code.service` prevents an SSH-managed spawn.
+It waits up to 120 seconds for the default home's runtime metadata and HTTP
+readiness, then connects as external. A service restart gap must never create a
+second writer on the same database. If the service stays down, SSH fails with
+service recovery commands instead of taking over the home.
+
 Exact-version installs keep restarts independent of npm cache eviction or a moving
 release tag. Installation and preflight happen in staging before publishing an
 immutable runtime. Preflight checks the launcher protocol because a target that

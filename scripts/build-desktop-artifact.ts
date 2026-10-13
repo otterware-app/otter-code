@@ -4,7 +4,6 @@
 import * as NodeFSP from "node:fs/promises";
 import * as NodeCrypto from "node:crypto";
 import * as NodeModule from "node:module";
-// plist is CommonJS; Node cannot load its named exports from an ES module.
 
 import {
   createPackageWithOptions,
@@ -39,6 +38,13 @@ import {
   selectCliRuntimeExternalDependencies,
 } from "./lib/cli-external-packages.ts";
 import { selectDesktopRuntimeExternalDependencies } from "./lib/desktop-external-packages.ts";
+import { loadRepoEnv } from "./lib/public-config.ts";
+import {
+  resolveMacPasskeySigningConfiguration,
+  resolveMacWebAuthnEntitlements,
+  renderMacPasskeyEntitlements,
+  type MacWebAuthnEntitlements,
+} from "./otter/macos-profile.ts";
 import { resolveCatalogDependencies } from "./lib/resolve-catalog.ts";
 
 import * as NodeRuntime from "@effect/platform-node/NodeRuntime";
@@ -201,6 +207,28 @@ const getDefaultArch = Effect.fn("getDefaultArch")(function* (platform: typeof B
 
   return yield* getDefaultBuildArch(platform, config);
 });
+
+export class MacPasskeySigningConfigurationResolutionError extends Schema.TaggedError<MacPasskeySigningConfigurationResolutionError>()(
+  "MacPasskeySigningConfigurationResolutionError",
+  {
+    cause: Schema.Defect(),
+  },
+) {
+  override get message(): string {
+    return "Failed to resolve macOS passkey signing configuration.";
+  }
+}
+
+export class MacProvisioningProfileNotFoundError extends Schema.TaggedError<MacProvisioningProfileNotFoundError>()(
+  "MacProvisioningProfileNotFoundError",
+  {
+    provisioningProfilePath: Schema.String,
+  },
+) {
+  override get message(): string {
+    return `macOS provisioning profile not found: ${this.provisioningProfilePath}`;
+  }
+}
 
 export class KeyringNativePackageMissingError extends Schema.TaggedError<KeyringNativePackageMissingError>()(
   "KeyringNativePackageMissingError",
@@ -918,6 +946,7 @@ interface StagePackageJson {
   readonly version: string;
   readonly buildVersion: string;
   readonly t3codeCommitHash: string;
+  readonly t3codeWebAuthn?: MacWebAuthnEntitlements;
   readonly private: true;
   readonly packageManager: string;
   readonly description: string;
@@ -3408,6 +3437,49 @@ const buildDesktopArtifactUnlocked = Effect.fn("buildDesktopArtifactUnlocked")(f
   const stageProdResourcesDir = path.join(stageAppDir, "apps/desktop/prod-resources");
   yield* fs.copy(stageResourcesDir, stageProdResourcesDir);
 
+  const configuredMacPasskeySigning =
+    options.platform === "mac" && options.signed
+      ? yield* Effect.try({
+          try: () =>
+            resolveMacPasskeySigningConfiguration(loadRepoEnv({ repoRoot }), DESKTOP_APP_ID),
+          catch: (cause) => new MacPasskeySigningConfigurationResolutionError({ cause }),
+        })
+      : undefined;
+  const macPasskeySigning = configuredMacPasskeySigning
+    ? {
+        ...configuredMacPasskeySigning,
+        provisioningProfilePath: path.resolve(
+          repoRoot,
+          configuredMacPasskeySigning.provisioningProfilePath,
+        ),
+      }
+    : undefined;
+  const macEntitlementsPath = macPasskeySigning
+    ? path.join(stageAppDir, "entitlements.mac.plist")
+    : undefined;
+  let macWebAuthn: MacWebAuthnEntitlements | undefined;
+  if (macPasskeySigning && macEntitlementsPath) {
+    if (!(yield* fs.exists(macPasskeySigning.provisioningProfilePath))) {
+      return yield* new MacProvisioningProfileNotFoundError({
+        provisioningProfilePath: macPasskeySigning.provisioningProfilePath,
+      });
+    }
+    const profile = yield* fs.readFileString(macPasskeySigning.provisioningProfilePath);
+    macWebAuthn = resolveMacWebAuthnEntitlements(profile, macPasskeySigning);
+    yield* Effect.log(
+      `[desktop-artifact] In-app browser passkeys: Touch ID ${macWebAuthn.touchIdKeychainAccessGroup ? "enabled" : "disabled"}, browser passkeys ${macWebAuthn.browserPasskeys ? "enabled" : "disabled"}.`,
+    );
+    const entitlements = renderMacPasskeyEntitlements(macPasskeySigning, macWebAuthn, profile);
+    yield* fs.writeFileString(macEntitlementsPath, entitlements);
+    yield* Effect.log(
+      `[desktop-artifact] macOS provisioning profile embedded; enabled entitlements: ${[...entitlements.matchAll(/<key>([^<]+)<\/key>/gu)].map((match) => match[1]).join(", ")}.`,
+    );
+  } else if (options.platform === "mac") {
+    yield* Effect.log(
+      "[desktop-artifact] No macOS provisioning profile embedded; passkey entitlements disabled; default hardened-runtime entitlements retained.",
+    );
+  }
+
   // Windows splits dependencies per process: app.asar carries only the
   // desktop main-process externals, while the server bundle's externals live
   // in the server.asar sidecar (see stageWindowsServerSidecar). macOS and
@@ -3435,6 +3507,8 @@ const buildDesktopArtifactUnlocked = Effect.fn("buildDesktopArtifactUnlocked")(f
     version: appVersion,
     buildVersion: appVersion,
     t3codeCommitHash: commitHash,
+    // Read by apps/desktop/src/preview/Passkeys.ts; must match the signed entitlements.
+    ...(macWebAuthn ? { t3codeWebAuthn: macWebAuthn } : {}),
     private: true,
     packageManager: rootPackageJson.packageManager,
     description:
@@ -3450,7 +3524,12 @@ const buildDesktopArtifactUnlocked = Effect.fn("buildDesktopArtifactUnlocked")(f
       options.signed,
       options.mockUpdates,
       options.mockUpdateServerPort,
-      undefined,
+      macPasskeySigning && macEntitlementsPath
+        ? {
+            entitlementsPath: macEntitlementsPath,
+            provisioningProfilePath: macPasskeySigning.provisioningProfilePath,
+          }
+        : undefined,
       bundlesWslRuntime({ platform: options.platform, runtimeArchivePath: options.wslRuntime }),
       options.arch,
     ),

@@ -16,6 +16,7 @@ import { HttpClient, HttpClientResponse } from "effect/http";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";
 
 import * as SshAuth from "./auth.ts";
+import { collectProcessOutput } from "./command.ts";
 import { SshCommandError } from "./errors.ts";
 import * as SshTunnel from "./tunnel.ts";
 
@@ -339,7 +340,7 @@ describe("ssh tunnel scripts", () => {
     }).pipe(Effect.provide(layerProcess));
   });
 
-  it.effect("allows cold remote launches to exceed the default SSH command timeout", () => {
+  it.effect("allows node-script service restarts to exceed the default SSH command timeout", () => {
     const target = {
       alias: "devbox",
       hostname: "devbox.example.com",
@@ -347,7 +348,7 @@ describe("ssh tunnel scripts", () => {
       port: 2222,
     } as const;
     const spawner = ChildProcessSpawner.make(() =>
-      Effect.succeed(makeDelayedSuccessfulProcess('{"remotePort":3774}\n', 75_000)),
+      Effect.succeed(makeDelayedSuccessfulProcess('{"remotePort":3774}\n', 125_000)),
     );
     const layerSpawner = Layer.succeed(ChildProcessSpawner.ChildProcessSpawner, spawner);
     const layerProcess = Layer.mergeAll(NodeServices.layer, layerSpawner, TestClock.layer());
@@ -357,7 +358,7 @@ describe("ssh tunnel scripts", () => {
         SshTunnel.launchOrReuseRemoteServer(target, undefined, NODE_SCRIPT),
       );
       yield* Effect.yieldNow;
-      yield* TestClock.adjust(Duration.seconds(75));
+      yield* TestClock.adjust(Duration.seconds(125));
 
       const result = yield* Fiber.join(fiber);
       assert.equal(result.remotePort, 3774);
@@ -695,6 +696,220 @@ describe("ssh tunnel scripts", () => {
       }),
   );
 });
+
+// Exercise the generated shell with fake helpers and a deterministic clock.
+// No fixture starts a server or signals a real PID.
+describe.skipIf(HostProcess.Platform.defaultValue() === "win32")(
+  "remote launch service ownership",
+  () => {
+    const cases = [
+      { name: "active service with a ready server", marker: "active", server: "up" },
+      {
+        name: "pending trial publishes runtime before readiness",
+        marker: "pending",
+        server: "restart",
+      },
+      { name: "service never starts", marker: "active", server: "down" },
+      { name: "enabled systemd service restarts", marker: "enabled", server: "restart" },
+      { name: "installed systemd unit with no service state", marker: "unit", server: "up" },
+      { name: "installed launchd plist with no service state", marker: "plist", server: "up" },
+      { name: "invalid service state fails closed", marker: "invalid", server: "down" },
+      { name: "host without a service spawns managed", marker: "none", server: "down" },
+      { name: "host without a service reuses external", marker: "none", server: "up" },
+      {
+        name: "ready service stops stale managed PID",
+        marker: "active",
+        server: "up",
+        stale: "other",
+      },
+      {
+        name: "stale ownership cannot kill the service PID",
+        marker: "active",
+        server: "up",
+        stale: "same",
+      },
+      {
+        name: "down service never reuses stale managed server",
+        marker: "active",
+        server: "down",
+        stale: "other",
+      },
+    ] as const;
+
+    it.effect.each(cases)("$name", (testCase) =>
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
+        const root = yield* fs.makeTempDirectoryScoped({
+          directory: "/tmp",
+          prefix: "otter-ssh-service-",
+        });
+        const home = `${root}/home`;
+        const serverHome = `${home}/.otter-code`;
+        const stateDir = `${serverHome}/ssh-launch/fixture`;
+        const runtimeDir = `${serverHome}/runtime/versions/${ARCHIVE.archiveVersion}`;
+        const runtimeFile = `${serverHome}/userdata/server-runtime.json`;
+        for (const dir of [stateDir, runtimeDir, `${serverHome}/userdata`, `${root}/bin`]) {
+          yield* fs.makeDirectory(dir, { recursive: true });
+        }
+        yield* fs.writeFileString(`${home}/ticks`, "0");
+        yield* fs.writeFileString(`${runtimeDir}/.install-complete`, ARCHIVE.archiveVersion);
+        const runtime = JSON.stringify({
+          pid: process.pid,
+          port: 4773,
+          origin: "http://127.0.0.1:4773",
+        });
+        if (testCase.server === "up") {
+          yield* fs.writeFileString(runtimeFile, runtime);
+          yield* fs.writeFileString(`${home}/ready`, "4773\n");
+        } else if (testCase.server === "restart") {
+          // A dead child's metadata must be reread, and readiness may lag it.
+          yield* fs.writeFileString(runtimeFile, JSON.stringify({ pid: 0, port: 4772 }));
+          yield* fs.writeFileString(`${home}/next-runtime`, runtime);
+        }
+        if (["active", "pending", "invalid"].includes(testCase.marker)) {
+          const state =
+            testCase.marker === "active"
+              ? { activeVersion: "1.2.3" }
+              : { update: { status: "pending" } };
+          yield* fs.writeFileString(
+            `${serverHome}/runtime/service-state.json`,
+            testCase.marker === "invalid" ? "{" : JSON.stringify(state),
+          );
+        } else if (testCase.marker === "unit" || testCase.marker === "plist") {
+          const unitDir =
+            testCase.marker === "unit"
+              ? `${home}/.config/systemd/user`
+              : `${home}/Library/LaunchAgents`;
+          yield* fs.makeDirectory(unitDir, { recursive: true });
+          yield* fs.writeFileString(
+            `${unitDir}/${testCase.marker === "unit" ? "otter-code.service" : "dev.otterware.code.service.plist"}`,
+            "fixture",
+          );
+        } else if (testCase.marker === "enabled") {
+          yield* fs.writeFileString(`${home}/enabled`, "");
+        }
+        const stale = "stale" in testCase ? testCase.stale : undefined;
+        if (stale) {
+          yield* fs.writeFileString(
+            `${stateDir}/pid`,
+            String(stale === "same" ? process.pid : 424242),
+          );
+          yield* fs.writeFileString(`${stateDir}/port`, "4774");
+          yield* fs.writeFileString(`${stateDir}/managed`, "managed");
+        }
+        const executable = `${runtimeDir}/t3`;
+        yield* fs.writeFileString(
+          executable,
+          `#!/bin/sh
+set -eu
+case "$1" in
+  --version) exit 0 ;;
+  __ssh-helper)
+    shift
+    case "$1" in
+      runtime-port)
+        "$T3_TEST_NODE" -e 'try { const r = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8")); if (!r.pid) process.exit(1); process.kill(r.pid, 0); process.stdout.write(r.pid + " " + r.port); } catch { process.exit(1); }' "$2" ;;
+      wait-ready)
+        if [ "$2" = "4774" ]; then exit 0; fi
+        [ -f "$HOME/ready" ] && [ "$(cat "$HOME/ready")" = "$2" ] ;;
+      pick-port) printf '4774' ;;
+      *) exit 99 ;;
+    esac ;;
+  *) exit 99 ;;
+esac
+`,
+        );
+        yield* fs.chmod(executable, 0o700);
+        // Shadow systemctl unconditionally so tests cannot query the live unit.
+        yield* fs.writeFileString(
+          `${root}/bin/systemctl`,
+          `#!/bin/sh
+printf '%s\\n' "$*" > "$HOME/systemctl-call"
+[ "$*" = "--user is-enabled otter-code.service" ] && [ -f "$HOME/enabled" ]
+`,
+        );
+        yield* fs.chmod(`${root}/bin/systemctl`, 0o700);
+        const fakeCommands = `
+kill() {
+  if [ "$1" = "-0" ]; then [ ! -f "$HOME/killed" ]; return; fi
+  printf '%s' "$1" > "$HOME/killed"
+}
+date() { cat "$HOME/ticks"; }
+sleep() {
+  TICKS=$(($(cat "$HOME/ticks") + 1))
+  printf '%s' "$TICKS" > "$HOME/ticks"
+  if [ "$TICKS" -eq 2 ] && [ -f "$HOME/next-runtime" ]; then
+    mv "$HOME/next-runtime" "$HOME/.otter-code/userdata/server-runtime.json"
+  fi
+  if [ "$TICKS" -eq 3 ] && [ "${testCase.server}" = "restart" ]; then printf '4773' > "$HOME/ready"; fi
+}
+nohup() { printf '%s\\n' "$*" > "$HOME/spawned"; }
+`;
+        const script = `${root}/launch.sh`;
+        yield* fs.writeFileString(
+          script,
+          fakeCommands + SshTunnel.buildRemoteLaunchScript(ARCHIVE),
+        );
+        const child = yield* spawner.spawn(
+          ChildProcess.make("sh", [script, "fixture"], {
+            env: {
+              HOME: home,
+              PATH: `${root}/bin:${process.env.PATH ?? ""}`,
+              T3_TEST_NODE: process.execPath,
+            },
+            extendEnv: false,
+          }),
+        );
+        const [stdout, stderr, exitCode] = yield* Effect.all(
+          [
+            collectProcessOutput(child.stdout),
+            collectProcessOutput(child.stderr),
+            child.exitCode.pipe(Effect.map(Number)),
+          ],
+          { concurrency: "unbounded" },
+        );
+        const failure = testCase.marker !== "none" && testCase.server === "down";
+        assert.equal(exitCode, failure ? 1 : 0, stderr);
+        const managed = testCase.marker === "none" && testCase.server === "down";
+        assert.equal(yield* fs.exists(`${home}/spawned`), managed);
+        if (failure) {
+          assert.equal(stdout, "");
+          assert.include(stderr, "This host's Otter Code service is not running");
+          assert.include(stderr, "otter-code service restart");
+          assert.include(stderr, "systemctl --user start otter-code.service");
+          assert.equal(Number(yield* fs.readFileString(`${home}/ticks`)), 120);
+        } else {
+          assert.deepEqual(JSON.parse(stdout), {
+            remotePort: managed ? 4774 : 4773,
+            serverKind: managed ? "managed" : "external",
+          });
+          assert.equal(
+            (yield* fs.readFileString(`${stateDir}/managed`)).trim(),
+            managed ? "managed" : "external",
+          );
+          assert.equal(yield* fs.exists(`${stateDir}/pid`), managed);
+          if (testCase.server === "restart")
+            assert.equal(Number(yield* fs.readFileString(`${home}/ticks`)), 3);
+          if (managed)
+            assert.include(
+              yield* fs.readFileString(`${home}/spawned`),
+              `serve --host 127.0.0.1 --port 4774 --base-dir ${serverHome}`,
+            );
+        }
+        assert.equal(yield* fs.exists(`${home}/killed`), stale === "other" && !failure);
+        if (stale === "other" && !failure)
+          assert.equal(yield* fs.readFileString(`${home}/killed`), "424242");
+        if (testCase.marker === "enabled" || testCase.marker === "none") {
+          assert.equal(
+            (yield* fs.readFileString(`${home}/systemctl-call`)).trim(),
+            "--user is-enabled otter-code.service",
+          );
+        }
+      }).pipe(Effect.provide(NodeServices.layer)),
+    );
+  },
+);
 
 // The archive runner is generated shell; string assertions cannot prove the
 // lock excludes concurrent installers. Run the real script against a tiny

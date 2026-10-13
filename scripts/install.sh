@@ -147,7 +147,7 @@ version="${T3CODE_VERSION:-}"
 if [ -z "$version" ]; then
   tmp_index="$(mktemp)"
   fetch "${base_url}/channel-code/SHA256SUMS" "$tmp_index"
-  version="$(sed -n 's/.*  t3-\([0-9][0-9.]*-otterware\.[0-9]*\.[0-9]*\)-linux-x64.tar.gz$/\1/p' "$tmp_index")"
+  version="$(sed -n 's/.*  t3-\([0-9][0-9.]*-otterware\.[a-z0-9.]*\)-linux-x64.tar.gz$/\1/p' "$tmp_index")"
   rm -f "$tmp_index"
   [ -n "$version" ] || fail "channel-code has no runtime; wait for the monorepo cutover"
 fi

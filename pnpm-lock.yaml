@@ -6,9 +6,6 @@ settings:
 
 catalogs:
   default:
-    '@types/plist':
-      specifier: 3.0.5
-      version: 3.0.5
     '@effect/openapi-generator':
       specifier: 4.0.2
       version: 4.0.2
@@ -48,9 +45,6 @@ catalogs:
     micromark-util-character:
       specifier: 2.1.1
       version: 2.1.1
-    micromark-util-types:
-      specifier: 2.0.2
-      version: 2.0.2
     plist:
       specifier: 3.1.1
       version: 3.1.1
@@ -122,6 +116,7 @@ overrides:
   electron-webauthn>@electron-webauthn/macos: 1.3.1
   '@electron-webauthn/macos>objc-js': 1.5.0
   lightningcss: 1.33.0
+  micromark-util-types: 2.0.2
   tailwindcss: 4.3.3
   '@types/ws@^8': 8.18.2
   undici@^8: 8.11.2
@@ -1553,7 +1548,7 @@ importers:
         specifier: 24.12.4
         version: 24.12.4
       micromark-util-types:
-        specifier: 'catalog:'
+        specifier: 2.0.2
         version: 2.0.2
       vite-plus:
         specifier: 1.0.0

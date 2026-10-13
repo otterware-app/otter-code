@@ -241,6 +241,8 @@ overrides:
   "electron-webauthn>@electron-webauthn/macos": "catalog:"
   "@electron-webauthn/macos>objc-js": "catalog:"
   lightningcss: "catalog:"
+  # Micromark extension types must share the parser's catalog version.
+  micromark-util-types: "catalog:"
   tailwindcss: "catalog:"
   # Ranges from @effect/platform-node, jsdom, unifont, Expo and libsql otherwise
   # settle on two patch releases of each major. Older majors stay as they are.

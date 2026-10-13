@@ -88,7 +88,9 @@ jobs:
         env:
           BASE_SHA: ${{ steps.changes.outputs.base_sha }}
         run: |
-          git checkout --quiet "$BASE_SHA"
+          # Filtered installs can rewrite tracked dependency metadata. Fingerprint
+          # artifacts are in RUNNER_TEMP; discard install edits in this CI checkout.
+          git checkout --quiet --force "$BASE_SHA"
           # Re-sync node_modules to the base commit's lockfile before
           # fingerprinting — a dep-changing PR must not fingerprint the base
           # against head's installed packages.

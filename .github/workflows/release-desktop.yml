@@ -19,6 +19,8 @@ on:
         required: false
       APPLE_API_ISSUER:
         required: false
+      MACOS_PROVISIONING_PROFILE:
+        required: false
       AZURE_TENANT_ID:
         required: false
       AZURE_CLIENT_ID:
@@ -409,6 +411,8 @@ jobs:
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+          MACOS_PROVISIONING_PROFILE: ${{ secrets.MACOS_PROVISIONING_PROFILE }}
+          T3CODE_MACOS_PASSKEY_RP_DOMAINS: ${{ vars.MACOS_PASSKEY_RP_DOMAINS }}
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
@@ -440,6 +444,21 @@ jobs:
               key_path="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8"
               printf '%s' "$APPLE_API_KEY" > "$key_path"
               export APPLE_API_KEY="$key_path"
+
+              if [[ -n "$MACOS_PROVISIONING_PROFILE" ]]; then
+                if [[ -z "$APPLE_TEAM_ID" ]]; then
+                  echo "MACOS_PROVISIONING_PROFILE requires APPLE_TEAM_ID." >&2
+                  exit 1
+                fi
+                profile_path="$RUNNER_TEMP/t3code.provisionprofile"
+                printf '%s' "$MACOS_PROVISIONING_PROFILE" | base64 -D > "$profile_path"
+                security cms -D -i "$profile_path" >/dev/null
+                export T3CODE_APPLE_TEAM_ID="$APPLE_TEAM_ID"
+                export T3CODE_MACOS_PROVISIONING_PROFILE="$profile_path"
+                echo "macOS provisioning profile validated; entitlements selected by the packager."
+              else
+                echo "No macOS provisioning profile; signing and notarization continue without passkey entitlements."
+              fi
 
               echo "macOS signing enabled."
               args+=(--signed)

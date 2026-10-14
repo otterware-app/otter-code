@@ -110,7 +110,7 @@ const make = Effect.gen(function* () {
   );
   const [snapshot, invalidate] = yield* Effect.cachedInvalidateWithTTL(build, CACHE_TTL);
 
-  const newCommandId = crypto.randomUUIDv4.pipe(
+  const newCommandId = crypto.randomUUIDv4().pipe(
     Effect.orDie,
     Effect.map((id) => CommandId.make(`otterware-home:${id}`)),
   );

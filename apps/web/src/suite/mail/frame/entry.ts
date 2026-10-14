@@ -281,6 +281,7 @@ function boot(host: OtterMailHost): void {
   });
   const updatesDisabled = {
     status: "disabled" as const,
+    channel: "stable" as const,
     currentVersion: "otterware",
     availableVersion: null,
     downloadPercent: null,
@@ -321,6 +322,7 @@ function boot(host: OtterMailHost): void {
     updates: {
       getState: async () => updatesDisabled,
       check: async () => updatesDisabled,
+      setChannel: async () => updatesDisabled,
       download: async () => updatesDisabled,
       install: async () => {},
       onState: () => () => {},

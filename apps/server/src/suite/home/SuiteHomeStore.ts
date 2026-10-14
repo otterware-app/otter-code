@@ -143,7 +143,7 @@ const make = Effect.gen(function* () {
 
   const now = Effect.map(DateTime.now, DateTime.formatIso);
   const newId = (prefix: string) =>
-    crypto.randomUUIDv4.pipe(
+    crypto.randomUUIDv4().pipe(
       Effect.map((id) => `${prefix}_${id.replaceAll("-", "").slice(0, 16)}`),
       Effect.mapError(storeError("allocate an id")),
     );

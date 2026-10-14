@@ -524,7 +524,7 @@ export const makeWith = (options: { readonly api: DriveApi; readonly store: Driv
         );
         if (duplicate) return { link: toDriveThreadLink(duplicate, views), alreadyLinked: true };
 
-        const id = yield* crypto.randomUUIDv4.pipe(Effect.orDie);
+        const id = yield* crypto.randomUUIDv4().pipe(Effect.orDie);
         const now = yield* nowIso;
         const stored: StoredDriveLink = { ...link, id, linkedAt: now };
         yield* orStoreFailure(store.insertLink(stored, now));
@@ -811,7 +811,7 @@ export const makeWith = (options: { readonly api: DriveApi; readonly store: Driv
                   .replace(/[^a-z0-9]+/gu, "-")
                   .replace(/^-|-$/gu, "")
                   .slice(0, 70) || "file";
-              const slug = `${stem.replace(/-$/u, "")}-${(yield* crypto.randomUUIDv4.pipe(Effect.orDie)).slice(0, 8)}`;
+              const slug = `${stem.replace(/-$/u, "")}-${(yield* crypto.randomUUIDv4().pipe(Effect.orDie)).slice(0, 8)}`;
               const artifact = yield* api.createArtifact(
                 {
                   slug,

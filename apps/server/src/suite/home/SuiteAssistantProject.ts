@@ -67,7 +67,7 @@ const make = Effect.gen(function* () {
     if (Option.isSome(existing)) {
       return { projectId: existing.value.id, workspaceRoot };
     }
-    const id = yield* crypto.randomUUIDv4.pipe(Effect.mapError(fail));
+    const id = yield* crypto.randomUUIDv4().pipe(Effect.mapError(fail));
     // bootstrap looks the root up before taking the workspace lock, so a
     // racing create loses with a conflict that names the winner.
     const bootstrapped = yield* projects

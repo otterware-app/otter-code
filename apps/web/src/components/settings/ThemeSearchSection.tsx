@@ -1,5 +1,6 @@
 import { RefreshIcon } from "~/components/ui/refresh-icon";
-import { ExternalLinkIcon, PackagePlusIcon, PaletteIcon, SearchIcon } from "lucide-react";
+import { PackagePlusIcon, PaletteIcon } from "lucide-react";
+import { ExternalLinkIcon, SearchIcon } from "~/lib/icons";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import {
   importOpenVsxThemeExtension,

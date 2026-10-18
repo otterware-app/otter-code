@@ -7,13 +7,8 @@ import type {
   PullRequestRef,
   ScopedThreadRef,
 } from "@t3tools/contracts";
-import {
-  ChevronDownIcon,
-  ExternalLinkIcon,
-  FileCode2Icon,
-  GitCommitHorizontalIcon,
-  MessageSquareIcon,
-} from "lucide-react";
+import { FileCode2Icon, GitCommitHorizontalIcon, MessageSquareIcon } from "lucide-react";
+import { ChevronDownIcon, ExternalLinkIcon } from "~/lib/icons";
 import { useState, type ReactNode } from "react";
 
 import { cn } from "~/lib/utils";

@@ -1,4 +1,4 @@
-import { ChevronRightIcon, ExternalLinkIcon, SearchIcon } from "lucide-react";
+import { ChevronRightIcon, ExternalLinkIcon, SearchIcon } from "~/lib/icons";
 import { useEffect, useState } from "react";
 
 import {

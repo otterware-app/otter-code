@@ -1,0 +1,74 @@
+/* The desktop supplies the blur. One coat on the body avoids making nested
+   route and transcript surfaces multiply the chosen window opacity. */
+:root[data-window-material="translucent"][data-window-translucency] {
+  --window-glass-tint: var(--sidebar);
+  --window-glass-coat: color-mix(
+    in srgb,
+    var(--window-glass-tint) var(--window-opacity),
+    transparent
+  );
+  --app-frame: transparent;
+  --sidebar-panel-surface: transparent;
+  --app-chrome-background: transparent;
+  --surface-grain: none;
+}
+
+:root.dark[data-window-material="translucent"] {
+  --window-glass-tint: color-mix(in srgb, var(--sidebar) 80%, black);
+}
+
+:root[data-window-material="translucent"],
+:root[data-window-material="translucent"] #root {
+  background: transparent;
+}
+
+:root[data-window-material="translucent"] body {
+  background: var(--window-glass-coat);
+}
+
+:root[data-window-material="translucent"] [data-app-frame],
+:root[data-window-material="translucent"] [data-slot="sidebar-inner"] {
+  background: transparent;
+}
+
+:root[data-window-translucency="window"] {
+  --toolbar-background: transparent;
+  --window-raised-surface: color-mix(in srgb, var(--popover) 55%, transparent);
+}
+
+:root[data-window-translucency="window"]
+  :is(
+    .app-content-surface,
+    [data-slot="sidebar-inset"],
+    [data-chat-header],
+    [data-chat-canvas],
+    [data-workspace-page-header],
+    [data-preview-panel-mode="inline"],
+    [data-timeline-loading]
+  ) {
+  background: transparent;
+}
+
+:root[data-window-translucency="window"] [data-slot="sidebar-inset"] > .bg-background {
+  background: transparent;
+}
+
+:root[data-window-translucency="sidebar"] [data-slot="sidebar-inset"] {
+  background: var(--background);
+}
+
+:root[data-window-translucency="window"] [data-slot="composer-shell"] {
+  --chat-composer-glass-surface: var(--popover);
+}
+
+:root[data-window-translucency="window"] [data-slot="composer-host"]::before {
+  background: var(--window-raised-surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+:root[data-window-translucency="window"]
+  :is([data-chat-composer-main-surface="true"], [data-chat-composer-surface="true"]) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}

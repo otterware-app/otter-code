@@ -1,3 +1,4 @@
+import { ChevronDownIcon, DownloadIcon, EyeIcon, Redo2Icon, Undo2Icon } from "~/lib/icons";
 import { findRevealRef } from "./markdownFindContext";
 import { type MessageId, type ServerProviderSkill, ThreadId } from "@t3tools/contracts";
 import { resolveUserMessagePresentation } from "@t3tools/client-runtime/user-message";
@@ -17,14 +18,7 @@ import {
   isVideoAttachment,
 } from "../../types";
 import ChatMarkdown from "../ChatMarkdown";
-import {
-  CalendarClockIcon,
-  ChevronDownIcon,
-  DownloadIcon,
-  EyeIcon,
-  Redo2Icon,
-  Undo2Icon,
-} from "lucide-react";
+import { CalendarClockIcon } from "lucide-react";
 import { Link as LinkIconNode } from "lucide";
 import { Button, InlineButton } from "../ui/button";
 import { useAssetUrlRefresh, useAssetUrls, useAssetUrlState } from "../../assets/assetUrls";

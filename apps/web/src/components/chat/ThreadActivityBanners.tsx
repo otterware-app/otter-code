@@ -1,3 +1,4 @@
+import { GitBranchIcon, MessageCircleIcon } from "~/lib/icons";
 import type {
   OrchestrationV2PendingBackgroundTask,
   OrchestrationV2ProviderGoal,
@@ -9,7 +10,7 @@ import {
   presentProviderGoal,
 } from "@t3tools/client-runtime/state/thread-execution";
 import { childThreadInputsTitle } from "@t3tools/client-runtime/state/threads";
-import { GitBranchIcon, MessageCircleIcon, ShieldQuestionIcon, TargetIcon } from "lucide-react";
+import { ShieldQuestionIcon, TargetIcon } from "lucide-react";
 import { Fragment } from "react";
 import { cn } from "~/lib/utils";
 import { Button, InlineButton } from "../ui/button";

@@ -1,10 +1,15 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 import { converter } from "culori/fn";
-import { BUILT_IN_THEMES } from "@t3tools/shared/themePalettes";
+import {
+  BUILT_IN_THEMES,
+  RESERVED_THEME_IDS,
+  UNPUBLISHABLE_THEME_IDS,
+} from "@t3tools/shared/themePalettes";
 
 import {
   getThemeColorsForMode,
   getThemeModes,
+  getThemeDefinition,
   getCustomThemes,
   getStandardThemeColors,
   getStoredCustomThemeCollection,
@@ -18,6 +23,7 @@ import {
   serializeThemeFile,
   T3_CHAT_THEME,
   GROVE_THEME,
+  SYNARA_THEME,
   updateCustomTheme,
   updateThemeColorFamily,
   CUSTOM_THEMES_STORAGE_KEY,
@@ -57,6 +63,50 @@ function contrastRatio(first: string, second: string): number {
 }
 
 describe("theme files", () => {
+  it("keeps Synara send actions neutral and its status accents orange", () => {
+    for (const appearance of ["light", "dark"] as const) {
+      const colors = getThemeColorsForMode(SYNARA_THEME, appearance)!;
+      expect(colors.messageAction).toBe(colors.accent);
+      expect(colors.messageActionForeground).toBe(colors.accentForeground);
+      expect(asHex(colors.messageAction)).toBe(appearance === "light" ? "#0d0d0d" : "#fcfcfc");
+      expect(asHex(colors.messageActionHover)).toBe(appearance === "light" ? "#252525" : "#e5e5e5");
+      expect(asHex(colors.update)).toBe(appearance === "light" ? "#c74614" : "#f2612d");
+    }
+  });
+  it("offers Synara in both appearances without changing the T3 Code palette", () => {
+    expect(getThemeDefinition("synara")).toBe(SYNARA_THEME);
+    expect(getThemeModes(SYNARA_THEME)).toEqual(["light", "dark"]);
+    expect(asHex(getStandardThemeColors("light").canvas)).toBe("#fcfcfc");
+    expect(asHex(getStandardThemeColors("dark").canvas)).toBe("#0a0a0a");
+    expect(asHex(getThemeColorsForMode(SYNARA_THEME, "light")!.canvas)).toBe("#ffffff");
+    expect(asHex(getThemeColorsForMode(SYNARA_THEME, "dark")!.canvas)).toBe("#111111");
+    expect(resolveThemeAppearance("synara", true, true)).toBe("dark");
+    expect(resolveDesktopTheme("synara", true)).toBe("system");
+    expect(RESERVED_THEME_IDS.has("synara")).toBe(true);
+    expect(UNPUBLISHABLE_THEME_IDS.has("synara")).toBe(true);
+    expect(() => installCustomTheme(SYNARA_THEME)).toThrow('The theme id "synara" is reserved.');
+  });
+
+  it("exports a Synara copy with both appearances without allowing it to replace the built-in", () => {
+    const exported = JSON.parse(serializeThemeFile(SYNARA_THEME));
+    expect(() => parseThemeFile(exported)).toThrow('The theme id "synara" is reserved.');
+    const copy = parseThemeFile({ ...exported, id: "synara-copy", name: "Synara copy" });
+    for (const appearance of ["light", "dark"] as const) {
+      expect(getThemeColorsForMode(copy, appearance)).toEqual(
+        getThemeColorsForMode(SYNARA_THEME, appearance),
+      );
+    }
+  });
+  it("keeps every built-in palette value in canonical OKLCH form", () => {
+    for (const theme of BUILT_IN_THEMES) {
+      for (const colors of [theme.colors, ...Object.values(theme.variants ?? {})]) {
+        for (const value of Object.values(colors)) {
+          expect(toCanonicalThemeColor(value)).toBe(value);
+        }
+      }
+    }
+  });
+
   it("keeps built-in and standard search pairs readable and distinct from inline code", () => {
     const toOklab = converter("oklab");
     const distance = (first: string, second: string) => {

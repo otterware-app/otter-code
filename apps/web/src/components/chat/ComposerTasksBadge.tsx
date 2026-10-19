@@ -1,4 +1,5 @@
-import { CheckIcon, CircleDotIcon, CircleIcon, ListTodoIcon } from "lucide-react";
+import { CircleDotIcon, CircleIcon } from "lucide-react";
+import { CheckIcon, ListTodoIcon } from "~/lib/icons";
 import { memo, type ComponentProps } from "react";
 
 import { formatDuration } from "../../session-logic";

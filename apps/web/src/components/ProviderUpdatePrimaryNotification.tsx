@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useAtomValue } from "@effect/atom-react";
-import { DownloadIcon } from "lucide-react";
+import { DownloadIcon } from "~/lib/icons";
 import { useEffect, useRef } from "react";
 import {
   AuthProvidersManageScope,

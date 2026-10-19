@@ -1,33 +1,21 @@
-/*
- * Otter Mail's window frame (AppSidebarLayout sets data-app-frame on the
- * sidebar wrapper, from md up). The window wears the sidebar's surface: the
- * rail of spaces runs down its left edge, and the sidebar and panes after it
- * share one rounded content panel. In the desktop app ("window") the panel
- * starts under the title band, so every pane's header sits on the frame, with
- * a thin margin of frame on the right and bottom. In a browser tab ("tab")
- * the panel runs to the page's edges, rounded only against the rail.
- *
- * The panes keep painting their own surfaces; the frame only recolors their
- * title bands, and AppFramePanelEdge draws the rim and rounds the corners
- * over them, so no pane has to know where the panel's corners fall.
- */
+/* The rail and title band surround one inset workspace on web and desktop. */
 
 :root {
-  --workspace-rail-width: 52px;
+  --workspace-rail-width: 51px;
   /* The window's frame: a step off the canvas, as Otter Mail's Mac window
      reads over its vibrancy, so the panel inside it has an edge. Themes use
      their sidebar color. Resolved on the root so it is one color everywhere. */
-  --app-frame: #f4f4f5;
+  --app-frame: color-mix(in srgb, var(--sidebar) 97%, black);
   /* The panel's edge against the frame: the frame a little of the way to the
      text, so it shows in every theme whatever its border role is. */
   --panel-edge: color-mix(in srgb, var(--foreground) 5%, var(--app-frame));
   /* The sidebar's body in the panel: halfway from the frame to the canvas, so
      the rail stands apart from it. */
-  --sidebar-panel-surface: color-mix(in srgb, var(--app-frame) 50%, var(--background));
-  --app-frame-radius: calc(var(--radius) + 4px);
+  --sidebar-panel-surface: var(--sidebar);
+  --app-frame-radius: calc(var(--radius) * 1.3);
 
   @variant dark {
-    --app-frame: #171717;
+    --app-frame: color-mix(in srgb, var(--sidebar) 95%, white);
   }
 }
 
@@ -38,7 +26,7 @@ html[data-theme-id]:not([data-theme-id=""]) {
 /* The Mac app's thin chrome (Linear's): the traffic lights sit centered in it
    (apps/desktop DesktopWindow). Windows and Linux follow their overlay. */
 html.electron:not(.wco) {
-  --workspace-topbar-height: 43px;
+  --workspace-topbar-height: 44px;
 }
 
 [data-app-frame] {
@@ -53,21 +41,22 @@ html.electron:not(.wco) {
 
 /* The panes after the rail. The fixed sidebar is positioned inside them. */
 [data-app-frame="window"] [data-app-panel] {
-  padding: 0 0.25rem 0.25rem 0;
+  padding: 0 3px 3px 0;
 }
 
 [data-app-frame] [data-slot="sidebar-container"] {
-  left: var(--workspace-rail-width);
+  position: absolute;
+  left: 0;
 }
 
 /* Collapsed, the sidebar slides away under the rail. */
 [data-app-frame] [data-collapsible="offcanvas"] [data-slot="sidebar-container"] {
-  left: calc(var(--workspace-rail-width) - var(--sidebar-width));
+  left: calc(-1 * var(--sidebar-width));
 }
 
 [data-app-frame="window"] [data-slot="sidebar-container"] {
   height: auto;
-  bottom: 0.25rem;
+  bottom: 3px;
 }
 
 [data-app-frame] [data-slot="sidebar-inner"] {
@@ -133,13 +122,13 @@ html.electron:not(.wco) {
 }
 
 [data-app-frame="window"] [data-app-panel-edge] {
-  inset: var(--workspace-topbar-height) 0.25rem 0.25rem 0;
+  inset: var(--workspace-topbar-height) 3px 3px 0;
 }
 
 [data-app-panel-edge] > [data-rim] {
   position: absolute;
   inset: 0;
-  border: 1px solid var(--panel-edge);
+  border: 0.5px solid var(--panel-edge);
   border-radius: var(--app-frame-radius);
 }
 
@@ -209,5 +198,5 @@ html.electron:not(.wco) {
 }
 
 [data-app-frame="window"] [data-app-sidebar] {
-  --sidebar-heading-start: var(--sidebar-content-inset);
+  --sidebar-heading-start: 0px;
 }

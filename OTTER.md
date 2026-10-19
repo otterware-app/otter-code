@@ -133,21 +133,21 @@ list text that must keep matching what the server or agents emit.
 
 ## Identities and infrastructure
 
-| What                 | Value                                                                                   |
-| -------------------- | --------------------------------------------------------------------------------------- |
-| App and bundle ID    | `dev.otterware.code` (`.dev`, `.preview`; iOS extensions `.widgets`, `.sharing`)        |
-| URL scheme           | `ottercode` (`ottercode-dev`, `ottercode-preview`)                                      |
-| Data home            | `~/.otter-code` (never `~/.t3`, so it can sit beside an installed T3 Code)              |
-| Background service   | `otter-code.service` (systemd user unit), `dev.otterware.code.service` (launchd)        |
-| Releases and updates | GitHub Releases of `otterware-app/otter-code`, nightly channel                          |
-| Relay                | `https://relay.code.otterware.app` (Cloudflare Worker, deployed from `infra/relay`)     |
-| Tunnels              | `prod-<digest>.otterware.app`, one per linked machine                                   |
-| Hosted web app       | `https://code.otterware.app` (Cloudflare Worker `otter-code-web`)                       |
-| Sign-in              | Otter Accounts at `accounts.otterware.app`                                              |
-| Apple                | Team `YNJ5WLH965`, App Store app `6815697255`                                           |
-| Mobile builds        | EAS project `@clary-so/otter-code`                                                      |
-| CLI on npm           | `otter-code` (command `otter-code`), platform builds `@otterware/otter-code-<platform>` |
-| App icons            | `assets/otter` (production), `assets/otter-nightly`, `assets/otter-dev`: see below      |
+| What                 | Value                                                                               |
+| -------------------- | ----------------------------------------------------------------------------------- |
+| App and bundle ID    | `dev.otterware.code` (`.dev`, `.preview`; iOS extensions `.widgets`, `.sharing`)    |
+| URL scheme           | `ottercode` (`ottercode-dev`, `ottercode-preview`)                                  |
+| Data home            | `~/.otter-code` (never `~/.t3`, so it can sit beside an installed T3 Code)          |
+| Background service   | `otter-code.service` (systemd user unit), `dev.otterware.code.service` (launchd)    |
+| Releases and updates | GitHub Releases of `otterware-app/otter-code`, nightly channel                      |
+| Relay                | `https://relay.code.otterware.app` (Cloudflare Worker, deployed from `infra/relay`) |
+| Tunnels              | `prod-<digest>.otterware.app`, one per linked machine                               |
+| Hosted web app       | `https://code.otterware.app` (Cloudflare Worker `otter-code-web`)                   |
+| Sign-in              | Otter Accounts at `accounts.otterware.app`                                          |
+| Apple                | Team `YNJ5WLH965`, App Store app `6815697255`                                       |
+| Mobile builds        | EAS project `@clary-so/otter-code`                                                  |
+| CLI on npm           | `otter-code` (command `otter-code`), launcher downloads GitHub Release binaries     |
+| App icons            | `assets/otter` (production), `assets/otter-nightly`, `assets/otter-dev`: see below  |
 
 Secrets live in the repository's Actions secrets and its `production` environment.
 
@@ -178,10 +178,10 @@ widget's `T3Mark.svg`, `agent_activity_mark.xml`, the DMG backgrounds) is the ki
   x64/arm64 on GitHub-hosted runners and publishes a nightly GitHub Release that installed apps
   offer in their update dialog. Windows, AUR, marketing, and Discord are skipped.
   Start one by hand with `gh workflow run release.yml -f channel=nightly`.
-- **CLI on npm:** the same run publishes `otter-code` and its `@otterware/otter-code-<platform>`
-  packages with the `NPM_TOKEN` secret (an npm account that is a member of the `otterware` org),
-  tagged `nightly` and also `latest`, so `npx otter-code` and `npm i -g otter-code` get the newest
-  build. The token is needed because new packages have no npm trusted publisher yet.
+- **CLI on npm:** after the GitHub Release exists, the same run publishes `otter-code` as a
+  launcher that downloads and verifies that release's CLI archive into the Otter runtime directory.
+  It uses `NPM_TOKEN` and tags nightlies as both `nightly` and `latest`, so `npx otter-code` and
+  `npm i -g otter-code` get the newest build. Platform packages are no longer published.
 - **macOS passkeys:** `MACOS_PROVISIONING_PROFILE` is the base64 Developer ID profile for
   `dev.otterware.code`, signed by Clary GmbH's team `YNJ5WLH965` (`APPLE_TEAM_ID`). The
   Otterware branch must pass its own `OTTERWARE_MACOS_PROVISIONING_PROFILE` secret into the

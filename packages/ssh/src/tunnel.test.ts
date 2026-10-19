@@ -21,7 +21,6 @@ import { HttpClient, HttpClientResponse } from "effect/http";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";
 
 import * as SshAuth from "./auth.ts";
-import { collectProcessOutput } from "./command.ts";
 import { SshCommandError } from "./errors.ts";
 import * as SshTunnel from "./tunnel.ts";
 
@@ -1163,8 +1162,8 @@ nohup() { printf '%s\\n' "$*" > "$HOME/spawned"; }
         );
         const [stdout, stderr, exitCode] = yield* Effect.all(
           [
-            collectProcessOutput(child.stdout),
-            collectProcessOutput(child.stderr),
+            child.stdout.pipe(Stream.decodeText(), Stream.mkString),
+            child.stderr.pipe(Stream.decodeText(), Stream.mkString),
             child.exitCode.pipe(Effect.map(Number)),
           ],
           { concurrency: "unbounded" },

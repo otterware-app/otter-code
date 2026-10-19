@@ -21,6 +21,7 @@ const GENERATED_DEFAULT_VARIABLES_PATH = NodePath.resolve(
   import.meta.dirname,
   "../generated-uniwind-default-theme-variables.json",
 );
+const GENERATED_TYPES_PATH = NodePath.resolve(import.meta.dirname, "../uniwind-types.d.ts");
 
 type TailwindColorFamily = keyof typeof tailwindColors;
 type TailwindColorShade = 50 | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | 950;
@@ -221,6 +222,19 @@ export const getGeneratedUniwindThemeOutputs = (): ReadonlyArray<
   [GENERATED_CSS_PATH, renderUniwindThemesCSS()],
   [GENERATED_NAMES_PATH, `${JSON.stringify(customThemeNames, null, 2)}\n`],
   [GENERATED_DEFAULT_VARIABLES_PATH, renderDefaultThemeVariablesJSON()],
+  [
+    GENERATED_TYPES_PATH,
+    `/// <reference types="uniwind/types" />
+
+declare module 'uniwind' {
+    export interface UniwindConfig {
+        themes: readonly [${["light", "dark", ...customThemeNames].map((name) => `'${name}'`).join(", ")}]
+    }
+}
+
+export {}
+`,
+  ],
 ];
 
 const writeFileAtomically = (filename: string, contents: string) => {

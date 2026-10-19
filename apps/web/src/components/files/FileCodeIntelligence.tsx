@@ -8,7 +8,7 @@ import type {
 } from "@t3tools/contracts";
 import { getFiletypeFromFileName } from "@pierre/diffs";
 import type { Editor } from "@pierre/diffs/edit";
-import { ArrowLeft, ArrowRight, X } from "lucide-react";
+import { ArrowLeftIcon as ArrowLeft, ArrowRightIcon as ArrowRight, XIcon as X } from "~/lib/icons";
 import { squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";
 import { projectEnvironment } from "~/state/projects";
 import { useAtomCommand } from "~/state/use-atom-command";

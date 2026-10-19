@@ -164,7 +164,7 @@ export const PanelAnimationDurationMs = Schema.Int.check(
   }),
 );
 export type PanelAnimationDurationMs = typeof PanelAnimationDurationMs.Type;
-const DEFAULT_PANEL_ANIMATION_DURATION_MS: PanelAnimationDurationMs = 0;
+const DEFAULT_PANEL_ANIMATION_DURATION_MS: PanelAnimationDurationMs = 125;
 
 export const MIN_INTERFACE_FONT_SIZE = 12;
 export const MAX_INTERFACE_FONT_SIZE = 20;
@@ -208,7 +208,7 @@ export const EnvironmentIdentificationMode = Schema.Literals([
   "none",
 ]);
 export type EnvironmentIdentificationMode = typeof EnvironmentIdentificationMode.Type;
-export const DEFAULT_ENVIRONMENT_IDENTIFICATION_MODE: EnvironmentIdentificationMode = "artwork";
+export const DEFAULT_ENVIRONMENT_IDENTIFICATION_MODE: EnvironmentIdentificationMode = "pill";
 
 export const SnapShotKeyChord = KeybindingShortcut.check(
   Schema.makeFilter(
@@ -404,6 +404,26 @@ export const VoiceTranscriptionDestination = Schema.Union([
 export type VoiceTranscriptionDestination = typeof VoiceTranscriptionDestination.Type;
 
 export const ClientSettingsSchema = Schema.Struct({
+  railShortcuts: Schema.Array(TrimmedNonEmptyString).pipe(
+    Schema.withDecodingDefault(Effect.succeed([])),
+  ),
+  railItemOrder: Schema.Array(TrimmedNonEmptyString).pipe(
+    Schema.withDecodingDefault(Effect.succeed([])),
+  ),
+  hiddenRailItems: Schema.Array(TrimmedNonEmptyString).pipe(
+    Schema.withDecodingDefault(Effect.succeed([])),
+  ),
+  showAsciiBackground: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
+  windowMaterial: Schema.Literals(["solid", "translucent"]).pipe(
+    Schema.withDecodingDefault(Effect.succeed("translucent" as const)),
+  ),
+  windowSidebarOnly: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
+  windowOpacity: Schema.Int.check(Schema.isBetween({ minimum: 15, maximum: 100 })).pipe(
+    Schema.withDecodingDefault(Effect.succeed(90)),
+  ),
+  windowBlur: Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 64 })).pipe(
+    Schema.withDecodingDefault(Effect.succeed(64)),
+  ),
   notificationMode: NotificationMode.pipe(
     Schema.withDecodingDefault(Effect.succeed("off" as const)),
   ),
@@ -418,7 +438,6 @@ export const ClientSettingsSchema = Schema.Struct({
   appearanceContrast: AppearanceContrast.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_APPEARANCE_CONTRAST)),
   ),
-  // Zero avoids per-frame layout work from width/height transitions.
   panelAnimationDurationMs: PanelAnimationDurationMs.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_PANEL_ANIMATION_DURATION_MS)),
   ),
@@ -545,7 +564,9 @@ export const ClientSettingsSchema = Schema.Struct({
   threadDetailsItems: Schema.Record(Schema.String, Schema.Boolean).pipe(
     Schema.withDecodingDefault(Effect.succeed({})),
   ),
-  sidebarWorkingShelfEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
+  sidebarWorkingShelfEnabled: Schema.Boolean.pipe(
+    Schema.withDecodingDefault(Effect.succeed(false)),
+  ),
   sidebarProjectGroupingMode: SidebarProjectGroupingMode.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_SIDEBAR_PROJECT_GROUPING_MODE)),
   ),
@@ -1386,6 +1407,7 @@ export const CloudSpeechCredentials = Schema.Struct({
 export const ProjectGroupSetting = Schema.Struct({
   id: TrimmedNonEmptyString,
   name: TrimmedNonEmptyString,
+  icon: Schema.optionalKey(TrimmedNonEmptyString),
   projectKeys: Schema.Array(TrimmedNonEmptyString),
 });
 export type ProjectGroupSetting = typeof ProjectGroupSetting.Type;
@@ -2088,6 +2110,16 @@ export function requiredScopesForProjectMutation(
 }
 
 export const ClientSettingsPatch = Schema.Struct({
+  railShortcuts: Schema.optionalKey(Schema.Array(TrimmedNonEmptyString)),
+  railItemOrder: Schema.optionalKey(Schema.Array(TrimmedNonEmptyString)),
+  hiddenRailItems: Schema.optionalKey(Schema.Array(TrimmedNonEmptyString)),
+  showAsciiBackground: Schema.optionalKey(Schema.Boolean),
+  windowMaterial: Schema.optionalKey(Schema.Literals(["solid", "translucent"])),
+  windowSidebarOnly: Schema.optionalKey(Schema.Boolean),
+  windowOpacity: Schema.optionalKey(
+    Schema.Int.check(Schema.isBetween({ minimum: 15, maximum: 100 })),
+  ),
+  windowBlur: Schema.optionalKey(Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 64 }))),
   notificationMode: Schema.optionalKey(NotificationMode),
   inAppNotificationsEnabled: Schema.optionalKey(Schema.Boolean),
   diffColorScheme: Schema.optionalKey(DiffColorScheme),

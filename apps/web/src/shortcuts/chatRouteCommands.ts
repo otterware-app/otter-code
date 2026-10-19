@@ -110,14 +110,17 @@ export function installChatRouteCommands(router: AnyRouter): () => void {
   };
   // Grouped like the sidebar and counted within the rail's space, so the shortcut and the
   // New thread button agree: a group of one project has no choice to make.
-  const readProjectGroups = () =>
-    buildSidebarProjectSnapshots({
-      projects: readSpaceProjects().projects,
+  const readProjectGroups = () => {
+    const { projectFilter } = readActiveProjectSpace();
+    const projects = readProjects();
+    return buildSidebarProjectSnapshots({
+      projects: projectFilter === null ? projects : projects.filter(projectFilter),
       groupScratchProjects: true,
       settings: selectProjectGroupingSettings(getClientSettings()),
       primaryEnvironmentId: appAtomRegistry.get(primaryEnvironmentIdAtom),
       resolveEnvironmentLabel: () => null,
     });
+  };
   const canOperatePreview = (environmentId: EnvironmentId) =>
     readEnvironmentScope(environmentId, AuthPreviewOperateScope);
 
@@ -135,7 +138,20 @@ export function installChatRouteCommands(router: AnyRouter): () => void {
     event.stopPropagation();
   };
 
+  // A space without projects has no project to start in: All starts a chat
+  // without one where the machine offers it; otherwise the user adds a project.
+  const startInEmptySpace = (event: KeyboardEvent) => {
+    const { space } = readActiveProjectSpace();
+    if (space.kind === "chats" || readProjectGroups().length > 0) return false;
+    claim(event);
+    const environmentId = space.kind === "all" ? readScratchEnvironmentId() : null;
+    if (environmentId !== null) void scratch.startScratchThread(environmentId);
+    else openCommandPalette({ open: "add-project" });
+    return true;
+  };
+
   const startNewLocal: CommandHandler = (event) => {
+    if (startInEmptySpace(event)) return;
     claim(event);
     // With no current or open project, such as when every project is archived, pick one.
     void startNewThreadFromContext(readThreadContext()).then((started) => {
@@ -161,6 +177,7 @@ export function installChatRouteCommands(router: AnyRouter): () => void {
         void scratch.startScratchThread(environmentId);
       },
       "chat.new": (event) => {
+        if (startInEmptySpace(event)) return;
         // In Chats, chat.new starts without a project too, unless the machine
         // offers no such home; then it falls through to the ordinary new thread.
         if (readActiveProjectSpace().space.kind === "chats") {

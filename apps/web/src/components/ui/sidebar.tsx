@@ -716,14 +716,13 @@ const sidebarMenuButtonVariants = cva(
     },
     variants: {
       size: {
-        default:
-          "h-8 rounded-[var(--control-radius)] px-[var(--sidebar-row-content-inset)] py-1.5 text-sm",
+        default: "h-7 rounded-md px-[var(--sidebar-row-content-inset)] py-1 text-[13px]",
         icon: "size-8 justify-center rounded-[var(--control-radius)] p-0",
         lg: "h-12 rounded-[var(--control-radius)] px-[var(--sidebar-row-content-inset)] py-2 text-sm group-data-[collapsible=icon]:p-0!",
         sm: "h-7 rounded-[var(--control-radius)] px-[var(--sidebar-row-content-inset)] py-2 text-xs",
       },
       variant: {
-        default: "font-medium text-sidebar-muted-foreground/80",
+        default: "font-normal text-sidebar-foreground/90",
         outline: "bg-sidebar-control-surface ring-1 ring-sidebar-border",
       },
     },
@@ -783,11 +782,21 @@ function SidebarMenuButton({
   );
 }
 
-function SidebarMenuSub({ className, ...props }: React.ComponentProps<"ul">) {
+function SidebarMenuSub({
+  className,
+  variant = "default",
+  ...props
+}: React.ComponentProps<"ul"> & {
+  variant?: "default" | "plain" | "flat";
+}) {
   return (
     <ul
       className={cn(
-        "mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-sidebar-border border-l px-2.5 py-0.5",
+        "flex min-w-0 flex-col gap-1",
+        variant === "default" &&
+          "mx-3.5 translate-x-px border-sidebar-border border-l px-2.5 py-0.5",
+        variant === "plain" && "mx-1 px-2.5 py-0.5",
+        variant === "flat" && "mx-0 px-0 py-0",
         "group-data-[collapsible=icon]:hidden",
         className,
       )}

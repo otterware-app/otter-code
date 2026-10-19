@@ -52,7 +52,7 @@ import {
 import { type PendingApproval, type TimelineEntry } from "../../session-logic";
 import type { CodexArtifactTemplate } from "@t3tools/shared/codexArtifactTemplates";
 import { type ChatFileAttachment, type TurnDiffSummary } from "../../types";
-import { ArrowRightIcon, BotIcon, CircleAlertIcon, Minimize2Icon } from "lucide-react";
+import { ArrowRightIcon, BotIcon, CircleAlertIcon, ContextCompactionIcon } from "~/lib/icons";
 import { ChevronDown, ChevronRight } from "lucide";
 import { MorphIcon } from "~/components/MorphIcon";
 import { Skeleton } from "../ui/skeleton";
@@ -1526,7 +1526,7 @@ function ContextCompactionTimelineRow({
       {row.failed ? (
         <CircleAlertIcon aria-hidden="true" className="size-3 shrink-0" />
       ) : (
-        <Minimize2Icon aria-hidden="true" className="size-3" />
+        <ContextCompactionIcon aria-hidden="true" className="size-3" />
       )}
       {row.tokenCounts ? (
         <>

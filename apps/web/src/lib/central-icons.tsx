@@ -1,10 +1,4 @@
-// FILE: central-icons.tsx
-// Purpose: Resolve and render Central icon SVGs shipped as static web assets.
-// Layer: web UI utility
-// Exports: CentralIcon, getCentralIconUrl, createCentralIconElement, createCentralIconComponent
-// Depends on: Vite public asset serving and app className merging utilities.
-
-import { forwardRef, type CSSProperties, type HTMLAttributes, type ReactElement } from "react";
+import { forwardRef, type CSSProperties, type HTMLAttributes } from "react";
 import { cn } from "./utils";
 
 // Central icons ship in two visual sets served as static assets: the default
@@ -27,7 +21,7 @@ export type CentralIconProps = Omit<HTMLAttributes<HTMLSpanElement>, "children">
 };
 
 // Builds a public asset URL from the icon basename without allowing path traversal.
-export function getCentralIconUrl(
+function getCentralIconUrl(
   name: string,
   variant: CentralIconVariant = DEFAULT_CENTRAL_ICON_VARIANT,
 ): string | null {
@@ -47,10 +41,9 @@ export function getCentralIconUrl(
   return `${CENTRAL_ICON_BASE_PATHS[variant]}/${encodeURIComponent(normalizedName)}${SVG_SUFFIX}`;
 }
 
-// Shared base classes so the React component and the imperative DOM helper stay
-// pixel-identical (single uniform fill tinted to the current text color).
+// Masked SVGs inherit the surrounding text color.
 const CENTRAL_ICON_BASE_CLASS = "inline-block size-4 shrink-0 bg-current";
-export const CENTRAL_ICON_SLOT = "central-icon";
+const CENTRAL_ICON_SLOT = "central-icon";
 
 // CSS-mask shorthand value that paints the icon as a solid `bg-current` fill.
 function centralIconMaskValue(iconUrl: string): string {
@@ -113,40 +106,3 @@ export const CentralIcon = forwardRef<HTMLSpanElement, CentralIconProps>(functio
     />
   );
 });
-
-// Adapts a Central icon name to the `ComponentType<{ className?: string }>` shape
-// expected by icon-prop APIs (SidebarIconButton, menu action descriptors, …) so
-// Central glyphs can drop in wherever a react-icons/lucide component was used.
-export function createCentralIconComponent(
-  name: string,
-  variant?: CentralIconVariant,
-): (props: { className?: string }) => ReactElement {
-  function CentralIconGlyph({ className }: { className?: string }) {
-    return <CentralIcon name={name} variant={variant} className={className} />;
-  }
-  CentralIconGlyph.displayName = `CentralIconGlyph(${name})`;
-  return CentralIconGlyph;
-}
-
-// Imperative twin of `CentralIcon` for non-React surfaces such as the Lexical
-// composer chips that build their DOM by hand. Returns null when the name is
-// invalid so callers can fall back to a static glyph.
-export function createCentralIconElement(
-  name: string,
-  className?: string,
-  variant?: CentralIconVariant,
-): HTMLSpanElement | null {
-  const iconUrl = getCentralIconUrl(name, variant);
-  if (!iconUrl) {
-    return null;
-  }
-
-  const span = document.createElement("span");
-  span.setAttribute("aria-hidden", "true");
-  span.dataset.slot = CENTRAL_ICON_SLOT;
-  span.className = cn(CENTRAL_ICON_BASE_CLASS, className);
-  const maskValue = centralIconMaskValue(iconUrl);
-  span.style.setProperty("-webkit-mask", maskValue);
-  span.style.setProperty("mask", maskValue);
-  return span;
-}

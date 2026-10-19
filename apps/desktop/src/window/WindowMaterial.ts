@@ -1,7 +1,7 @@
 import type { ClientSettings } from "@t3tools/contracts";
 import type { BrowserWindow, BrowserWindowConstructorOptions } from "electron";
 
-export const MAC_WINDOW_VIBRANCY = "under-window";
+const MAC_WINDOW_VIBRANCY = "under-window";
 
 export interface WindowMaterialAddon {
   readonly setBackgroundBlurRadius: (nativeWindowHandle: Buffer, radius: number) => boolean;

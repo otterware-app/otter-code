@@ -4,7 +4,6 @@ import "culori/css";
 import { converter, parse } from "culori/fn";
 import {
   BUILT_IN_THEMES,
-  CHATGPT_THEME,
   EMBER_THEME,
   GROVE_THEME,
   IRIS_THEME,
@@ -23,7 +22,6 @@ import {
 } from "@t3tools/shared/themePalettes";
 
 export {
-  CHATGPT_THEME,
   EMBER_THEME,
   GROVE_THEME,
   IRIS_THEME,

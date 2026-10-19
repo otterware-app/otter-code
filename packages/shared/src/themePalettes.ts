@@ -251,7 +251,7 @@ export const T3_CODE_DARK_THEME_COLORS: ThemeColors = {
   terminalScrollbarHover: "#363636",
 };
 
-export const SYNARA_LIGHT_THEME_COLORS: ThemeColors = {
+const SYNARA_LIGHT_THEME_COLORS: ThemeColors = {
   searchMatchBackground: "oklch(0.910441 0.108498 88.529)",
   searchMatchForeground: "oklch(0.216164 0.028283 77.423)",
   searchMatchActiveBackground: "oklch(0.774202 0.151946 74.331)",
@@ -315,7 +315,7 @@ export const SYNARA_LIGHT_THEME_COLORS: ThemeColors = {
   terminalScrollbarHover: "oklch(0.798372 0 0)",
 };
 
-export const SYNARA_DARK_THEME_COLORS: ThemeColors = {
+const SYNARA_DARK_THEME_COLORS: ThemeColors = {
   searchMatchBackground: "oklch(0.549168 0.09987 84.95)",
   searchMatchForeground: "oklch(0.970151 0 0)",
   searchMatchActiveBackground: "oklch(0.774202 0.151946 74.331)",
@@ -388,7 +388,7 @@ export const SYNARA_THEME: ThemeDefinition = {
 };
 
 /** ChatGPT's neutral grays, with its blue for focus and accents. */
-export const CHATGPT_THEME: ThemeDefinition = {
+const CHATGPT_THEME: ThemeDefinition = {
   id: "chatgpt",
   label: "ChatGPT",
   appearance: "dark",

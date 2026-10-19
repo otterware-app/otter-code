@@ -1,7 +1,8 @@
 "use client";
 import type { DesktopPreviewExtensionAction, ScopedThreadRef } from "@t3tools/contracts";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowUpRight, EyeOff, MoreVertical, Pin, PinOff, Puzzle, Settings2 } from "lucide-react";
+import { EyeOff, MoreVertical, PinOff, Puzzle, Settings2 } from "lucide-react";
+import { ArrowUpRightIcon as ArrowUpRight, PinIcon as Pin } from "~/lib/icons";
 import { useEffect, useRef } from "react";
 import {
   CHROME_WEB_STORE_URL,

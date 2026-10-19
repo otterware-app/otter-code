@@ -15,6 +15,7 @@ git grep -l -I -z -E 'T3|t3 ' -- \
   ':!*.md' ':!*.svg' ':!*.podspec' ':!packages/client-runtime/src/errors/transport*' \
   | xargs -0 perl -pi -e '
       next if /^\s*(\/\/|\*|\/\*|#)/;
+      next if /label: "T3 Code"/;
       s/T3 Nightly\b/Otter Code Nightly/g;
       s/T3([ +])(Code|Connect)\b/Otter$1$2/g;
       s/\bT3 CODE\b/OTTER CODE/g;

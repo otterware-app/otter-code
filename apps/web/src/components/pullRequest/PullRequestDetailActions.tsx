@@ -1,10 +1,11 @@
+import { CheckIcon, ChevronDownIcon, GitBranchIcon, PlayIcon } from "~/lib/icons";
 import type {
   EnvironmentId,
   PullRequestAction,
   PullRequestMergeMethod,
   PullRequestUpdateMethod,
 } from "@t3tools/contracts";
-import { CheckIcon, ChevronDownIcon, FolderGit2Icon, GitBranchIcon, PlayIcon } from "lucide-react";
+import { FolderGit2Icon } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { AnimatedWidth } from "~/components/AnimatedWidth";

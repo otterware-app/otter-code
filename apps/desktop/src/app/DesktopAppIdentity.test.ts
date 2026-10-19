@@ -112,7 +112,7 @@ const withIdentity = <A, E, R>(
     readonly calls?: ElectronAppCalls;
     readonly environment?: TestEnvironmentInput;
     readonly legacyPathExists?: boolean;
-    readonly legacyPathProbeError?: PlatformError.PlatformError;
+    readonly pathProbeError?: PlatformError.PlatformError;
     readonly packageJson?: string;
     readonly pngIconPath?: Option.Option<string>;
   } = {},
@@ -130,8 +130,8 @@ const withIdentity = <A, E, R>(
         Layer.provideMerge(
           FileSystem.layerNoop({
             exists: (path) =>
-              input.legacyPathProbeError
-                ? Effect.fail(input.legacyPathProbeError)
+              input.pathProbeError
+                ? Effect.fail(input.pathProbeError)
                 : Effect.succeed(
                     input.legacyPathExists === true && /Otter Code( \(Dev\))?$/.test(path),
                   ),
@@ -160,20 +160,33 @@ describe("DesktopAppIdentity", () => {
     ),
   );
 
-  it.effect("keeps using the legacy development profile", () =>
-    withIdentity(
-      Effect.gen(function* () {
-        const identity = yield* DesktopAppIdentity.DesktopAppIdentity;
-        assert.equal(
-          yield* identity.resolveUserDataPath,
-          "/Users/alice/Library/Application Support/Otter Code (Dev)",
-        );
-      }),
-      {
-        legacyPathExists: true,
-        environment: { env: { VITE_DEV_SERVER_URL: "http://localhost:5173" } },
+  it.effect.each([
+    {
+      label: "default development state",
+      env: { VITE_DEV_SERVER_URL: "http://localhost:5173" },
+      expectedPath: "/Users/alice/.otter-code/dev/electron",
+    },
+    {
+      label: "an isolated worktree",
+      env: {
+        VITE_DEV_SERVER_URL: "http://localhost:5173",
+        T3CODE_HOME: "/worktree/.t3",
       },
-    ),
+      expectedPath: "/worktree/.t3/userdata/electron",
+    },
+  ])(
+    "uses the isolated Chromium profile for $label even when the legacy profile exists",
+    ({ env, expectedPath }) =>
+      withIdentity(
+        Effect.gen(function* () {
+          const identity = yield* DesktopAppIdentity.DesktopAppIdentity;
+          assert.equal(yield* identity.resolveUserDataPath, expectedPath);
+        }),
+        {
+          legacyPathExists: true,
+          environment: { env },
+        },
+      ),
   );
 
   it.effect.each([

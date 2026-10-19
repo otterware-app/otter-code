@@ -7,7 +7,7 @@ import type {
   RelayLinearStatusResponse,
 } from "@t3tools/contracts/relay";
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { ChevronRightIcon, EllipsisIcon } from "lucide-react";
+import { ChevronRightIcon, EllipsisIcon } from "~/lib/icons";
 import { type ReactNode, useEffect, useEffectEvent, useRef, useState } from "react";
 import {
   fetchLinearStatus,

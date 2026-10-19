@@ -2,7 +2,8 @@ import { PermissionChecklist, PermissionContinueButton } from "../permissions/Pe
 import { usePermissionStatus } from "../permissions/usePermissionStatus";
 import type { BrowserImportSource } from "@t3tools/contracts";
 import { BROWSER_IMPORT_FAILURE_COPY } from "@t3tools/contracts";
-import { ArrowDownIcon, ArrowRightIcon, CheckIcon, HardDriveIcon } from "lucide-react";
+import { HardDriveIcon } from "lucide-react";
+import { ArrowDownIcon, ArrowRightIcon, CheckIcon } from "~/lib/icons";
 import { useRef, useState } from "react";
 
 import { cn, randomUUID } from "~/lib/utils";

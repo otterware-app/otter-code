@@ -27,26 +27,28 @@ import {
   encodeComposerContextClipboardHtml,
 } from "@t3tools/shared/composerContextClipboard";
 import {
-  ChevronRightIcon,
-  CodeIcon,
   FileSpreadsheetIcon,
   FileTextIcon,
-  GlobeIcon,
   ImageIcon,
-  InfoIcon,
-  LightbulbIcon,
   MailIcon,
   MessageSquareIcon,
   MessageSquareWarningIcon,
-  OctagonAlertIcon,
-  PlayIcon,
   PresentationIcon,
   SparklesIcon,
+  WrapTextIcon,
+} from "lucide-react";
+import type { LucideIcon } from "~/lib/icons";
+import {
+  ChevronRightIcon,
+  CodeIcon,
+  GlobeIcon,
+  InfoIcon,
+  LightbulbIcon,
+  OctagonAlertIcon,
+  PlayIcon,
   TriangleAlertIcon,
   WorkflowIcon,
-  WrapTextIcon,
-  type LucideIcon,
-} from "lucide-react";
+} from "~/lib/icons";
 import { Check, Copy, Maximize2, Minimize2 } from "lucide";
 import {
   AssetWorkspaceAssetNotFoundError,

@@ -5,7 +5,8 @@ import { AuthOrchestrationOperateScope } from "@t3tools/contracts";
 import { readEnvironmentScope, useEnvironmentScope } from "../../state/session";
 import { AuthEnvironmentMaintainScope } from "@t3tools/contracts";
 import { RefreshIcon } from "~/components/ui/refresh-icon";
-import { AlertTriangleIcon, CopyIcon, FolderOpenIcon, InfoIcon } from "lucide-react";
+import { AlertTriangleIcon } from "lucide-react";
+import { CopyIcon, FolderOpenIcon, InfoIcon } from "~/lib/icons";
 import { ChevronDown, ChevronRight } from "lucide";
 import {
   isAtomCommandInterrupted,

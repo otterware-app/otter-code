@@ -5,8 +5,8 @@ import {
   createEnvironmentThreadDetailAtoms,
   createEnvironmentThreadShellAtoms,
   createEnvironmentThreadStateAtoms,
-  EMPTY_ENVIRONMENT_THREAD_STATE,
   type EnvironmentThreadState,
+  EMPTY_ENVIRONMENT_THREAD_STATE,
   createThreadEnvironmentAtoms,
 } from "@t3tools/client-runtime/state/threads";
 import type { EnvironmentId, OrchestrationV2ThreadShell, ThreadId } from "@t3tools/contracts";
@@ -30,24 +30,19 @@ export const environmentThreadShells = createEnvironmentThreadShellAtoms({
   snapshotAtom: threadEnvironment.snapshotAtom,
 });
 
-const EMPTY_THREAD_STATE_ATOM = Atom.make(AsyncResult.success(EMPTY_ENVIRONMENT_THREAD_STATE)).pipe(
-  Atom.withLabel("web-environment-thread:empty"),
+const NO_THREAD_STATE_ATOM = Atom.make(EMPTY_ENVIRONMENT_THREAD_STATE).pipe(
+  Atom.withLabel("web-environment-thread-state:none"),
 );
 
 export function useEnvironmentThread(
   environmentId: EnvironmentId | null,
   threadId: ThreadId | null,
-): EnvironmentThreadState {
-  const result = useAtomValue(
-    environmentId !== null && threadId !== null
-      ? environmentThreads.stateAtom(environmentId, threadId)
-      : EMPTY_THREAD_STATE_ATOM,
+) {
+  return useAtomValue(
+    environmentId === null || threadId === null
+      ? NO_THREAD_STATE_ATOM
+      : environmentThreadDetails.stateAtom({ environmentId, threadId }),
   );
-  const state = Option.getOrElse(
-    AsyncResult.value(result),
-    () => EMPTY_ENVIRONMENT_THREAD_STATE,
-  ) as EnvironmentThreadState;
-  return state;
 }
 
 const isRunning = (status: string) =>

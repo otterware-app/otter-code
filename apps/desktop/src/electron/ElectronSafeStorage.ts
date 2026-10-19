@@ -68,20 +68,43 @@ export class ElectronSafeStorage extends Context.Service<
 /** @public Service construction is part of the canonical Effect module API. */
 export const make = Effect.gen(function* () {
   const platform = yield* HostProcess.Platform;
+  const environment = yield* HostProcess.Environment;
+  const rememberUnavailable =
+    platform === "darwin" && Boolean(environment.VITE_DEV_SERVER_URL?.trim());
+  let unavailable = false;
+  const checkAvailability = () => {
+    if (unavailable) return false;
+    const available = Electron.safeStorage.isEncryptionAvailable();
+    if (rememberUnavailable && !available) unavailable = true;
+    return available;
+  };
+  const guardDevelopmentKeychain = () => {
+    if (rememberUnavailable && !checkAvailability()) {
+      // Deny is a decision for this dev process, not an invitation for every
+      // independent credential read to open another native permission prompt.
+      throw new Error("macOS Keychain access is unavailable. Restart the dev app to retry.");
+    }
+  };
 
   return ElectronSafeStorage.of({
     isEncryptionAvailable: Effect.try({
-      try: () => Electron.safeStorage.isEncryptionAvailable(),
+      try: checkAvailability,
       catch: (cause) => new ElectronSafeStorageAvailabilityError({ cause }),
     }),
     encryptString: (value) =>
       Effect.try({
-        try: () => Electron.safeStorage.encryptString(value),
+        try: () => {
+          guardDevelopmentKeychain();
+          return Electron.safeStorage.encryptString(value);
+        },
         catch: (cause) => new ElectronSafeStorageEncryptError({ cause }),
       }),
     decryptString: (value) =>
       Effect.try({
-        try: () => Electron.safeStorage.decryptString(Buffer.from(value)),
+        try: () => {
+          guardDevelopmentKeychain();
+          return Electron.safeStorage.decryptString(Buffer.from(value));
+        },
         catch: (cause) => new ElectronSafeStorageDecryptError({ cause }),
       }),
     selectedStorageBackend: Effect.sync(() => {

@@ -28,30 +28,32 @@ import {
 } from "@t3tools/contracts";
 import {
   ArrowDownUpIcon,
+  CircleDotIcon,
+  FileDiffIcon,
+  FolderGit2Icon,
+  GitCommitHorizontalIcon,
+  MessageCircleQuestionIcon,
+  MessageSquareIcon,
+  SparklesIcon,
+  Trash2Icon,
+} from "lucide-react";
+import {
   ArrowLeftIcon,
   ArrowUpRightIcon,
   BookOpenIcon,
   CheckIcon,
-  CircleDotIcon,
   CopyIcon,
   ChevronDownIcon,
   ExternalLinkIcon,
-  FileDiffIcon,
-  FolderGit2Icon,
   GitBranchIcon,
-  GitCommitHorizontalIcon,
   HammerIcon,
-  MessageCircleQuestionIcon,
-  MessageSquareIcon,
   LinkIcon,
   MoreHorizontalIcon,
-  PanelRightIcon,
+  PanelRightCloseIcon as PanelRightIcon,
   PlayIcon,
   RotateCcwIcon,
-  SparklesIcon,
-  Trash2Icon,
   TriangleAlertIcon,
-} from "lucide-react";
+} from "~/lib/icons";
 import {
   lazy,
   Suspense,

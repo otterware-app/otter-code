@@ -1,6 +1,6 @@
 import type { DeviceHubAccess } from "@t3tools/client-runtime/state/deviceHubAccess";
 import type { DevicePermission, DeviceSummary, DeviceTextSize } from "@t3tools/contracts";
-import { ChevronDown, X } from "lucide-react";
+import { ChevronDownIcon as ChevronDown, XIcon as X } from "~/lib/icons";
 import { useEffect, useState } from "react";
 
 import { Button } from "~/components/ui/button";

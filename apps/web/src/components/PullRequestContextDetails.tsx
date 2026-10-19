@@ -1,5 +1,5 @@
 import type { PullRequestContextMetadata } from "@t3tools/contracts";
-import { ArrowRightIcon } from "lucide-react";
+import { ArrowRightIcon } from "~/lib/icons";
 
 import { cn } from "~/lib/utils";
 

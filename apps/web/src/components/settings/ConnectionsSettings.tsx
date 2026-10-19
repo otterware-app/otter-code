@@ -1,14 +1,7 @@
 import { SessionPermissions } from "./SessionPermissions";
 import { AUTH_SCOPE_OPTIONS as PAIRING_SCOPE_OPTIONS } from "@t3tools/shared/authScopeOptions";
-import {
-  ChevronRightIcon,
-  ChevronsLeftRightEllipsisIcon,
-  EllipsisIcon,
-  PlusIcon,
-  QrCodeIcon,
-  RouteIcon,
-  TerminalIcon,
-} from "lucide-react";
+import { ChevronsLeftRightEllipsisIcon, QrCodeIcon, RouteIcon } from "lucide-react";
+import { ChevronRightIcon, EllipsisIcon, PlusIcon, TerminalIcon } from "~/lib/icons";
 import { useAtomValue } from "@effect/atom-react";
 import {
   type KeyboardEvent,

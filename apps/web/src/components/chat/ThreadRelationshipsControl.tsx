@@ -40,17 +40,15 @@ import { deriveSubagentElapsedMs } from "@t3tools/shared/orchestrationTiming";
 import { groupBy } from "effect/Array";
 import * as DateTime from "effect/DateTime";
 import { useNavigate } from "@tanstack/react-router";
+import { CornerLeftUpIcon, SquareIcon, UnplugIcon } from "lucide-react";
 import {
   ArrowRightIcon,
   BotIcon,
-  CornerLeftUpIcon,
   GitForkIcon,
   LoaderCircleIcon,
   MoreHorizontalIcon,
   PlusIcon,
-  SquareIcon,
-  UnplugIcon,
-} from "lucide-react";
+} from "~/lib/icons";
 import { useState, type ReactNode } from "react";
 
 import { useArchivedThreadSnapshots } from "../../lib/archivedThreadsState";

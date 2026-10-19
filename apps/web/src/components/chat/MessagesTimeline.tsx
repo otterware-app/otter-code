@@ -120,7 +120,17 @@ import ChatMarkdown, { ChatMarkdownAssetImage } from "../ChatMarkdown";
 import { T3Wordmark } from "../T3Wordmark";
 import { ThreadContextChip } from "../ThreadContextChip";
 import {
+  MousePointerClickIcon,
+  PaintbrushIcon,
+  SmartphoneIcon,
+  WrenchIcon,
+  Code2Icon,
+} from "lucide-react";
+import type { LucideIcon } from "~/lib/icons";
+import { contextCompactionLabel } from "./contextCompaction";
+import {
   ArrowRightIcon,
+  ContextCompactionIcon,
   BotIcon,
   BrainIcon,
   CheckIcon,
@@ -132,25 +142,17 @@ import {
   EyeIcon,
   GitForkIcon,
   GlobeIcon,
-  type LucideIcon,
   MessageCircleIcon,
-  MousePointerClickIcon,
-  PaintbrushIcon,
-  MinusIcon,
   Redo2Icon,
-  Minimize2Icon,
   SearchIcon,
-  SmartphoneIcon,
-  SquarePenIcon,
+  NewThreadIcon as SquarePenIcon,
   TerminalIcon,
   Undo2Icon,
   HammerIcon,
-  WrenchIcon,
-  Code2Icon,
   XIcon,
   ZapIcon,
   RotateCcwIcon,
-} from "lucide-react";
+} from "~/lib/icons";
 import { ChevronDown, ChevronRight, Link as LinkIconNode } from "lucide";
 import type {
   ComposerContextId,
@@ -298,7 +300,7 @@ import {
 import { SecretRequestCard } from "./SecretRequestCard";
 import { TimelineSystemDivider } from "./TimelineSystemDivider";
 import { WorkflowOpeningBlock } from "./WorkflowOpeningBlock";
-import { SkillChipIcon, SkillInlineText } from "./SkillInlineText";
+import { SkillChipIcon } from "./SkillInlineText";
 import * as DateTime from "effect/DateTime";
 import { formatWorkspaceRelativePath } from "../../filePathDisplay";
 import { forwardWheelToTimeline } from "./timelineMinimapWheel";
@@ -2020,7 +2022,7 @@ function ContextCompactionTimelineRow({
 }) {
   const content = (
     <span className="flex items-center gap-1.5">
-      <Minimize2Icon aria-hidden="true" className="size-3" />
+      <ContextCompactionIcon aria-hidden="true" className="size-3" />
       {row.tokenCounts ? (
         <>
           Context compacted {row.tokenCounts.before}
@@ -2978,10 +2980,10 @@ function v2EventPresentation(item: OrchestrationV2TurnItem): {
           ? null
           : `${item.beforeTokenCount ?? "?"} → ${item.afterTokenCount ?? "?"} tokens`;
       return {
-        label: "Context compacted",
+        label: contextCompactionLabel(item.status),
         detail: item.summary ?? tokenSummary,
         tone: item.status === "failed" ? "danger" : "muted",
-        icon: MinusIcon,
+        icon: ContextCompactionIcon,
       };
     }
     case "todo_list": {
@@ -3665,7 +3667,7 @@ function BackgroundWorktreeSetupChip({ snapshot }: { snapshot: WorktreeSetupSnap
 function CompactingLabel() {
   return (
     <span className="inline-flex items-center gap-1.5">
-      <Minimize2Icon aria-hidden="true" className="size-3" />
+      <ContextCompactionIcon aria-hidden="true" className="size-3" />
       Compacting…
     </span>
   );

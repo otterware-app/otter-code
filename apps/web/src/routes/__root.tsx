@@ -1,6 +1,5 @@
 import { PermissionUpdateNotice } from "../components/PermissionUpdateNotice";
 import { type ServerLifecycleWelcomePayload } from "@t3tools/contracts";
-import { scopedProjectKey, scopeProjectRef } from "@t3tools/client-runtime/environment";
 import {
   Outlet,
   Link,
@@ -31,6 +30,7 @@ import { ThreadDeepLinkCoordinator } from "../components/desktop/ThreadDeepLinkC
 import { DesktopAppActivationCoordinator } from "../components/desktop/DesktopAppActivationCoordinator";
 import { DesktopWebLinkCoordinator } from "../components/desktop/DesktopWebLinkCoordinator";
 import { RunningThreadKeepAlive } from "../components/desktop/RunningThreadKeepAlive";
+import { WindowMaterialSync } from "../components/desktop/WindowMaterialSync";
 import { ProviderUpdateLaunchNotification } from "../components/ProviderUpdateLaunchNotification";
 import { DesktopUpdateLaunchNotice } from "../components/sidebar/updateEverythingRun";
 import { LegacyThreadMigrationToast } from "../components/LegacyThreadMigrationToast";
@@ -60,12 +60,6 @@ import { cn } from "../lib/utils";
 import { applyAppearanceFontVariables } from "~/appearanceFonts";
 import { applyAppearanceContrast } from "~/appearanceContrast";
 import { useClientSettings } from "../hooks/useSettings";
-import {
-  deriveLogicalProjectKeyFromSettings,
-  derivePhysicalProjectKeyFromPath,
-  selectProjectGroupingSettings,
-} from "../logicalProject";
-import { useUiStateStore } from "../uiStateStore";
 import { syncBrowserChromeTheme } from "../hooks/useTheme";
 import { configureClientTracing } from "../observability/clientTracing";
 import { resolveInitialServerAuthGateState } from "../environments/primary";
@@ -79,7 +73,7 @@ import {
   primaryServerConfigEventAtom,
   primaryServerWelcomeAtom,
 } from "../state/server";
-import { readProject, setActiveEnvironmentId, useActiveEnvironmentId } from "../state/entities";
+import { setActiveEnvironmentId, useActiveEnvironmentId } from "../state/entities";
 import {
   createKeybindingsUpdateToastController,
   type KeybindingsUpdateToastController,
@@ -191,6 +185,7 @@ function RootRouteView() {
           <ContrastAppearanceSync />
           <EnvironmentThemeSync />
           <GlassAppearanceSync />
+          <WindowMaterialSync />
           <FontAppearanceSync />
           <ProviderAuthCallbackCoordinator />
           <CustomSnoozeDialogHost />
@@ -230,6 +225,7 @@ function RootRouteView() {
         <ContrastAppearanceSync />
         <EnvironmentThemeSync />
         <GlassAppearanceSync />
+        <WindowMaterialSync />
         <FontAppearanceSync />
         <ProviderAuthCallbackCoordinator />
         <ChatGptWelcomeCoordinator />
@@ -517,7 +513,6 @@ function EventRouter({
 }) {
   const navigate = useNavigate();
   const pathname = useLocation({ select: (loc) => loc.pathname });
-  const projectGroupingSettings = useClientSettings(selectProjectGroupingSettings);
   const primaryEnvironment = usePrimaryEnvironment();
   const serverConfig = useAtomValue(primaryServerConfigAtom);
   const serverConfigEvent = useAtomValue(primaryServerConfigEventAtom);
@@ -538,21 +533,6 @@ function EventRouter({
       if (!payload.bootstrapProjectId || !payload.bootstrapThreadId) {
         return;
       }
-      const bootstrapProject = readProject(
-        scopeProjectRef(payload.environment.environmentId, payload.bootstrapProjectId),
-      );
-      const bootstrapProjectKey =
-        (bootstrapProject
-          ? deriveLogicalProjectKeyFromSettings(bootstrapProject, projectGroupingSettings)
-          : null) ??
-        (serverConfig?.cwd
-          ? derivePhysicalProjectKeyFromPath(payload.environment.environmentId, serverConfig.cwd)
-          : null) ??
-        scopedProjectKey(
-          scopeProjectRef(payload.environment.environmentId, payload.bootstrapProjectId),
-        );
-      useUiStateStore.getState().setProjectExpanded(bootstrapProjectKey, true);
-
       if (readPathname() !== "/") {
         return;
       }

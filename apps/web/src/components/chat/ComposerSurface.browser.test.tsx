@@ -6,7 +6,7 @@ import { expect, it, vi } from "vite-plus/test";
 
 import { ComposerSurface } from "./ComposerSurface";
 
-it("masks the toolbar overlap and reveals its surface one pixel before the input edge", async () => {
+it("lays the context strip below the input with a gap and no overlapping seam", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const container = document.createElement("div");
   document.body.append(container);
@@ -22,9 +22,18 @@ it("masks the toolbar overlap and reveals its surface one pixel before the input
       );
     });
 
+    const host = container.querySelector('[data-slot="composer-host"]')!;
     const strip = container.querySelector('[data-slot="composer-context-strip"]')!;
-    const mask = getComputedStyle(strip, "::before").maskImage;
-    expect(mask).toContain("rgba(0, 0, 0, 0) 15px, rgb(0, 0, 0) 15px");
+    const hostBounds = host.getBoundingClientRect();
+    const stripBounds = strip.getBoundingClientRect();
+
+    expect(hostBounds.height).toBeGreaterThan(0);
+    expect(stripBounds.height).toBeGreaterThan(0);
+    expect(stripBounds.top).toBeGreaterThan(hostBounds.bottom);
+    expect(stripBounds.left).toBeCloseTo(hostBounds.left);
+    expect(stripBounds.right).toBeCloseTo(hostBounds.right);
+    expect(getComputedStyle(strip, "::before").content).toBe("none");
+    expect(getComputedStyle(host, "::after").clipPath).toBe("none");
   } finally {
     await act(async () => root.unmount());
     container.remove();

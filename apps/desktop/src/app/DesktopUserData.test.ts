@@ -7,6 +7,26 @@ import * as PlatformError from "effect/PlatformError";
 
 import { resolveUserDataPath } from "./DesktopUserData.ts";
 
+it.effect("isolates Chromium dev profiles without inspecting or migrating the shared profile", () =>
+  Effect.gen(function* () {
+    const profile = yield* resolveUserDataPath({
+      appDataDirectory: "/shared/profiles",
+      stateDir: "/worktree/.t3/userdata",
+      isDevelopment: true,
+      platform: "darwin",
+    });
+    assert.equal(profile, "/worktree/.t3/userdata/electron");
+  }).pipe(
+    Effect.provideService(
+      FileSystem.FileSystem,
+      FileSystem.makeNoop({
+        exists: () => Effect.die("the shared profile must not be read"),
+      }),
+    ),
+    Effect.provide(NodeServices.layer),
+  ),
+);
+
 it.effect("identifies a failed source read and preserves its cause", () => {
   const sourceState = "/profiles/Otter Code/Local State";
   const cause = PlatformError.systemError({

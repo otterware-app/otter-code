@@ -1,4 +1,5 @@
-import { BookmarkIcon, FileIcon, FileTextIcon } from "lucide-react";
+import { BookmarkIcon, FileTextIcon } from "lucide-react";
+import { FileIcon } from "~/lib/icons";
 import { memo, useEffect, useRef, useState } from "react";
 import { assistantCitationsToPlainText } from "@t3tools/shared/assistantCitations";
 

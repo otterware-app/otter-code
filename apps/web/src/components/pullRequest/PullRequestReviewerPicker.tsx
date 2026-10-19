@@ -4,7 +4,8 @@ import type {
   PullRequestRef,
   PullRequestReviewerCandidate,
 } from "@t3tools/contracts";
-import { CheckIcon, UserPlusIcon } from "lucide-react";
+import { UserPlusIcon } from "lucide-react";
+import { CheckIcon } from "~/lib/icons";
 import { useState } from "react";
 
 import { pullRequestEnvironment } from "~/state/pullRequests";

@@ -57,28 +57,30 @@ import {
 } from "@t3tools/contracts";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import {
-  ArrowLeftIcon,
   ChartNoAxesColumnIcon,
-  CheckIcon,
-  ChevronRightIcon,
   CornerLeftUpIcon,
   FileSearchIcon,
   FolderGit2Icon,
-  FolderIcon,
-  FolderPlusIcon,
   MessageSquareDashedIcon,
-  LinkIcon,
-  ListTodoIcon,
   MessageSquareIcon,
-  MonitorIcon,
-  MoonIcon,
   PaletteIcon,
-  RotateCcwIcon,
-  SettingsIcon,
-  SquarePenIcon,
-  SunIcon,
   TextSearchIcon,
 } from "lucide-react";
+import {
+  ArrowLeftIcon,
+  CheckIcon,
+  ChevronRightIcon,
+  FolderIcon,
+  FolderAddIcon as FolderPlusIcon,
+  LinkIcon,
+  ListTodoIcon,
+  MonitorIcon,
+  MoonIcon,
+  RotateCcwIcon,
+  SettingsIcon,
+  NewThreadIcon as SquarePenIcon,
+  SunIcon,
+} from "~/lib/icons";
 import { requestThreadFindOpen } from "./chat/threadFindActionBus";
 import {
   useDeferredValue,
@@ -97,7 +99,12 @@ import { useAtomValue } from "@effect/atom-react";
 import { isDesktopLocalConnectionTarget } from "../connection/desktopLocal";
 import { useDesktopLocalBootstraps } from "../connection/useDesktopLocalBootstraps";
 import { useHandleNewThread } from "../hooks/useHandleNewThread";
-import { useActiveProjectSpace } from "../hooks/useProjectSpace";
+import {
+  useActiveProjectSpace,
+  useAssignProjectToActiveSpace,
+  useProjectGroups,
+  useSelectProjectSpace,
+} from "../hooks/useProjectSpace";
 import { useOpenPanelPullRequestUrl } from "../hooks/useOpenPanelPullRequestUrl";
 import { writeTextToClipboard } from "../hooks/useCopyToClipboard";
 import {
@@ -243,7 +250,8 @@ import { stackedThreadToast, toastManager } from "./ui/toast";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "./ui/tooltip";
 import { ComposerHandleContext, useComposerHandleContext } from "../composerHandleContext";
 import type { ChatComposerHandle } from "./chat/ChatComposer";
-import { getProjectOrderKey } from "../logicalProject";
+import { deriveLogicalProjectKeyFromSettings, getProjectOrderKey } from "../logicalProject";
+import { CHATS_SPACE_ID } from "../projectSpaces";
 import { legacyProjectCwdPreferenceKey, useUiStateStore } from "../uiStateStore";
 import {
   buildSidebarProjectPickerEntries,
@@ -452,9 +460,7 @@ const selectCommandPaletteClientSettings = (settings: ClientSettings) => ({
 });
 
 function useSortedProjectGroups(environmentLabelById: ReadonlyMap<EnvironmentId, string>) {
-  const allProjects = useProjects();
-  const { projectFilter } = useActiveProjectSpace();
-  const projects = projectFilter === null ? allProjects : allProjects.filter(projectFilter);
+  const projects = useProjects();
   const threads = useThreadShells();
   const projectOrder = useUiStateStore((store) => store.projectOrder);
   const clientSettings = useClientSettings(selectCommandPaletteClientSettings);
@@ -721,6 +727,10 @@ function OpenCommandPaletteDialog(props: {
     setHighlightedItemValue(null);
   }
   const clientSettings = useClientSettings(selectCommandPaletteClientSettings);
+  const projectGroupingSettings = {
+    sidebarProjectGroupingMode: clientSettings.sidebarProjectGroupingMode,
+    sidebarProjectGroupingOverrides: clientSettings.sidebarProjectGroupingOverrides,
+  };
   const createProject = useAtomCommand(projectEnvironment.create, {
     reportFailure: false,
   });
@@ -752,6 +762,9 @@ function OpenCommandPaletteDialog(props: {
     useHandleNewThread();
   const paletteRouteTarget = useThreadRouteTarget();
   const { space, projectFilter } = useActiveProjectSpace();
+  const { groups: projectSpaces } = useProjectGroups();
+  const assignToActiveSpace = useAssignProjectToActiveSpace();
+  const setProjectSpaceId = useSelectProjectSpace();
   const projects = useProjects();
   const referenceThreadRef =
     pathname === "/pull-requests"
@@ -1073,6 +1086,14 @@ function OpenCommandPaletteDialog(props: {
   );
 
   const openProjectFromSearch = async (project: (typeof projects)[number]) => {
+    const projectKey = deriveLogicalProjectKeyFromSettings(project, projectGroupingSettings);
+    const matchingSpaces = projectSpaces.filter((entry) => entry.projectKeys.includes(projectKey));
+    setProjectSpaceId(
+      project.isScratch
+        ? CHATS_SPACE_ID
+        : ((matchingSpaces.find((entry) => entry.id === space.id) ?? matchingSpaces[0])?.id ??
+            null),
+    );
     const group = projectGroupByTargetKey.get(`${project.environmentId}:${project.id}`);
     const groupedProjectKeys = group
       ? new Set(
@@ -1150,9 +1171,7 @@ function OpenCommandPaletteDialog(props: {
         // The no-project home shows once, as the "No project" item below.
         // A project group offers only its own projects.
         projects: pickerProjects.filter(
-          (project) =>
-            !isScratch(project) &&
-            (space.kind !== "group" || projectFilter === null || projectFilter(project)),
+          (project) => !isScratch(project) && (projectFilter === null || projectFilter(project)),
         ),
         valuePrefix: "new-thread-in",
         searchTerms: (project) => {
@@ -1597,7 +1616,7 @@ function OpenCommandPaletteDialog(props: {
       projectPickerEntries.find((entry) => entry.isPreferred)?.group.displayName ??
       (currentProjectId ? (projectTitleById.get(currentProjectId) ?? null) : null);
 
-    if (activeProjectTitle) {
+    if (activeProjectTitle && contextualProjectRef !== null) {
       actionItems.push({
         kind: "action",
         value: "action:new-thread",
@@ -2239,6 +2258,7 @@ function OpenCommandPaletteDialog(props: {
       cwd,
     );
     if (existing) {
+      assignToActiveSpace(existing);
       const latestThread = getLatestThreadForProject(
         threads.filter((thread) => thread.environmentId === existing.environmentId),
         existing.id,
@@ -2306,6 +2326,10 @@ function OpenCommandPaletteDialog(props: {
       return;
     }
 
+    const addedProject = await waitForProject(
+      scopeProjectRef(input.environmentId, projectId),
+    ).catch(() => null);
+    if (addedProject) assignToActiveSpace(addedProject);
     const navigationResult = await settlePromise(() =>
       handleNewThread(scopeProjectRef(input.environmentId, projectId)),
     );
@@ -2554,7 +2578,8 @@ function OpenCommandPaletteDialog(props: {
     }
     setOpen(false);
     const projectRef = scopeProjectRef(addProjectCloneFlow.environmentId, projectId);
-    await waitForProject(projectRef, 3_000).catch(() => null);
+    const clonedProject = await waitForProject(projectRef, 3_000).catch(() => null);
+    if (clonedProject) assignToActiveSpace(clonedProject);
     const navigationResult = await settlePromise(() => handleNewThread(projectRef));
     if (navigationResult._tag === "Failure") {
       const error = squashAtomCommandFailure(navigationResult);

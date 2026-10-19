@@ -1,4 +1,4 @@
-import { ProjectId, ThreadId } from "@t3tools/contracts";
+import { ThreadId } from "@t3tools/contracts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 import {
@@ -9,10 +9,7 @@ import {
   PERSISTED_STATE_KEY,
   type PersistedUiState,
   persistState,
-  reorderProjects,
-  resolveProjectExpanded,
   setDefaultAdvertisedEndpointKey,
-  setProjectExpanded,
   setSidebarProjectScopeKey,
   setSidebarProjectSpaceId,
   setThreadChangedFilesExpanded,
@@ -21,7 +18,6 @@ import {
 
 function makeUiState(overrides: Partial<UiState> = {}): UiState {
   return {
-    projectExpandedById: {},
     projectOrder: [],
     sidebarProjectScopeKey: null,
     sidebarProjectSpaceId: null,
@@ -56,69 +52,6 @@ describe("uiStateStore pure functions", () => {
 
     expect(next.threadLastVisitedAtById[threadId]).toBe("2026-02-25T12:29:59.999Z");
     expect(markThreadUnread(next, threadId, null)).toBe(next);
-  });
-
-  it("resolves project expansion from logical, physical, and legacy preference keys", () => {
-    const physicalKey = "environment:/repo/project";
-    const legacyKey = legacyProjectCwdPreferenceKey("/repo/project");
-
-    expect(resolveProjectExpanded({ logical: false, [physicalKey]: true }, ["logical"])).toBe(
-      false,
-    );
-    expect(resolveProjectExpanded({ [physicalKey]: false }, ["new-logical", physicalKey])).toBe(
-      false,
-    );
-    expect(resolveProjectExpanded({ [legacyKey]: false }, ["new-logical", legacyKey])).toBe(false);
-    expect(resolveProjectExpanded({}, ["new-logical"])).toBe(true);
-  });
-
-  it("sets expansion for every stable key belonging to a logical project", () => {
-    const initialState = makeUiState();
-    const keys = ["logical", "environment-a:/repo", "environment-b:/repo"];
-
-    const next = setProjectExpanded(initialState, keys, false);
-
-    expect(next.projectExpandedById).toEqual({
-      logical: false,
-      "environment-a:/repo": false,
-      "environment-b:/repo": false,
-    });
-    expect(setProjectExpanded(next, keys, false)).toBe(next);
-  });
-
-  it("reorders from the current atom-derived project order", () => {
-    const project1 = ProjectId.make("project-1");
-    const project2 = ProjectId.make("project-2");
-    const project3 = ProjectId.make("project-3");
-    const currentOrder = [project1, project2, project3];
-
-    const next = reorderProjects(makeUiState(), currentOrder, [project1], [project3]);
-
-    expect(next.projectOrder).toEqual([project2, project3, project1]);
-  });
-
-  it("moves grouped project members together", () => {
-    const keyALocal = "env-local:proj-a";
-    const keyARemote = "env-remote:proj-a";
-    const keyB = "env-local:proj-b";
-    const keyC = "env-local:proj-c";
-    const currentOrder = [keyALocal, keyARemote, keyB, keyC];
-
-    const next = reorderProjects(makeUiState(), currentOrder, [keyALocal, keyARemote], [keyC]);
-
-    expect(next.projectOrder).toEqual([keyB, keyC, keyALocal, keyARemote]);
-  });
-
-  it("does not reorder missing or identical groups", () => {
-    const currentOrder = ["env-local:proj-a", "env-local:proj-b"];
-    const state = makeUiState();
-
-    expect(reorderProjects(state, currentOrder, ["env-local:missing"], ["env-local:proj-b"])).toBe(
-      state,
-    );
-    expect(reorderProjects(state, currentOrder, ["env-local:proj-a"], ["env-local:proj-a"])).toBe(
-      state,
-    );
   });
 
   it("stores explicit changed-file expansion choices", () => {
@@ -171,6 +104,23 @@ describe("uiStateStore pure functions", () => {
 });
 
 describe("parsePersistedState", () => {
+  it("returns a removed Space selection to Home and clears its project filter", () => {
+    const parsed = parsePersistedState({
+      sidebarProjectSpaceId: "__void__",
+      sidebarProjectScopeKey: "logical-project",
+      projectOrder: ["logical-project"],
+    });
+    expect(parsed.sidebarProjectSpaceId).toBeNull();
+    expect(parsed.sidebarProjectScopeKey).toBeNull();
+    expect(parsed.projectOrder).toEqual(["logical-project"]);
+    const selected = setSidebarProjectSpaceId(
+      makeUiState({ sidebarProjectSpaceId: "work", sidebarProjectScopeKey: "logical-project" }),
+      "__void__",
+    );
+    expect(selected.sidebarProjectSpaceId).toBeNull();
+    expect(selected.sidebarProjectScopeKey).toBeNull();
+  });
+
   it("hydrates the last selected pull request merge method", () => {
     const parsed = parsePersistedState({
       pullRequestMergeMethod: "squash",
@@ -185,10 +135,6 @@ describe("parsePersistedState", () => {
 
   it("hydrates raw UI-owned state without server entities", () => {
     const parsed = parsePersistedState({
-      projectExpandedById: {
-        logical: false,
-        invalid: "no" as unknown as boolean,
-      },
       projectOrder: ["physical-b", "", "physical-a", "physical-b"],
       threadLastVisitedAtById: {
         "environment:thread-1": "2026-02-25T12:35:00.000Z",
@@ -205,9 +151,6 @@ describe("parsePersistedState", () => {
     });
 
     expect(parsed).toEqual({
-      projectExpandedById: {
-        logical: false,
-      },
       projectOrder: ["physical-b", "physical-a"],
       threadLastVisitedAtById: {
         "environment:thread-1": "2026-02-25T12:35:00.000Z",
@@ -238,36 +181,14 @@ describe("parsePersistedState", () => {
     expect(parsed.threadChangedFilesExpandedById).toEqual({});
   });
 
-  it("migrates legacy CWD project preferences into local alias keys", () => {
+  it("migrates legacy CWD project ordering into local alias keys", () => {
     const parsed = parsePersistedState({
-      collapsedProjectCwds: ["/repo/b"],
-      expandedProjectCwds: ["/repo/a"],
       projectOrderCwds: ["/repo/b", "/repo/a"],
     });
     const projectAKey = legacyProjectCwdPreferenceKey("/repo/a");
     const projectBKey = legacyProjectCwdPreferenceKey("/repo/b");
 
     expect(parsed.projectOrder).toEqual([projectBKey, projectAKey]);
-    expect(resolveProjectExpanded(parsed.projectExpandedById, [projectAKey])).toBe(true);
-    expect(resolveProjectExpanded(parsed.projectExpandedById, [projectBKey])).toBe(false);
-    expect(resolveProjectExpanded(parsed.projectExpandedById, ["unknown"])).toBe(true);
-  });
-
-  it("preserves legacy expanded-only semantics for one-way migration", () => {
-    const parsed = parsePersistedState({
-      expandedProjectCwds: ["/repo/a"],
-    });
-
-    expect(
-      resolveProjectExpanded(parsed.projectExpandedById, [
-        legacyProjectCwdPreferenceKey("/repo/a"),
-      ]),
-    ).toBe(true);
-    expect(
-      resolveProjectExpanded(parsed.projectExpandedById, [
-        legacyProjectCwdPreferenceKey("/repo/b"),
-      ]),
-    ).toBe(false);
   });
 });
 
@@ -306,9 +227,6 @@ describe("uiStateStore persistence", () => {
 
   it("persists raw UI preferences including thread visit markers", () => {
     const state = makeUiState({
-      projectExpandedById: {
-        logical: false,
-      },
       projectOrder: ["physical-b", "physical-a"],
       threadLastVisitedAtById: {
         "environment:thread-1": "2026-02-25T12:35:00.000Z",
@@ -328,9 +246,6 @@ describe("uiStateStore persistence", () => {
       localStorageStub.getItem(PERSISTED_STATE_KEY) ?? "{}",
     ) as PersistedUiState;
     expect(persisted).toEqual({
-      projectExpandedById: {
-        logical: false,
-      },
       projectOrder: ["physical-b", "physical-a"],
       threadLastVisitedAtById: {
         "environment:thread-1": "2026-02-25T12:35:00.000Z",
@@ -363,18 +278,22 @@ describe("uiStateStore persistence", () => {
       "github.com/pingdotgg/t3code",
     );
   });
-
-  it("drops the temporary expanded-only migration fallback when rewriting state", () => {
-    const migrated = parsePersistedState({
-      expandedProjectCwds: ["/repo/a"],
-    });
-
-    persistState(migrated);
+  it("drops obsolete project-tree preferences while retaining saved order and visit markers", () => {
+    const previous = {
+      projectExpandedById: { repository: false },
+      collapsedProjectCwds: ["/repo"],
+      projectOrder: ["remote:repository", "local:repository"],
+      threadLastVisitedAtById: { "remote:thread": "2026-02-25T12:35:00.000Z" },
+    };
+    const current = parsePersistedState(previous);
+    persistState(current);
 
     const persisted = JSON.parse(
       localStorageStub.getItem(PERSISTED_STATE_KEY) ?? "{}",
     ) as PersistedUiState;
-    expect(resolveProjectExpanded(persisted.projectExpandedById ?? {}, ["unknown"])).toBe(true);
-    expect(persisted).not.toHaveProperty("threadPanelOpen");
+    expect(persisted.projectOrder).toEqual(previous.projectOrder);
+    expect(persisted.threadLastVisitedAtById).toEqual(previous.threadLastVisitedAtById);
+    expect(persisted).not.toHaveProperty("projectExpandedById");
+    expect(persisted).not.toHaveProperty("collapsedProjectCwds");
   });
 });

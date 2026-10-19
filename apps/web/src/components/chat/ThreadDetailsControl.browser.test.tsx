@@ -1,6 +1,7 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vite-plus/test";
+import { page, userEvent } from "vite-plus/test/browser";
 
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "../ui/menu";
 import { ThreadDetailsControl } from "./ThreadDetailsControl";
@@ -25,9 +26,14 @@ it("keeps the row label and one chevron when used as a menu trigger", async () =
     });
     const trigger = container.querySelector("button")!;
     expect(trigger.textContent).toBe("Run on this machine");
-    expect(trigger.querySelectorAll(".lucide-chevron-down")).toHaveLength(1);
-    await act(async () => trigger.click());
-    expect(document.querySelector('[role="menuitem"]')?.textContent).toBe("New worktree");
+    expect(trigger.querySelectorAll('[data-slot="select-icon"]')).toHaveLength(1);
+    const triggerControl = page.getByRole("button", { name: "Run on this machine", exact: true });
+    await act(() => triggerControl.click());
+    await expect.element(page.getByRole("menuitem", { name: "New worktree" })).toBeVisible();
+    await act(() => userEvent.keyboard("{Escape}"));
+    await expect
+      .element(page.getByRole("menuitem", { name: "New worktree" }))
+      .not.toBeInTheDocument();
   } finally {
     await act(async () => root.unmount());
     container.remove();

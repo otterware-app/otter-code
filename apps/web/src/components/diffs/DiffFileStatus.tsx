@@ -1,4 +1,5 @@
-import { InfoIcon, RotateCwIcon } from "lucide-react";
+import { RotateCwIcon } from "lucide-react";
+import { InfoIcon } from "~/lib/icons";
 import { Button } from "../ui/button";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 

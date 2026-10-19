@@ -16,6 +16,7 @@ import { sourceControlEnvironment } from "~/state/sourceControl";
 import { useAtomCommand } from "~/state/use-atom-command";
 import { useNewThreadHandler } from "./useHandleNewThread";
 import { suggestAppAccessForRemote } from "../components/sourceControlAppAccessToast";
+import { useAssignProjectToActiveSpace } from "./useProjectSpace";
 
 function errorMessage(error: unknown): string {
   return error instanceof Error && error.message.trim().length > 0
@@ -29,6 +30,7 @@ export function useNewProject() {
     reportFailure: false,
   });
   const handleNewThread = useNewThreadHandler();
+  const assignToActiveSpace = useAssignProjectToActiveSpace();
 
   const publishNewRepository = async (input: {
     readonly environmentId: EnvironmentId;
@@ -122,6 +124,7 @@ export function useNewProject() {
       return null;
     });
     if (project === null) return true;
+    assignToActiveSpace(project);
     await handleNewThread(projectRef).catch((error: unknown) => {
       toastManager.add(
         stackedThreadToast({

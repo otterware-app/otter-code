@@ -1,4 +1,5 @@
-import { ArrowLeftIcon, FileDiffIcon } from "lucide-react";
+import { FileDiffIcon } from "lucide-react";
+import { ArrowLeftIcon } from "~/lib/icons";
 import type { ComponentProps, ReactNode } from "react";
 
 import { cn } from "~/lib/utils";

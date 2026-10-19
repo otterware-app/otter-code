@@ -19,7 +19,8 @@ import {
   useRemoteOpenState,
 } from "../../remoteOpen";
 import { useEnvironment } from "../../state/environments";
-import { ChevronDownIcon, FolderClosedIcon, SquareArrowOutUpRightIcon } from "lucide-react";
+import { FolderClosedIcon, SquareArrowOutUpRightIcon } from "lucide-react";
+import { ChevronDownIcon } from "~/lib/icons";
 
 import { Group, GroupSeparator } from "../ui/group";
 import {

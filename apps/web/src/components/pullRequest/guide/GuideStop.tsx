@@ -3,6 +3,7 @@ import type {
   PullRequestReviewGuideAttention,
   PullRequestReviewGuideStop,
 } from "@t3tools/contracts";
+import { MessageCircleQuestionIcon, MessageSquareIcon } from "lucide-react";
 import {
   ArrowRightIcon,
   ChevronDownIcon,
@@ -10,9 +11,7 @@ import {
   ChevronUpIcon,
   EyeIcon,
   FileIcon,
-  MessageCircleQuestionIcon,
-  MessageSquareIcon,
-} from "lucide-react";
+} from "~/lib/icons";
 import type { ReactNode } from "react";
 
 import { getDiffLineStat } from "~/lib/diffRendering";

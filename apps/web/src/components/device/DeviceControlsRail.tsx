@@ -1,21 +1,23 @@
 import type { DeviceHostSummary, DevicePlatform } from "@t3tools/contracts";
 import {
-  Camera,
-  ChevronLeft,
-  Home,
-  Keyboard,
   Box,
   Maximize,
-  MoreHorizontal,
   PictureInPicture2,
   Power,
-  RotateCcw,
   SlidersHorizontal,
   Smartphone,
   Square,
   Type,
-  X,
 } from "lucide-react";
+import {
+  CameraIcon as Camera,
+  ChevronLeftIcon as ChevronLeft,
+  HomeIcon as Home,
+  KeyboardIcon as Keyboard,
+  MoreHorizontalIcon as MoreHorizontal,
+  RotateCcwIcon as RotateCcw,
+  XIcon as X,
+} from "~/lib/icons";
 import { Moon, Sun } from "lucide";
 import type { ReactNode } from "react";
 import { Button } from "~/components/ui/button";

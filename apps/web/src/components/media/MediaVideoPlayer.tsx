@@ -1,6 +1,7 @@
 import { settlePromise } from "@t3tools/client-runtime/state/runtime";
 import { AsyncResult } from "effect/reactivity";
-import { PlayIcon, RotateCwIcon, TriangleAlertIcon } from "lucide-react";
+import { RotateCwIcon } from "lucide-react";
+import { PlayIcon, TriangleAlertIcon } from "~/lib/icons";
 import { useState, type CSSProperties } from "react";
 
 import { observeIntersection } from "../../lib/observeIntersection";

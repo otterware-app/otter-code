@@ -11,14 +11,8 @@ import {
   squashAtomCommandFailure,
   type AtomCommandResult,
 } from "@t3tools/client-runtime/state/runtime";
-import {
-  BugIcon,
-  FlaskConicalIcon,
-  HammerIcon,
-  ListChecksIcon,
-  PlayIcon,
-  WrenchIcon,
-} from "lucide-react";
+import { WrenchIcon } from "lucide-react";
+import { BugIcon, FlaskConicalIcon, HammerIcon, ListChecksIcon, PlayIcon } from "~/lib/icons";
 import React, { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
 
 import {

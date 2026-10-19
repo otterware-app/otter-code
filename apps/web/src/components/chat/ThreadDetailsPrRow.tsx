@@ -9,14 +9,8 @@ import { PullRequestGlyph } from "../pullRequest/pullRequestIcons";
 import { selectEnvironmentQueryData } from "@t3tools/client-runtime/state/runtime";
 import type { EnvironmentProject } from "@t3tools/client-runtime/state/shell";
 import type { EnvironmentId, ProjectId, PullRequestRef } from "@t3tools/contracts";
-import {
-  ArrowUpRightIcon,
-  EyeIcon,
-  EyeOffIcon,
-  FileDiffIcon,
-  GitBranchIcon,
-  TriangleAlertIcon,
-} from "lucide-react";
+import { EyeOffIcon, FileDiffIcon } from "lucide-react";
+import { ArrowUpRightIcon, EyeIcon, GitBranchIcon, TriangleAlertIcon } from "~/lib/icons";
 import { AsyncResult } from "effect/reactivity";
 import { useState, type MouseEvent as ReactMouseEvent } from "react";
 

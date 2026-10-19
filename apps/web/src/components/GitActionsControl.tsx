@@ -26,17 +26,13 @@ import { useDeadlinePassed } from "../hooks/useDeadline";
 import { useNowSecond } from "../hooks/useNowSecond";
 import { flushSync } from "react-dom";
 import {
-  CheckIcon,
-  ChevronDownIcon,
   CloudDownloadIcon,
   CloudUploadIcon,
   FileDiffIcon,
   GitBranchPlusIcon,
-  GitCommitIcon,
-  InfoIcon,
   LockIcon,
-  GlobeIcon,
 } from "lucide-react";
+import { CheckIcon, ChevronDownIcon, GitCommitIcon, InfoIcon, GlobeIcon } from "~/lib/icons";
 import { Radio as RadioPrimitive } from "@base-ui/react/radio";
 import { RadioGroup } from "~/components/ui/radio-group";
 import { Spinner } from "~/components/ui/spinner";

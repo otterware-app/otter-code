@@ -11,14 +11,14 @@ import {
   type TerminalOutputUpdate,
   type TerminalSessionState,
 } from "@t3tools/client-runtime/state/terminal";
+import { Square } from "lucide-react";
 import {
   Plus,
-  Square,
   SquareSplitHorizontal,
   SquareSplitVertical,
-  TerminalSquare,
+  TerminalIcon as TerminalSquare,
   Trash2,
-} from "lucide-react";
+} from "~/lib/icons";
 import {
   AuthPreviewOperateScope,
   AuthOrchestrationOperateScope,

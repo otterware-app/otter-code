@@ -16,19 +16,21 @@ import type {
   PullRequestThreadCommentsResult,
 } from "@t3tools/contracts";
 import {
+  FlaskConicalOffIcon,
+  FolderTreeIcon,
+  MessageSquareOffIcon,
+  PilcrowIcon,
+  Settings2Icon,
+} from "lucide-react";
+import {
   ChevronDownIcon,
   ChevronRightIcon,
   Columns2Icon,
-  FlaskConicalOffIcon,
-  FolderTreeIcon,
   InfoIcon,
-  MessageSquareOffIcon,
-  PilcrowIcon,
   Rows3Icon,
-  Settings2Icon,
   TextWrapIcon,
   TriangleAlertIcon,
-} from "lucide-react";
+} from "~/lib/icons";
 import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown } from "lucide";
 import { useAtomRefresh } from "@effect/atom-react";
 import * as Schema from "effect/Schema";

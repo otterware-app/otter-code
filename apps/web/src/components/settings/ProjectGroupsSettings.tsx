@@ -1,43 +1,45 @@
 import { isScratchProject } from "@t3tools/client-runtime/state/projects";
 import type { ProjectGroupSetting } from "@t3tools/contracts";
-import { FolderPlusIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
-import { useProjectGroups } from "../../hooks/useProjectSpace";
-import { useClientSettings, useUpdatePrimarySettings } from "../../hooks/useSettings";
+import { useState } from "react";
+
+import { useProjectSpaceActions, useSelectProjectSpace } from "../../hooks/useProjectSpace";
+import { useClientSettings } from "../../hooks/useSettings";
+import {
+  AddPlusIcon,
+  ArrowRightIcon,
+  EllipsisIcon,
+  FolderIcon,
+  PencilIcon,
+  TrashCanIcon,
+  XIcon,
+} from "../../lib/icons";
 import { randomUUID } from "../../lib/utils";
-import { selectProjectGroupingSettings } from "../../logicalProject";
-import { deriveProjectIdentity } from "../../projectIdentity";
-import { buildSidebarProjectSnapshots } from "../../sidebarProjectGrouping";
+import { selectProjectGroupingSettings } from "@t3tools/client-runtime/state/project-grouping";
+import { projectSpaceIcon } from "../../projectSpaces";
+import {
+  buildSidebarProjectSnapshots,
+  type SidebarProjectSnapshot,
+} from "../../sidebarProjectGrouping";
 import { useProjects } from "../../state/entities";
 import { useEnvironments, usePrimaryEnvironmentId } from "../../state/environments";
 import { ProjectFavicon } from "../ProjectFavicon";
-import { ProjectMonogram } from "../ProjectMonogram";
+import { useNavigateToMainApp } from "../sidebar/mainAppLocation";
+import { SpaceEditorDialog } from "../spaces/SpaceEditorDialog";
+import { SpaceIcon } from "../spaces/SpaceIcon";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "../ui/menu";
 import { SettingsPageContainer, SettingsRow, SettingsSection } from "./settingsLayout";
 import { searchableSetting } from "./settingsSearch";
-/** The first "New group", "New group 2", ... that no group is called yet. */
-function nextGroupName(groups: ReadonlyArray<ProjectGroupSetting>): string {
-  const names = new Set(groups.map((group) => group.name));
-  for (let index = 1; ; index += 1) {
-    const name = index === 1 ? "New group" : `New group ${index}`;
-    if (!names.has(name)) return name;
-  }
-}
-/**
- * The rail's project groups. Each one is a space of its own: its threads in
- * the sidebar, and only its projects offered to new threads. Saved on every
- * connected environment so each device shows the same groups.
- */
+
 export function ProjectGroupsSettings() {
-  const { groups } = useProjectGroups();
-  const updateSettings = useUpdatePrimarySettings();
+  const { groups, canEdit, saveSpaces, moveProject } = useProjectSpaceActions();
   const projects = useProjects();
   const groupingSettings = useClientSettings(selectProjectGroupingSettings);
   const primaryEnvironmentId = usePrimaryEnvironmentId();
   const { environments } = useEnvironments();
-  // Every project a group can hold, as the sidebar names them. The machines'
-  // no-project homes belong to Chats, not to a group.
+  const setSpaceId = useSelectProjectSpace();
+  const navigateToMainApp = useNavigateToMainApp();
+  const [editor, setEditor] = useState<ProjectGroupSetting | "create" | null>(null);
   const projectOptions = (() => {
     const scratchRootByEnvironment = new Map(
       environments.map(
@@ -52,157 +54,142 @@ export function ProjectGroupsSettings() {
       ),
       settings: groupingSettings,
       primaryEnvironmentId,
-      resolveEnvironmentLabel: () => null,
+      resolveEnvironmentLabel: (environmentId) =>
+        environments.find((entry) => entry.environmentId === environmentId)?.label ?? null,
     }).toSorted((left, right) => left.displayName.localeCompare(right.displayName));
   })();
-  const projectOptionByKey = new Map(
-    projectOptions.map((option) => [option.projectKey, option] as const),
+  const projectByKey = new Map(projectOptions.map((project) => [project.projectKey, project]));
+  const assignedKeys = new Set(groups.flatMap((group) => group.projectKeys));
+  const unassigned = projectOptions.filter((project) => !assignedKeys.has(project.projectKey));
+
+  const projectTitle = (project: SidebarProjectSnapshot | undefined) => (
+    <span className="flex min-w-0 items-center gap-2">
+      {project ? <ProjectFavicon project={project} className="size-4 shrink-0" /> : null}
+      <span className="min-w-0 truncate">{project?.displayName ?? "Unavailable project"}</span>
+    </span>
   );
-  const saveGroups = (next: ReadonlyArray<ProjectGroupSetting>) =>
-    updateSettings({ railProjectGroups: next });
-  const updateGroup = (id: string, change: (group: ProjectGroupSetting) => ProjectGroupSetting) =>
-    saveGroups(groups.map((group) => (group.id === id ? change(group) : group)));
+
   return (
     <SettingsPageContainer>
       <SettingsSection
         id={searchableSetting("project-groups").id}
-        title="Project groups"
+        title="Spaces"
         headerAction={
           <Button
             size="xs"
             variant="outline"
-            onClick={() =>
-              saveGroups([
-                ...groups,
-                { id: randomUUID(), name: nextGroupName(groups), projectKeys: [] },
-              ])
-            }
+            disabled={!canEdit}
+            onClick={() => setEditor("create")}
           >
-            <PlusIcon />
-            New group
+            <AddPlusIcon />
+            New space
           </Button>
         }
       >
         <SettingsRow
-          title="Groups in the rail"
-          description={
-            groups.length === 0
-              ? "Make a group to give a set of projects its own space in the rail. All projects and Chats are always there."
-              : "Each group lists its threads in the sidebar and offers only its projects to new threads. All projects and Chats are always there."
-          }
+          title="A place for each kind of work"
+          description="Organize projects into Spaces. Home shows every project; selecting a Space selects its projects."
         />
       </SettingsSection>
+
       {groups.map((group) => {
-        const identity = deriveProjectIdentity(group.name);
-        const memberKeys = new Set(group.projectKeys);
-        const addable = projectOptions.filter((option) => !memberKeys.has(option.projectKey));
+        const members = new Set(group.projectKeys);
+        const addable = projectOptions.filter((project) => !members.has(project.projectKey));
         return (
           <SettingsSection
             key={group.id}
             title={group.name}
-            icon={<ProjectMonogram text={identity.monogram} color={identity.color} />}
+            icon={<SpaceIcon icon={projectSpaceIcon(group)} />}
             headerAction={
-              <Button
-                size="icon-xs"
-                variant="ghost"
-                aria-label={`Delete ${group.name}`}
-                onClick={() => saveGroups(groups.filter((entry) => entry.id !== group.id))}
-              >
-                <Trash2Icon />
-              </Button>
+              <Menu>
+                <MenuTrigger
+                  render={
+                    <Button
+                      size="icon-xs"
+                      variant="ghost-muted"
+                      aria-label={`${group.name} actions`}
+                    />
+                  }
+                >
+                  <EllipsisIcon />
+                </MenuTrigger>
+                <MenuPopup align="end">
+                  <MenuItem
+                    onClick={() => {
+                      setSpaceId(group.id);
+                      void navigateToMainApp();
+                    }}
+                  >
+                    <SpaceIcon icon={projectSpaceIcon(group)} />
+                    Open space
+                  </MenuItem>
+                  <MenuItem disabled={!canEdit} onClick={() => setEditor(group)}>
+                    <PencilIcon />
+                    Edit space…
+                  </MenuItem>
+                  <MenuItem
+                    disabled={!canEdit}
+                    onClick={() => saveSpaces(groups.filter((entry) => entry.id !== group.id))}
+                  >
+                    <TrashCanIcon />
+                    Delete space
+                  </MenuItem>
+                </MenuPopup>
+              </Menu>
             }
           >
             <SettingsRow
-              title="Name"
-              control={
-                <Input
-                  // Remounts when the saved name changes elsewhere.
-                  key={group.name}
-                  size="sm"
-                  aria-label={`${group.name} name`}
-                  defaultValue={group.name}
-                  className="w-48"
-                  onBlur={(event) => {
-                    const name = event.currentTarget.value.trim();
-                    if (name.length === 0) {
-                      event.currentTarget.value = group.name;
-                      return;
-                    }
-                    if (name !== group.name) updateGroup(group.id, (entry) => ({ ...entry, name }));
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") event.currentTarget.blur();
-                    if (event.key === "Escape") {
-                      event.currentTarget.value = group.name;
-                      event.currentTarget.blur();
-                    }
-                  }}
-                />
-              }
-            />
-            <SettingsRow
-              title="Projects"
+              title={`${group.projectKeys.length} ${group.projectKeys.length === 1 ? "project" : "projects"}`}
               description={
                 group.projectKeys.length === 0
-                  ? "No projects yet."
-                  : `${group.projectKeys.length} ${group.projectKeys.length === 1 ? "project" : "projects"}`
+                  ? "Add a project to start working in this Space."
+                  : undefined
               }
               control={
                 <Menu>
                   <MenuTrigger
-                    render={<Button size="sm" variant="outline" disabled={addable.length === 0} />}
+                    render={
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={!canEdit || addable.length === 0}
+                      />
+                    }
                   >
-                    <FolderPlusIcon />
+                    <AddPlusIcon />
                     Add project
                   </MenuTrigger>
-                  <MenuPopup align="end" className="max-h-80 overflow-y-auto">
-                    {addable.map((option) => (
+                  <MenuPopup align="end">
+                    {addable.map((project) => (
                       <MenuItem
-                        key={option.projectKey}
-                        onClick={() =>
-                          updateGroup(group.id, (entry) => ({
-                            ...entry,
-                            projectKeys: [...entry.projectKeys, option.projectKey],
-                          }))
-                        }
+                        key={project.projectKey}
+                        onClick={() => moveProject(project.projectKey, group.id)}
                       >
-                        <ProjectFavicon project={option} className="size-4 shrink-0" />
-                        <span className="min-w-0 truncate">{option.displayName}</span>
+                        {projectTitle(project)}
                       </MenuItem>
                     ))}
                   </MenuPopup>
                 </Menu>
               }
             />
-            {group.projectKeys.map((projectKey) => {
-              const option = projectOptionByKey.get(projectKey);
+            {group.projectKeys.map((key) => {
+              const project = projectByKey.get(key);
               return (
                 <SettingsRow
-                  key={projectKey}
-                  title={
-                    <span className="flex min-w-0 items-center gap-2">
-                      {option ? (
-                        <ProjectFavicon project={option} className="size-4 shrink-0" />
-                      ) : null}
-                      <span className="min-w-0 truncate">
-                        {option?.displayName ?? "Unavailable project"}
-                      </span>
-                    </span>
+                  key={key}
+                  title={projectTitle(project)}
+                  description={
+                    project
+                      ? undefined
+                      : "This project is unavailable. Its Space membership is preserved."
                   }
-                  // A member whose machine is offline or whose project was
-                  // removed keeps its place until the user removes it.
-                  description={option ? undefined : projectKey}
                   control={
                     <Button
                       size="icon-xs"
-                      variant="ghost"
-                      aria-label={`Remove ${option?.displayName ?? "project"} from ${group.name}`}
-                      onClick={() =>
-                        updateGroup(group.id, (entry) => ({
-                          ...entry,
-                          projectKeys: entry.projectKeys.filter((key) => key !== projectKey),
-                        }))
-                      }
+                      variant="ghost-muted"
+                      disabled={!canEdit}
+                      aria-label={`Remove ${project?.displayName ?? "project"} from ${group.name}`}
+                      onClick={() => moveProject(key, null)}
                     >
                       <XIcon />
                     </Button>
@@ -213,6 +200,65 @@ export function ProjectGroupsSettings() {
           </SettingsSection>
         );
       })}
+
+      <SettingsSection title="Unassigned" icon={<FolderIcon className="size-4" />}>
+        <SettingsRow
+          title="Unassigned projects"
+          description={
+            unassigned.length === 0
+              ? "Every project has a Space."
+              : "These projects appear in Home. Add them to a Space to select them together."
+          }
+        />
+        {unassigned.map((project) => (
+          <SettingsRow
+            key={project.projectKey}
+            title={projectTitle(project)}
+            control={
+              <Menu>
+                <MenuTrigger
+                  render={
+                    <Button size="sm" variant="ghost" disabled={!canEdit || groups.length === 0} />
+                  }
+                >
+                  <ArrowRightIcon />
+                  Move to Space
+                </MenuTrigger>
+                <MenuPopup align="end">
+                  {groups.map((group) => (
+                    <MenuItem
+                      key={group.id}
+                      onClick={() => moveProject(project.projectKey, group.id)}
+                    >
+                      <SpaceIcon icon={projectSpaceIcon(group)} />
+                      {group.name}
+                    </MenuItem>
+                  ))}
+                </MenuPopup>
+              </Menu>
+            }
+          />
+        ))}
+      </SettingsSection>
+      {editor ? (
+        <SpaceEditorDialog
+          {...(editor === "create"
+            ? {}
+            : { initialValue: { name: editor.name, icon: projectSpaceIcon(editor) } })}
+          existingNames={groups
+            .filter((group) => editor === "create" || group.id !== editor.id)
+            .map((group) => group.name)}
+          onClose={() => setEditor(null)}
+          onSave={(value) => {
+            if (editor === "create")
+              saveSpaces([...groups, { id: randomUUID(), ...value, projectKeys: [] }]);
+            else
+              saveSpaces(
+                groups.map((group) => (group.id === editor.id ? { ...group, ...value } : group)),
+              );
+          }}
+        />
+      ) : null}
     </SettingsPageContainer>
   );
 }

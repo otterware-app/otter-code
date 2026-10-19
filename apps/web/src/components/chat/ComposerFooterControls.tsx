@@ -1,3 +1,4 @@
+import { BotIcon } from "~/lib/icons";
 import type {
   ModelSelection,
   ProviderInstanceId,
@@ -5,7 +6,7 @@ import type {
   RuntimeMode,
 } from "@t3tools/contracts";
 import { createModelSelection } from "@t3tools/shared/model";
-import { BotIcon, PencilRulerIcon } from "lucide-react";
+import { PencilRulerIcon } from "lucide-react";
 import { type ComponentProps, memo, useId, useRef, useState } from "react";
 
 import type { ContextWindowSnapshot } from "../../lib/contextWindow";
@@ -124,7 +125,11 @@ export const ComposerFooterModeControls = memo(function ComposerFooterModeContro
             icon={RuntimeModeIcon}
             size={size}
             // Match the label, not full foreground: the chip's presence already marks the mode.
-            {...(props.emphasized ? { className: "text-current" } : {})}
+            {...(props.emphasized
+              ? { className: "text-current" }
+              : props.runtimeMode === "full-access"
+                ? { className: "text-permission" }
+                : {})}
           />
           <span
             data-composer-control-label

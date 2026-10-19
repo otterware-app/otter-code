@@ -1,4 +1,4 @@
-import { ChevronRightIcon } from "lucide-react";
+import { ChevronRightIcon } from "~/lib/icons";
 import {
   Children,
   isValidElement,

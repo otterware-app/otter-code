@@ -68,7 +68,17 @@ export const make = Effect.gen(function* () {
   const platform = yield* HostProcess.Platform;
   const homeDirectory = yield* HostProcess.HomeDirectory;
   const linuxDesktopEntryConfig = yield* LinuxDesktopEntryConfig;
+  const environment = yield* HostProcess.Environment;
   return yield* Effect.sync((): DesktopPreReadyElectronOptions["Service"] => {
+    const macDevelopmentName =
+      platform === "darwin"
+        ? DesktopEarlyElectronStartup.resolveDevelopmentMacAppName(environment)
+        : null;
+    if (macDevelopmentName !== null) {
+      // Electron fixes the Keychain service name before asynchronous startup.
+      // Worktrees must not request the generic Electron app's encryption key.
+      Electron.app.setName(macDevelopmentName);
+    }
     const linuxPasswordStoreCommandLine =
       platform === "linux"
         ? readCommandLineSwitchValue(Electron.app.commandLine, "password-store")

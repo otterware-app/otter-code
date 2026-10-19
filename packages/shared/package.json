@@ -578,6 +578,10 @@
     "./pinOrderKey": {
       "types": "./src/pinOrderKey.ts",
       "import": "./src/pinOrderKey.ts"
+    },
+    "./otterAccounts": {
+      "types": "./src/otterAccounts.ts",
+      "import": "./src/otterAccounts.ts"
     }
   },
   "scripts": {

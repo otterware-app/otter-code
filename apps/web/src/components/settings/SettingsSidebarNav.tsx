@@ -65,18 +65,6 @@ import { useAvailableSettingsSearchItems } from "./useAvailableSettingsSearchIte
 import { handleSettingsSectionKeyDown } from "./settingsSectionNavigation";
 import { workspaceAreaProps } from "../../lib/workspaceFocus";
 
-const SnapShotIcon = createLucideIcon("snap-shot", [
-  [
-    "path",
-    {
-      d: "M8 3H6a3 3 0 0 0-3 3v2M16 3h2a3 3 0 0 1 3 3v2M21 16v2a3 3 0 0 1-3 3h-2M8 21H6a3 3 0 0 1-3-3v-2",
-      key: "capture-frame",
-    },
-  ],
-  ["rect", { width: "10", height: "8", x: "7", y: "8", rx: "2", key: "window" }],
-  ["circle", { cx: "12", cy: "12", r: "1.5", key: "lens" }],
-]);
-
 const T3ConnectSidebarSignIn = lazy(() =>
   import("../accounts/T3ConnectSidebarSignIn").then((module) => ({
     default: module.T3ConnectSidebarSignIn,
@@ -334,7 +322,8 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
               </p>
             ) : null}
             {isSearching ? (
-              <SidebarMenu
+              <ul
+                className="flex flex-col gap-0.5"
                 id={hasResults ? "settings-search-results" : undefined}
                 role={hasResults ? "listbox" : undefined}
                 aria-label={hasResults ? gt("Settings search results") : undefined}
@@ -350,13 +339,15 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
                       role="option"
                       aria-selected={index === activeResultIndex}
                       tabIndex={-1}
-                      size="sm"
-                      isActive={index === activeResultIndex}
-                      className="h-auto min-h-10 items-start"
+                      className={cn(
+                        SETTINGS_NAV_ROW,
+                        "h-auto min-h-10 items-start py-1",
+                        index === activeResultIndex &&
+                          "bg-sidebar-row-selected text-sidebar-foreground",
+                      )}
                       onMouseMove={() => setActiveResultIndex(index)}
                       onClick={() => handleSearchResultClick(item)}
                     >
-                      <SettingsSectionIcon to={item.to} />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium text-sidebar-foreground">
                           {m(item.title)}
@@ -365,10 +356,10 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
                           {m(SETTINGS_SECTION_LABELS[item.to])}
                         </span>
                       </span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+                    </button>
+                  </li>
                 ))}
-              </SidebarMenu>
+              </ul>
             ) : (
               <div className="flex flex-col gap-4">
                 {compactSearchOpen ? null : (

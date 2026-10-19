@@ -320,7 +320,7 @@ const relayDashboardCharts = (dataset: string): ReadonlyArray<QueryChart> => {
           `| extend url = tostring(['attributes.url.full'])`,
           `| extend phase = case(`,
           `    name == "ConnectionDriver.checkRoute", "0. Direct route check, before any relay fallback",`,
-          `    name == "relay.connection.cloudSessionToken.resolve", "1. Clerk session token",`,
+          `    name == "relay.connection.cloudSessionToken.resolve", "1. Otter account session token",`,
           `    name == "clientRuntime.managedRelay.exchangeAccessToken", "2. Relay token exchange",`,
           `    kind == "client" and url startswith "https://relay.t3.codes/v1/environments/" and url endswith "/connect", "3. Relay connect, minting a host credential",`,
           `    name == "environment.authorization.descriptor", "4. Host descriptor",`,

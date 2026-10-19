@@ -16,14 +16,8 @@ import { environmentAtomList, environmentIdsKey } from "../../state/environmentA
 import { serverEnvironment } from "../../state/server";
 import { useAtomCommand } from "../../state/use-atom-command";
 import { Button, InlineButton } from "../ui/button";
-import {
-  CheckIcon,
-  ChevronDownIcon,
-  CircleIcon,
-  MoreVertical,
-  PlusIcon,
-  TriangleAlertIcon,
-} from "lucide-react";
+import { CircleIcon, MoreVertical } from "lucide-react";
+import { CheckIcon, ChevronDownIcon, PlusIcon, TriangleAlertIcon } from "~/lib/icons";
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "../ui/collapsible";
 import { Menu, MenuTrigger, MenuPopup, MenuItem } from "../ui/menu";
 import { SettingsRow } from "./settingsLayout";

@@ -1,31 +1,6 @@
-import {
-  lazy,
-  Suspense,
-  useEffect,
-  useRef,
-  useState,
-  type ComponentType,
-  type KeyboardEvent,
-} from "react";
-import {
-  ArchiveIcon,
-  BlocksIcon,
-  BotIcon,
-  createLucideIcon,
-  CalendarClockIcon,
-  BracesIcon,
-  GitBranchIcon,
-  HardDriveIcon,
-  PanelsTopLeftIcon,
-  KeyboardIcon,
-  LayersIcon,
-  Link2Icon,
-  PaletteIcon,
-  PuzzleIcon,
-  SearchIcon,
-  Settings2Icon,
-  XIcon,
-} from "lucide-react";
+import { lazy, Suspense, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { SearchIcon, XIcon } from "~/lib/icons";
+import { cn } from "~/lib/utils";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 
 import { Button } from "../ui/button";
@@ -34,9 +9,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   useSidebar,
   SidebarInput,
 } from "../ui/sidebar";
@@ -52,18 +24,6 @@ import {
 import { useAvailableSettingsSearchItems } from "./useAvailableSettingsSearchItems";
 import { validateSettingsScopeSearch } from "./settingsScope";
 
-const SnapShotIcon = createLucideIcon("snap-shot", [
-  [
-    "path",
-    {
-      d: "M8 3H6a3 3 0 0 0-3 3v2M16 3h2a3 3 0 0 1 3 3v2M21 16v2a3 3 0 0 1-3 3h-2M8 21H6a3 3 0 0 1-3-3v-2",
-      key: "capture-frame",
-    },
-  ],
-  ["rect", { width: "10", height: "8", x: "7", y: "8", rx: "2", key: "window" }],
-  ["circle", { cx: "12", cy: "12", r: "1.5", key: "lens" }],
-]);
-
 const T3ConnectSidebarSignIn = lazy(() =>
   import("../accounts/T3ConnectSidebarSignIn").then((module) => ({
     default: module.T3ConnectSidebarSignIn,
@@ -75,55 +35,57 @@ const T3ConnectSidebarAvatar = lazy(() =>
   })),
 );
 
-const SETTINGS_SECTION_ICONS: Readonly<
-  Record<SettingsPath, ComponentType<{ className?: string }>>
-> = {
-  "/settings/general": Settings2Icon,
-  "/settings/diagnostics": Settings2Icon,
-  "/settings/appearance": PaletteIcon,
-  "/settings/projects": PanelsTopLeftIcon,
-  "/settings/project-groups": LayersIcon,
-  "/settings/keybindings": KeyboardIcon,
-  "/settings/snap-shot": SnapShotIcon,
-  "/settings/providers": BotIcon,
-  "/settings/integrations": BlocksIcon,
-  "/settings/extensions": PuzzleIcon,
-  "/settings/scheduled-tasks": CalendarClockIcon,
-  "/settings/source-control": GitBranchIcon,
-  "/settings/code-intelligence": BracesIcon,
-  "/settings/storage": HardDriveIcon,
-  "/settings/connections": Link2Icon,
-  "/settings/archived": ArchiveIcon,
-};
-
-const SETTINGS_NAV_ITEMS: ReadonlyArray<{
+const SETTINGS_NAV_GROUPS: ReadonlyArray<{
+  id: string;
   label: string;
-  to: SettingsPath;
-  icon: ComponentType<{ className?: string }>;
-}> = (Object.keys(SETTINGS_SECTION_LABELS) as SettingsPath[])
-  .filter((to) => to !== "/settings/diagnostics")
-  .map((to) => ({
-    to,
-    label: SETTINGS_SECTION_LABELS[to],
-    icon: SETTINGS_SECTION_ICONS[to],
-  }));
+  paths: ReadonlyArray<SettingsPath>;
+}> = [
+  {
+    id: "personal",
+    label: "Personal",
+    paths: ["/settings/general", "/settings/appearance", "/settings/keybindings"],
+  },
+  {
+    id: "integrations",
+    label: "Integrations",
+    paths: [
+      "/settings/snap-shot",
+      "/settings/integrations",
+      "/settings/extensions",
+      "/settings/connections",
+    ],
+  },
+  {
+    id: "coding",
+    label: "Coding",
+    paths: ["/settings/providers", "/settings/source-control", "/settings/code-intelligence"],
+  },
+  {
+    id: "workspace",
+    label: "Workspace",
+    paths: ["/settings/projects", "/settings/project-groups"],
+  },
+  { id: "system", label: "System", paths: ["/settings/scheduled-tasks", "/settings/storage"] },
+  { id: "archived", label: "Archived", paths: ["/settings/archived"] },
+];
 
-function SettingsSectionIcon({ to }: { to: SettingsPath }) {
-  const Icon = SETTINGS_SECTION_ICONS[to];
-  return <Icon className="mt-0.5 size-3.5 shrink-0 text-sidebar-muted-foreground/60" />;
-}
+const SETTINGS_NAV_ROW =
+  "flex h-7 w-full cursor-pointer items-center rounded-md px-2 text-left text-ui font-normal text-sidebar-foreground/90 outline-hidden hover:bg-sidebar-row-hover hover:text-sidebar-foreground focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring";
 
 export function SettingsSidebarNav({ pathname }: { pathname: string }) {
   const navigate = useNavigate();
   const currentHash = useLocation({ select: (location) => location.hash });
   const currentSearch = useLocation({ select: (location) => location.search });
   const scopeSearch = validateSettingsScopeSearch(currentSearch);
-  const navItems = SETTINGS_NAV_ITEMS.filter(
-    (item) =>
-      (item.to !== "/settings/projects" || isSettingsOverviewVisible(scopeSearch)) &&
-      // Browser extensions run in the desktop app's browser only.
-      (item.to !== "/settings/extensions" || window.desktopBridge?.previewExtensions),
-  );
+  const navGroups = SETTINGS_NAV_GROUPS.map((group) => ({
+    ...group,
+    paths: group.paths.filter(
+      (to) =>
+        (to !== "/settings/projects" || isSettingsOverviewVisible(scopeSearch)) &&
+        // Browser extensions run in the desktop app's browser only.
+        (to !== "/settings/extensions" || window.desktopBridge?.previewExtensions),
+    ),
+  })).filter((group) => group.paths.length > 0);
   const { isMobile, setOpenMobile, open, setOpen } = useSidebar();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
@@ -252,7 +214,7 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
       <SidebarContent className="overflow-x-hidden">
         <SidebarGroup>
           <div className="flex flex-col gap-2">
-            <div className="flex h-8 items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-sidebar-muted-foreground hover:bg-sidebar-row-hover hover:text-sidebar-foreground">
+            <div className="flex h-8 items-center gap-2 rounded-md px-2 py-1.5 text-ui font-normal text-sidebar-muted-foreground hover:bg-sidebar-row-hover hover:text-sidebar-foreground">
               <SearchIcon className="size-4 shrink-0 text-sidebar-muted-foreground/80" />
               <SidebarInput
                 ref={searchInputRef}
@@ -304,61 +266,78 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
               </p>
             ) : null}
             {isSearching ? (
-              <SidebarMenu
+              <ul
+                className="flex flex-col gap-0.5"
                 id={hasResults ? "settings-search-results" : undefined}
                 role={hasResults ? "listbox" : undefined}
                 aria-label={hasResults ? "Settings search results" : undefined}
               >
                 {results.map((item, index) => (
-                  <SidebarMenuItem key={item.id} role="presentation">
-                    <SidebarMenuButton
+                  <li key={item.id} role="presentation">
+                    <button
+                      type="button"
                       id={`settings-search-result-${item.id}`}
                       role="option"
                       aria-selected={index === activeResultIndex}
                       tabIndex={-1}
-                      size="sm"
-                      isActive={index === activeResultIndex}
-                      className="h-auto min-h-10 items-start"
+                      className={cn(
+                        SETTINGS_NAV_ROW,
+                        "h-auto min-h-10 items-start py-1",
+                        index === activeResultIndex &&
+                          "bg-sidebar-row-selected text-sidebar-foreground",
+                      )}
                       onMouseMove={() => setActiveResultIndex(index)}
                       onClick={() => handleSearchResultClick(item)}
                     >
-                      <SettingsSectionIcon to={item.to} />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium text-sidebar-foreground">
+                        <span className="block truncate text-ui font-normal text-sidebar-foreground">
                           {item.title}
                         </span>
                         <span className="block truncate text-2xs text-sidebar-muted-foreground/75">
                           {SETTINGS_SECTION_LABELS[item.to]}
                         </span>
                       </span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+                    </button>
+                  </li>
                 ))}
-              </SidebarMenu>
+              </ul>
             ) : (
-              <SidebarMenu>
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  const isGeneralDetailPage =
-                    item.to === "/settings/general" &&
-                    pathname === "/settings/open-source-licenses";
-                  const isActive =
-                    isGeneralDetailPage ||
-                    pathname === item.to ||
-                    pathname.startsWith(`${item.to}/`);
-                  return (
-                    <SidebarMenuItem key={item.to}>
-                      <SidebarMenuButton
-                        isActive={isActive}
-                        onClick={() => handleSectionClick(item.to)}
-                      >
-                        <Icon />
-                        <span className="truncate">{item.label}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
+              <nav aria-label="Settings sections" className="flex flex-col gap-3">
+                {navGroups.map((group) => (
+                  <section key={group.id} aria-labelledby={`settings-nav-${group.id}`}>
+                    <h2
+                      id={`settings-nav-${group.id}`}
+                      className="flex h-7 items-center px-2 text-ui font-normal text-sidebar-muted-foreground/60"
+                    >
+                      {group.label}
+                    </h2>
+                    <ul className="flex flex-col gap-0.5">
+                      {group.paths.map((to) => {
+                        const isGeneralDetailPage =
+                          to === "/settings/general" &&
+                          pathname === "/settings/open-source-licenses";
+                        const isActive =
+                          isGeneralDetailPage || pathname === to || pathname.startsWith(`${to}/`);
+                        return (
+                          <li key={to}>
+                            <button
+                              type="button"
+                              aria-current={isActive ? "page" : undefined}
+                              className={cn(
+                                SETTINGS_NAV_ROW,
+                                isActive && "bg-sidebar-row-selected text-sidebar-foreground",
+                              )}
+                              onClick={() => handleSectionClick(to)}
+                            >
+                              <span className="truncate">{SETTINGS_SECTION_LABELS[to]}</span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+                ))}
+              </nav>
             )}
           </div>
         </SidebarGroup>

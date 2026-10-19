@@ -23,6 +23,19 @@ const decodeServerSettingsPatch = Schema.decodeUnknownSync(ServerSettingsPatch);
 const encodeServerSettings = Schema.encodeSync(ServerSettings);
 const decodeClaudeSettings = Schema.decodeUnknownSync(ClaudeSettings);
 
+describe("Space settings", () => {
+  it("preserves existing memberships and optional Space icons in snapshots and writes", () => {
+    const input = {
+      railProjectGroups: [
+        { id: "existing", name: "Work", projectKeys: ["repo", "offline"] },
+        { id: "new", name: "Personal", icon: "rocket", projectKeys: [] },
+      ],
+    };
+    expect(encodeServerSettings(decodeServerSettings(input))).toMatchObject(input);
+    expect(decodeServerSettingsPatch(input)).toEqual(input);
+  });
+});
+
 describe("ServerSettings response streaming", () => {
   it("defaults to paragraph buffering", () => {
     expect(decodeServerSettings({}).responseStreamingMode).toBe("paragraph");
@@ -611,9 +624,46 @@ describe("ClientSettings appearance contrast", () => {
   });
 });
 
+describe("ClientSettings sidebar organization", () => {
+  it("discards retired sidebar switches while preserving saved client preferences", () => {
+    const preferences = {
+      timestampFormat: "12-hour",
+      fontSizeCode: 14,
+      railShortcuts: ["project:remote:repository"],
+    };
+    const stored = {
+      ...preferences,
+      sidebarViewMode: "projects",
+      legacySidebarEnabled: true,
+      sidebarThreadPreviewCount: 6,
+    };
+    const decoded = decodeClientSettings(stored);
+    expect(decoded).toMatchObject(preferences);
+    expect(decoded).not.toHaveProperty("sidebarViewMode");
+    expect(decoded).not.toHaveProperty("legacySidebarEnabled");
+    expect(decoded).not.toHaveProperty("sidebarThreadPreviewCount");
+    expect(encodeClientSettings(decoded)).toMatchObject(preferences);
+    expect(decodeClientSettingsPatch(stored)).toEqual(preferences);
+  });
+
+  it("defaults rail preferences and round-trips saved project and Space shortcuts", () => {
+    const defaults = decodeClientSettings({});
+    expect(defaults.railShortcuts).toEqual([]);
+    expect(defaults.railItemOrder).toEqual([]);
+    expect(defaults.hiddenRailItems).toEqual([]);
+    const input = {
+      railShortcuts: ["space:__void__", "project:remote:repository"],
+      railItemOrder: ["spaces", "home", "automations"],
+      hiddenRailItems: ["pullRequests"],
+    };
+    expect(encodeClientSettings(decodeClientSettings(input))).toMatchObject(input);
+    expect(decodeClientSettingsPatch(input)).toEqual(input);
+  });
+});
+
 describe("ClientSettings panel animations", () => {
-  it("defaults to instant changes", () => {
-    expect(decodeClientSettings({}).panelAnimationDurationMs).toBe(0);
+  it("defaults to a short panel transition", () => {
+    expect(decodeClientSettings({}).panelAnimationDurationMs).toBe(125);
   });
 
   it.each([0, 400])("accepts a panel animation duration: %s", (value) => {
@@ -628,8 +678,8 @@ describe("ClientSettings panel animations", () => {
 });
 
 describe("ClientSettings environment identification", () => {
-  it("defaults to artwork and accepts each presentation mode", () => {
-    expect(decodeClientSettings({}).environmentIdentificationMode).toBe("artwork");
+  it("defaults to a version pill and accepts each presentation mode", () => {
+    expect(decodeClientSettings({}).environmentIdentificationMode).toBe("pill");
 
     for (const mode of ["artwork", "pill", "none"] as const) {
       expect(
@@ -646,16 +696,11 @@ describe("ClientSettings environment identification", () => {
 });
 
 describe("ClientSettings sidebar", () => {
-  it("defaults to the current sidebar", () => {
-    expect(decodeClientSettings({}).legacySidebarEnabled).toBe(false);
-  });
-
   it("drops the retired sidebar v2 beta keys, resetting everyone to the default", () => {
     const decoded = decodeClientSettings({
       sidebarV2Enabled: false,
       sidebarV2ConfiguredByUser: true,
     });
-    expect(decoded.legacySidebarEnabled).toBe(false);
     expect(decoded).not.toHaveProperty("sidebarV2Enabled");
     expect(decoded).not.toHaveProperty("sidebarV2ConfiguredByUser");
   });
@@ -668,13 +713,6 @@ describe("ClientSettings sidebar", () => {
     expect(decodeClientSettingsPatch(stored)).toEqual({});
   });
 
-  it("preserves an explicit legacy sidebar opt-in", () => {
-    expect(decodeClientSettings({ legacySidebarEnabled: true }).legacySidebarEnabled).toBe(true);
-    expect(decodeClientSettingsPatch({ legacySidebarEnabled: true }).legacySidebarEnabled).toBe(
-      true,
-    );
-  });
-
   it("keeps unpin confirmation opt-in and patchable", () => {
     expect(decodeClientSettings({}).confirmThreadUnpin).toBe(false);
     expect(decodeClientSettingsPatch({ confirmThreadUnpin: true }).confirmThreadUnpin).toBe(true);
@@ -683,14 +721,14 @@ describe("ClientSettings sidebar", () => {
 });
 
 describe("ClientSettings context window meter", () => {
-  it("defaults off and preserves an explicit legacy opt-in", () => {
-    expect(decodeClientSettings({}).contextWindowMeterEnabled).toBe(false);
+  it("defaults on and preserves an explicit opt-out", () => {
+    expect(decodeClientSettings({}).contextWindowMeterEnabled).toBe(true);
     expect(
-      decodeClientSettings({ contextWindowMeterEnabled: true }).contextWindowMeterEnabled,
-    ).toBe(true);
+      decodeClientSettings({ contextWindowMeterEnabled: false }).contextWindowMeterEnabled,
+    ).toBe(false);
     expect(
-      decodeClientSettingsPatch({ contextWindowMeterEnabled: true }).contextWindowMeterEnabled,
-    ).toBe(true);
+      decodeClientSettingsPatch({ contextWindowMeterEnabled: false }).contextWindowMeterEnabled,
+    ).toBe(false);
   });
 });
 

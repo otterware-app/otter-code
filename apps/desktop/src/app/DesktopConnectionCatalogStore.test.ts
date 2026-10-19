@@ -27,9 +27,16 @@ const encodeLegacySavedEnvironments = Schema.encodeEffect(
     Schema.Struct({ version: Schema.Literal(1), records: Schema.Array(Schema.Unknown) }),
   ),
 );
-function layerSafeStorageFor(available: boolean, failDecrypt: Ref.Ref<boolean> | null = null) {
+function layerSafeStorageFor(
+  available: boolean,
+  failDecrypt: Ref.Ref<boolean> | null = null,
+  onAvailabilityCheck?: () => void,
+) {
   return Layer.succeed(ElectronSafeStorage.ElectronSafeStorage, {
-    isEncryptionAvailable: Effect.succeed(available),
+    isEncryptionAvailable: Effect.sync(() => {
+      onAvailabilityCheck?.();
+      return available;
+    }),
     encryptString: (value) => Effect.succeed(textEncoder.encode(`encrypted:${value}`)),
     decryptString: (value) => {
       return Effect.gen(function* () {
@@ -54,6 +61,7 @@ function layerFor(
   encryptionAvailable = true,
   failDecrypt: Ref.Ref<boolean> | null = null,
   fileSystemLayer: Layer.Layer<FileSystem.FileSystem> = NodeServices.layer,
+  onAvailabilityCheck?: () => void,
 ) {
   const layerEnvironment = DesktopEnvironment.layer({
     dirname: "/repo/apps/desktop/src",
@@ -70,7 +78,11 @@ function layerFor(
       Layer.mergeAll(NodeServices.layer, DesktopConfig.layerTest({ T3CODE_HOME: baseDir })),
     ),
   );
-  const layerSafeStorage = layerSafeStorageFor(encryptionAvailable, failDecrypt);
+  const layerSafeStorage = layerSafeStorageFor(
+    encryptionAvailable,
+    failDecrypt,
+    onAvailabilityCheck,
+  );
   const layerDependencies = Layer.mergeAll(
     layerEnvironment,
     layerSafeStorage,
@@ -90,16 +102,38 @@ function layerFor(
 const withStore = <A, E, R>(
   effect: Effect.Effect<A, E, R | DesktopConnectionCatalogStore.DesktopConnectionCatalogStore>,
   encryptionAvailable = true,
+  onAvailabilityCheck?: () => void,
 ) =>
   Effect.gen(function* () {
     const fileSystem = yield* FileSystem.FileSystem;
     const baseDir = yield* fileSystem.makeTempDirectoryScoped({
       prefix: "t3-desktop-connection-catalog-test-",
     });
-    return yield* effect.pipe(Effect.provide(layerFor(baseDir, encryptionAvailable)));
+    return yield* effect.pipe(
+      Effect.provide(
+        layerFor(baseDir, encryptionAvailable, null, NodeServices.layer, onAvailabilityCheck),
+      ),
+    );
   }).pipe(Effect.provide(NodeServices.layer), Effect.scoped);
 
 describe("DesktopConnectionCatalogStore", () => {
+  it.effect("does not unlock Keychain to repeatedly read an empty installation", () => {
+    let checks = 0;
+    return withStore(
+      Effect.gen(function* () {
+        const store = yield* DesktopConnectionCatalogStore.DesktopConnectionCatalogStore;
+        assert.deepStrictEqual(yield* store.get, Option.none());
+        assert.deepStrictEqual(yield* store.get, Option.none());
+        assert.equal(checks, 0);
+        assert.isTrue(yield* store.set('{"schemaVersion":1,"targets":[]}'));
+        assert.equal(checks, 1);
+      }),
+      true,
+      () => {
+        checks += 1;
+      },
+    );
+  });
   it.effect("persists, reads, and clears an encrypted connection catalog", () =>
     withStore(
       Effect.gen(function* () {

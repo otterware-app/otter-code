@@ -19,39 +19,47 @@ import {
   useSidebar,
 } from "../ui/sidebar";
 import { useAppFrame } from "./appFrame";
+import { useActiveProjectSpace } from "../../hooks/useProjectSpace";
+import { openCommandPalette } from "../../commandPaletteBus";
+import { SearchIcon } from "../../lib/icons";
+import { Button } from "../ui/button";
 import { isSidebarUtilityPage, useNavigateToMainApp } from "./mainAppLocation";
 import { SidebarThreadUndoNotice } from "./SidebarThreadUndoNotice";
 import { SidebarProviderUpdatePill } from "./SidebarProviderUpdatePill";
 import { SidebarUpdateArchitectureWarning } from "./SidebarUpdatePill";
 /**
- * The sidebar's first row, which names the space it shows (`children`: its
- * heading). There's no wordmark, as in Otter Mail. The dev and nightly stage
- * art sits behind the row. In the desktop app's frame the title band above
- * the panel stays empty for the window controls and the pinned toggle, so
- * the row is the panel's first; in a browser tab it shares the band, after
- * the toggle.
+ * The sidebar's first row, naming its space (`children`), with stage art behind it. In the
+ * desktop frame the title band stays clear for window controls and the pinned toggle; in a
+ * browser tab the row shares the band, after the toggle.
  */
 export const SidebarChromeHeader = memo(function SidebarChromeHeader({
   isElectron,
   headingRef,
+  onSearch,
   children,
 }: {
   isElectron: boolean;
   /** The heading's row, for a popup to anchor to its width. */
   headingRef?: RefObject<HTMLDivElement | null>;
+  onSearch?: () => void;
   children?: ReactNode;
 }) {
+  const inPanel = useAppFrame() === "window";
   const stageLabel = useEnvironmentStageLabel();
   const environmentIdentificationMode = useEnvironmentIdentificationMode();
   const backdropVariant = resolveSidebarStageBackdropVariant(
     stageLabel,
-    environmentIdentificationMode === "artwork",
+    environmentIdentificationMode === "artwork" && !inPanel,
   );
   const pillLabel =
-    environmentIdentificationMode === "pill"
+    !inPanel && environmentIdentificationMode === "pill"
       ? resolveEnvironmentIdentificationPillLabel(stageLabel)
       : null;
-  const inPanel = useAppFrame() === "window";
+  const { space } = useActiveProjectSpace();
+  const showThreadActions = useLocation({
+    select: (location) => !isSidebarUtilityPage(location.pathname),
+  });
+
   return (
     <>
       {inPanel ? (
@@ -60,7 +68,7 @@ export const SidebarChromeHeader = memo(function SidebarChromeHeader({
       {/* The titlebar row, not a padded SidebarHeader: it aligns to the window controls. */}
       <div
         className={cn(
-          "relative flex h-[var(--workspace-topbar-height)] shrink-0 flex-row items-center gap-2 pr-3",
+          "relative flex h-11 shrink-0 flex-row items-center gap-1 px-2",
           isElectron && !inPanel && "drag-region",
         )}
         data-stage-art={backdropVariant ? "" : undefined}
@@ -75,13 +83,25 @@ export const SidebarChromeHeader = memo(function SidebarChromeHeader({
             aria-label="Toggle main sidebar"
           />
         </div>
-        {/* One visible line: the pill wraps onto the clipped second line once it no longer fits.
-            The padding keeps the heading's focus ring inside the clip. */}
         <div
           ref={headingRef}
-          className="relative z-10 ms-(--sidebar-heading-start) flex h-9 min-w-0 flex-1 flex-wrap content-start items-center gap-x-2 overflow-hidden py-0.5"
+          className="relative z-10 ms-(--sidebar-heading-start) flex h-9 min-w-0 flex-1 items-center gap-x-2 overflow-hidden py-0.5"
         >
-          {children}
+          <div className="min-w-0 flex-1">
+            {children ?? <SidebarSpaceTitle>{space.name}</SidebarSpaceTitle>}
+          </div>
+          {showThreadActions ? (
+            <div className="ml-auto flex shrink-0 items-center gap-0.5">
+              <Button
+                size="icon-xs"
+                variant="ghost-muted"
+                aria-label="Search"
+                onClick={onSearch ?? (() => openCommandPalette())}
+              >
+                <SearchIcon className="size-4" />
+              </Button>
+            </div>
+          ) : null}
           {pillLabel ? (
             <div className="ml-1 flex h-8 items-center">
               <Badge data-environment-identification="pill" size="sm" variant="secondary">

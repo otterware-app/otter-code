@@ -1,4 +1,4 @@
-import { ExternalLinkIcon, PaperclipIcon } from "lucide-react";
+import { ExternalLinkIcon, PaperclipIcon } from "~/lib/icons";
 import { markdownImageSourceFragment } from "@t3tools/client-runtime/markdown-images";
 import {
   sourceControlClients,

@@ -1,3 +1,4 @@
+import { XIcon } from "~/lib/icons";
 import { WorkLogButton, WorkLogList, WorkLogRow } from "./WorkLog";
 import type { WorktreeSetupSnapshot } from "@t3tools/contracts";
 import {
@@ -15,7 +16,7 @@ import { memo, use, useLayoutEffect, useRef, useState, type ReactNode } from "re
 import { LegendList, type LegendListRef } from "@legendapp/list/react";
 import { workEntryDisplayIndicatesToolFailure } from "../../session-logic";
 import ChatMarkdown from "../ChatMarkdown";
-import { Minimize2Icon, XIcon } from "lucide-react";
+import { Minimize2Icon } from "lucide-react";
 import { Button } from "../ui/button";
 import { getVirtualizedScrollFadeClassName } from "../ui/scroll-area";
 import {

@@ -1,6 +1,22 @@
-import type { EnvironmentId, ProjectGroupSetting, ServerConfig } from "@t3tools/contracts";
-import { selectProjectGroupingSettings } from "../logicalProject";
-import { projectSpaceFilter, resolveProjectSpace } from "../projectSpaces";
+import {
+  AuthSettingsWriteScope,
+  type EnvironmentId,
+  type ProjectGroupSetting,
+  type ServerConfig,
+} from "@t3tools/contracts";
+import { useEffect } from "react";
+
+import {
+  deriveLogicalProjectKeyFromSettings,
+  selectProjectGroupingSettings,
+} from "../logicalProject";
+import {
+  LEGACY_VOID_SPACE_ID,
+  moveProjectToSpace,
+  projectSpaceFilter,
+  resolveProjectSpace,
+  type ProjectSpaceProject,
+} from "../projectSpaces";
 import { appAtomRegistry } from "../rpc/atomRegistry";
 import {
   readPrimaryEnvironmentId,
@@ -8,8 +24,10 @@ import {
   usePrimaryEnvironmentId,
 } from "../state/environments";
 import { environmentPresentations } from "../state/presentation";
+import { useEnvironmentScope } from "../state/session";
 import { useUiStateStore } from "../uiStateStore";
-import { getClientSettings, useClientSettings, useLegacySidebarEnabled } from "./useSettings";
+import { getClientSettings, useClientSettings, useUpdateEnvironmentSettings } from "./useSettings";
+
 const NO_GROUPS: ReadonlyArray<ProjectGroupSetting> = [];
 
 interface ProjectSpaceEnvironment {
@@ -17,11 +35,7 @@ interface ProjectSpaceEnvironment {
   readonly serverConfig?: Pick<ServerConfig, "settings" | "scratchWorkspaceRoot"> | null;
 }
 
-/**
- * The project groups, as the primary environment holds them. Clients write
- * them to every environment, so the hosted app, which has no primary, reads
- * the first environment that has settings.
- */
+/** Shared Spaces come from the primary environment, or the first available hosted connection. */
 function projectGroupsFrom(
   environments: ReadonlyArray<ProjectSpaceEnvironment>,
   primaryEnvironmentId: EnvironmentId | null,
@@ -45,22 +59,29 @@ export function useProjectGroups(): {
   return projectGroupsFrom(environments, usePrimaryEnvironmentId());
 }
 
+export function useProjectSpaceActions() {
+  const { groups, sourceEnvironmentId } = useProjectGroups();
+  const updateSettings = useUpdateEnvironmentSettings(sourceEnvironmentId);
+  const canEdit = useEnvironmentScope(sourceEnvironmentId, AuthSettingsWriteScope);
+  const saveSpaces = (next: ReadonlyArray<ProjectGroupSetting>) =>
+    updateSettings({ railProjectGroups: next });
+  const moveProject = (projectKey: string, destinationId: string | null) =>
+    saveSpaces(moveProjectToSpace(groups, projectKey, destinationId));
+  return { groups, canEdit, saveSpaces, moveProject };
+}
+
 function activeProjectSpace(input: {
   readonly storedSpaceId: string | null;
-  readonly legacySidebarEnabled: boolean;
   readonly environments: ReadonlyArray<ProjectSpaceEnvironment>;
   readonly primaryEnvironmentId: EnvironmentId | null;
   readonly groupingSettings: ReturnType<typeof selectProjectGroupingSettings>;
 }) {
-  // The legacy sidebar hides the rail's spaces, so none may filter behind it.
-  const spaceId = input.legacySidebarEnabled ? null : input.storedSpaceId;
   const { groups } = projectGroupsFrom(input.environments, input.primaryEnvironmentId);
-  // The configured folder, not the connection-gated one: a disconnected
-  // machine's chats still belong in Chats.
+  // Configured roots keep disconnected environments' no-project chats in their scope.
   const scratchWorkspaceRootFor = (environmentId: EnvironmentId) =>
     input.environments.find((environment) => environment.environmentId === environmentId)
       ?.serverConfig?.scratchWorkspaceRoot ?? null;
-  const space = resolveProjectSpace(spaceId, groups);
+  const space = resolveProjectSpace(input.storedSpaceId, groups);
   return {
     space,
     projectFilter: projectSpaceFilter({
@@ -72,12 +93,18 @@ function activeProjectSpace(input: {
   };
 }
 
-/** The rail's selected space, with the project filters it implies. */
 export function useActiveProjectSpace() {
+  const storedSpaceId = useUiStateStore((store) => store.sidebarProjectSpaceId);
+  useEffect(() => {
+    if (
+      storedSpaceId === LEGACY_VOID_SPACE_ID &&
+      useUiStateStore.getState().sidebarProjectSpaceId === LEGACY_VOID_SPACE_ID
+    )
+      useUiStateStore.getState().setSidebarProjectSpaceId(null);
+  }, [storedSpaceId]);
   const { environments } = useEnvironments();
   return activeProjectSpace({
-    storedSpaceId: useUiStateStore((store) => store.sidebarProjectSpaceId),
-    legacySidebarEnabled: useLegacySidebarEnabled(),
+    storedSpaceId,
     environments,
     primaryEnvironmentId: usePrimaryEnvironmentId(),
     groupingSettings: useClientSettings(selectProjectGroupingSettings),
@@ -86,15 +113,26 @@ export function useActiveProjectSpace() {
 
 /** The rail's space read at call time, for handlers outside React. */
 export function readActiveProjectSpace() {
-  const settings = getClientSettings();
   return activeProjectSpace({
     storedSpaceId: useUiStateStore.getState().sidebarProjectSpaceId,
-    // Pre-hydration settings are the defaults, where the legacy sidebar is off.
-    legacySidebarEnabled: settings.legacySidebarEnabled,
     environments: [...appAtomRegistry.get(environmentPresentations.presentationsAtom)].map(
       ([environmentId, presentation]) => ({ ...presentation, environmentId }),
     ),
     primaryEnvironmentId: readPrimaryEnvironmentId(),
-    groupingSettings: selectProjectGroupingSettings(settings),
+    groupingSettings: selectProjectGroupingSettings(getClientSettings()),
   });
+}
+
+export function useSelectProjectSpace() {
+  return useUiStateStore((state) => state.setSidebarProjectSpaceId);
+}
+
+export function useAssignProjectToActiveSpace() {
+  const { space } = useActiveProjectSpace();
+  const { moveProject } = useProjectSpaceActions();
+  const groupingSettings = useClientSettings(selectProjectGroupingSettings);
+  return (project: ProjectSpaceProject) => {
+    if (space.kind === "group")
+      moveProject(deriveLogicalProjectKeyFromSettings(project, groupingSettings), space.id);
+  };
 }

@@ -400,6 +400,20 @@ export function useSettingsRestore(onRestored?: () => void) {
       ? ["Contrast"]
       : []),
     ...(settings.glassOpacity !== DEFAULT_UNIFIED_SETTINGS.glassOpacity ? ["Glass opacity"] : []),
+    ...(settings.railShortcuts.length > 0 ||
+    settings.railItemOrder.length > 0 ||
+    settings.hiddenRailItems.length > 0
+      ? ["Rail customization"]
+      : []),
+    ...(settings.windowMaterial !== DEFAULT_UNIFIED_SETTINGS.windowMaterial ||
+    settings.windowSidebarOnly !== DEFAULT_UNIFIED_SETTINGS.windowSidebarOnly ||
+    settings.windowOpacity !== DEFAULT_UNIFIED_SETTINGS.windowOpacity ||
+    settings.windowBlur !== DEFAULT_UNIFIED_SETTINGS.windowBlur
+      ? ["Window material"]
+      : []),
+    ...(settings.showAsciiBackground !== DEFAULT_UNIFIED_SETTINGS.showAsciiBackground
+      ? ["Animated background"]
+      : []),
     ...(settings.diffColorScheme !== DEFAULT_UNIFIED_SETTINGS.diffColorScheme
       ? ["Diff colors"]
       : []),
@@ -425,9 +439,6 @@ export function useSettingsRestore(onRestored?: () => void) {
       : []),
     ...(settings.inAppNotificationsEnabled !== DEFAULT_UNIFIED_SETTINGS.inAppNotificationsEnabled
       ? ["In-app notifications"]
-      : []),
-    ...(settings.sidebarThreadPreviewCount !== DEFAULT_UNIFIED_SETTINGS.sidebarThreadPreviewCount
-      ? ["Visible threads"]
       : []),
     ...(settings.sidebarProjectGroupingMode !== DEFAULT_UNIFIED_SETTINGS.sidebarProjectGroupingMode
       ? ["Project Grouping"]
@@ -601,8 +612,15 @@ export function useSettingsRestore(onRestored?: () => void) {
       contextWindowMeterEnabled: DEFAULT_UNIFIED_SETTINGS.contextWindowMeterEnabled,
       environmentIdentificationMode: DEFAULT_UNIFIED_SETTINGS.environmentIdentificationMode,
       glassOpacity: DEFAULT_UNIFIED_SETTINGS.glassOpacity,
+      railShortcuts: DEFAULT_UNIFIED_SETTINGS.railShortcuts,
+      railItemOrder: DEFAULT_UNIFIED_SETTINGS.railItemOrder,
+      hiddenRailItems: DEFAULT_UNIFIED_SETTINGS.hiddenRailItems,
+      windowMaterial: DEFAULT_UNIFIED_SETTINGS.windowMaterial,
+      windowSidebarOnly: DEFAULT_UNIFIED_SETTINGS.windowSidebarOnly,
+      windowOpacity: DEFAULT_UNIFIED_SETTINGS.windowOpacity,
+      windowBlur: DEFAULT_UNIFIED_SETTINGS.windowBlur,
+      showAsciiBackground: DEFAULT_UNIFIED_SETTINGS.showAsciiBackground,
       panelAnimationDurationMs: DEFAULT_UNIFIED_SETTINGS.panelAnimationDurationMs,
-      sidebarThreadPreviewCount: DEFAULT_UNIFIED_SETTINGS.sidebarThreadPreviewCount,
       sidebarProjectGroupingMode: DEFAULT_UNIFIED_SETTINGS.sidebarProjectGroupingMode,
       sidebarProjectSortOrder: DEFAULT_UNIFIED_SETTINGS.sidebarProjectSortOrder,
       sidebarWorkingShelfEnabled: DEFAULT_UNIFIED_SETTINGS.sidebarWorkingShelfEnabled,
@@ -727,19 +745,6 @@ export function LegacyFeaturesSection() {
               updateSettings({ contextWindowMeterEnabled: Boolean(checked) })
             }
             aria-label="Context window indicator (legacy)"
-          />
-        }
-      />
-      <SettingsRow
-        {...searchableSetting("legacy-sidebar")}
-        description="Restore per-project thread trees instead of the default flat sidebar."
-        control={
-          <Switch
-            checked={settings.legacySidebarEnabled}
-            onCheckedChange={(checked) =>
-              updateSettings({ legacySidebarEnabled: Boolean(checked) })
-            }
-            aria-label="Sidebar (legacy)"
           />
         }
       />

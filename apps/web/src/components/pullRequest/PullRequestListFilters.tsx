@@ -9,18 +9,15 @@ import type {
   SourceControlProviderKind,
 } from "@t3tools/contracts";
 import {
-  CircleCheckIcon,
   CircleDashedIcon,
   CircleSlashIcon,
   CircleXIcon,
   EyeOffIcon,
   FolderGit2Icon,
-  LayersIcon,
   ListFilterIcon,
-  SearchIcon,
-  TagIcon,
   UserRoundIcon,
 } from "lucide-react";
+import { CircleCheckIcon, FoldersIcon as LayersIcon, SearchIcon, TagIcon } from "~/lib/icons";
 import { type ElementType, useState } from "react";
 
 import { getSourceControlPresentationForKind } from "~/sourceControlPresentation";

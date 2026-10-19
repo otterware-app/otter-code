@@ -1,15 +1,12 @@
 import type { FileDiffMetadata } from "@pierre/diffs";
+import { SquareArrowRightIcon, SquareDotIcon, SquareMinusIcon, SquarePlusIcon } from "lucide-react";
 import {
   CheckIcon,
   ChevronDownIcon,
   ChevronRightIcon,
   FolderIcon,
   FolderOpenIcon,
-  SquareArrowRightIcon,
-  SquareDotIcon,
-  SquareMinusIcon,
-  SquarePlusIcon,
-} from "lucide-react";
+} from "~/lib/icons";
 import { memo, useEffect, useRef, useState, type CSSProperties } from "react";
 import { cn } from "~/lib/utils";
 import { DiffStatLabel } from "../chat/DiffStatLabel";

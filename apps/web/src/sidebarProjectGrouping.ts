@@ -86,12 +86,16 @@ export function resolveSidebarProjectScopeKey(input: {
 
 export function buildPhysicalToLogicalProjectKeyMap(input: {
   projects: ReadonlyArray<Project>;
+  groupScratchProjects?: boolean;
   settings: ProjectGroupingSettings;
   primaryEnvironmentId: EnvironmentId | null;
 }): Map<string, string> {
   const mapping = new Map<string, string>();
   const groups = buildProjectGroups({
     projects: input.projects,
+    ...(input.groupScratchProjects === undefined
+      ? {}
+      : { groupScratchProjects: input.groupScratchProjects }),
     settings: input.settings,
     preferredEnvironmentId: input.primaryEnvironmentId,
   });

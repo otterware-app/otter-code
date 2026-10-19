@@ -233,7 +233,8 @@ const isEnvironmentRequestInvalidError = Schema.is(EnvironmentRequestInvalidErro
 const COMPOSER_SCROLL_COLLAPSE_THRESHOLD_PX = 24;
 const COMPOSER_SCROLL_GESTURE_RESET_MS = 120;
 import { toastManager } from "../ui/toast";
-import { PlayIcon, ShieldIcon } from "lucide-react";
+import { ShieldIcon } from "lucide-react";
+import { PlayIcon } from "~/lib/icons";
 import { proposedPlanTitle } from "@t3tools/shared/proposedPlanText";
 import { hasProviderSetup } from "./ProviderStatusBanner";
 import { type AppModelOption, getAppModelOptionsForInstance } from "../../modelSelection";
@@ -3656,6 +3657,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                     skills={selectedProviderSkills}
                     containerClassName={cn(isComposerResting && "min-w-0 flex-1")}
                     className={cn(
+                      "min-h-12",
                       showMobilePendingAnswerActions && "max-sm:pb-12",
                       isComposerResting &&
                         "my-0 max-h-8 min-h-8 redesign:min-h-8 overflow-hidden py-0 whitespace-pre! leading-8",
@@ -3741,7 +3743,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                 data-chat-composer-footer="true"
                 data-chat-composer-footer-compact={isComposerFooterCompact ? "true" : "false"}
                 className={cn(
-                  "flex min-w-0 flex-nowrap items-center justify-between gap-2 overflow-visible px-3 pb-3 sm:px-4 sm:pb-4",
+                  "flex min-w-0 flex-nowrap items-center justify-between gap-2 overflow-visible px-2 pb-2 sm:px-2 sm:pb-2",
                   pendingUserInputs.length > 0 && "pt-2",
                   isComposerFooterCompact ? "gap-1.5" : "gap-2 sm:gap-0",
                   showMobilePendingAnswerActions && "hidden sm:flex",

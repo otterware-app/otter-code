@@ -24,7 +24,8 @@ import {
   normalizeModelSlug,
 } from "@t3tools/shared/model";
 import { memo } from "react";
-import { BrainIcon, GaugeIcon } from "lucide-react";
+import { BrainIcon } from "~/lib/icons";
+import { GaugeIcon } from "lucide-react";
 import {
   Menu,
   MenuGroup,

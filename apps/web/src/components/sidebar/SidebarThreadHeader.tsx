@@ -1,20 +1,14 @@
-/**
- * The sidebar header: one row holding search and new thread. The space it
- * searches (All projects, or one) is named in the row above it
- * (`SidebarChromeHeader`), which the space rail and its picker choose.
- */
-import { SearchIcon, SquarePenIcon, XIcon } from "lucide-react";
+import { SearchIcon, NewThreadIcon as SquarePenIcon, XIcon } from "~/lib/icons";
 import {
-  type ComponentProps,
+  useEffect,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
-  type ReactNode,
   type RefObject,
 } from "react";
 
-import { cn } from "~/lib/utils";
 import { Button } from "../ui/button";
-import { SidebarInput, SidebarMenuButton } from "../ui/sidebar";
+import { Kbd } from "../ui/kbd";
+import { SidebarInput, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "../ui/sidebar";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 
 export interface SidebarThreadHeaderProps {
@@ -24,6 +18,8 @@ export interface SidebarThreadHeaderProps {
   newThreadShortcutLabel: string | null | undefined;
   newThreadInProjectShortcutLabel: string | null | undefined;
   showNewThreadInProjectHint: boolean;
+  searchOpen: boolean;
+  onCloseSearch: () => void;
   searchInputRef: RefObject<HTMLInputElement | null>;
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
@@ -40,6 +36,8 @@ export function SidebarThreadHeader({
   newThreadShortcutLabel,
   newThreadInProjectShortcutLabel,
   showNewThreadInProjectHint,
+  searchOpen,
+  onCloseSearch,
   searchInputRef,
   searchQuery,
   onSearchQueryChange,
@@ -49,6 +47,10 @@ export function SidebarThreadHeader({
   activeSearchResultIndex,
   onClearSearch,
 }: SidebarThreadHeaderProps) {
+  useEffect(() => {
+    if (searchOpen) searchInputRef.current?.focus();
+  }, [searchOpen, searchInputRef]);
+
   const resultsVisible = isSearching && searchResultCount > 0;
   // Shrinking results can remove the active option; never leave aria-activedescendant pointing at it.
   const activeResultExists = resultsVisible && activeSearchResultIndex < searchResultCount;
@@ -57,117 +59,89 @@ export function SidebarThreadHeader({
     : "New thread";
 
   return (
-    <div className="flex items-center gap-1">
-      <div
-        ref={searchFieldRef}
-        className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-sidebar-muted-foreground hover:bg-sidebar-row-hover hover:text-sidebar-foreground redesign:focus-within:bg-sidebar-row-hover redesign:focus-within:text-sidebar-foreground redesign:focus-within:ring-1 redesign:focus-within:ring-inset redesign:focus-within:ring-ring/70"
-      >
-        <SearchIcon className="size-4 shrink-0 text-(--sidebar-icon-color)" />
-        <SidebarInput
-          ref={searchInputRef}
-          nativeInput
-          type="search"
-          value={searchQuery}
-          onChange={(event) => onSearchQueryChange(event.currentTarget.value)}
-          onKeyDown={onSearchKeyDown}
-          placeholder="Search"
-          aria-label="Search threads"
-          role="combobox"
-          aria-autocomplete="list"
-          aria-expanded={resultsVisible}
-          aria-controls={resultsVisible ? "sidebar-thread-search-results" : undefined}
-          aria-activedescendant={
-            activeResultExists
-              ? `sidebar-thread-search-result-${activeSearchResultIndex}`
-              : undefined
-          }
-          className="min-w-0 flex-1"
-        />
-        {isSearching ? (
-          <Button
-            type="button"
-            size="icon-micro"
-            variant="ghost-muted"
-            className="shrink-0"
-            aria-label="Clear thread search"
-            onClick={() => {
-              onClearSearch();
-              searchInputRef.current?.focus();
-            }}
-          >
-            <XIcon className="size-3" />
-          </Button>
-        ) : null}
+    <>
+      <div className="z-[1] px-(--sidebar-content-inset) pt-1 pb-3">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <Tooltip>
+              <TooltipTrigger
+                render={<SidebarMenuButton disabled={newThreadDisabled} onClick={onNewThread} />}
+              >
+                <SquarePenIcon />
+                <span className="flex-1 truncate">New thread</span>
+                {newThreadShortcutLabel ? <Kbd>{newThreadShortcutLabel}</Kbd> : null}
+              </TooltipTrigger>
+              <TooltipPopup side="top">
+                {showNewThreadInProjectHint ? (
+                  <span className="flex flex-col gap-0.5">
+                    <span>{newThreadLabel}</span>
+                    <span className="text-muted-foreground">
+                      New thread in current project: Shift+click
+                      {newThreadInProjectShortcutLabel
+                        ? ` (${newThreadInProjectShortcutLabel})`
+                        : ""}
+                    </span>
+                  </span>
+                ) : (
+                  newThreadLabel
+                )}
+              </TooltipPopup>
+            </Tooltip>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </div>
-      {/* Unfilled like the search field beside it: the button carries its own
-          hover state, and a background well reads far louder on themed
-          palettes than on the base light and dark ones. */}
-      <div className="flex shrink-0 items-center">
-        <SidebarHeaderIconButton
-          label="New thread"
-          tooltip={
-            showNewThreadInProjectHint ? (
-              <span className="flex flex-col gap-0.5">
-                <span>{newThreadLabel}</span>
-                <span className="text-muted-foreground">
-                  New thread in current project: Shift+click
-                  {newThreadInProjectShortcutLabel ? ` (${newThreadInProjectShortcutLabel})` : ""}
-                </span>
-              </span>
-            ) : (
-              newThreadLabel
-            )
-          }
-          disabled={newThreadDisabled}
-          onClick={onNewThread}
-        >
-          <SquarePenIcon />
-        </SidebarHeaderIconButton>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Icon button with a tooltip, sized for the header's segmented pair. Spreads
- * unknown props through so it can serve as a popup trigger's render target,
- * which injects its own handlers, ref and aria state.
- */
-function SidebarHeaderIconButton({
-  label,
-  tooltip = label,
-  className,
-  children,
-  ...rest
-}: {
-  label: string;
-  tooltip?: ReactNode;
-  className?: string | undefined;
-  children?: ReactNode;
-} & Omit<
-  ComponentProps<typeof SidebarMenuButton>,
-  "children" | "className" | "tooltip" | "isActive" | "aria-label"
->) {
-  return (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <SidebarMenuButton
-            size="icon"
-            type="button"
-            aria-label={label}
-            {...rest}
-            className={cn("relative size-7 shrink-0", className)}
-          />
-        }
-      >
-        {children}
-        <span
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-1/2 size-[max(100%,3rem)] -translate-1/2 pointer-fine:hidden"
-        />
-      </TooltipTrigger>
-      <TooltipPopup side="top">{tooltip}</TooltipPopup>
-    </Tooltip>
+      {searchOpen || isSearching ? (
+        <div className="px-(--sidebar-content-inset) pb-3">
+          <div className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-sidebar-muted-foreground hover:bg-sidebar-row-hover hover:text-sidebar-foreground">
+            <SearchIcon className="size-4 shrink-0 text-(--sidebar-icon-color)" />
+            <SidebarInput
+              ref={searchInputRef}
+              nativeInput
+              type="search"
+              value={searchQuery}
+              onChange={(event) => onSearchQueryChange(event.currentTarget.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape" && !isSearching && !event.nativeEvent.isComposing) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onCloseSearch();
+                  return;
+                }
+                onSearchKeyDown(event);
+              }}
+              placeholder="Search"
+              aria-label="Search threads"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded={resultsVisible}
+              aria-controls={resultsVisible ? "sidebar-thread-search-results" : undefined}
+              aria-activedescendant={
+                activeResultExists
+                  ? `sidebar-thread-search-result-${activeSearchResultIndex}`
+                  : undefined
+              }
+              className="min-w-0 flex-1"
+            />
+            <Button
+              type="button"
+              size="icon-micro"
+              variant="ghost-muted"
+              className="shrink-0"
+              aria-label={isSearching ? "Clear thread search" : "Close thread search"}
+              onClick={() => {
+                if (!isSearching) {
+                  onCloseSearch();
+                  return;
+                }
+                onClearSearch();
+                searchInputRef.current?.focus();
+              }}
+            >
+              <XIcon className="size-3" />
+            </Button>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }

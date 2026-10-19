@@ -52,6 +52,29 @@ const ITEMS: ReadonlyArray<SettingsSearchItem> = [
 ];
 
 describe("searchSettings", () => {
+  it("does not offer the removed Project sidebar switch", () => {
+    expect(getSettingsSearchTargetScope("legacy-sidebar")).toBeNull();
+    expect(searchSettings("project sidebar").map((item) => item.id)).not.toContain(
+      "legacy-sidebar",
+    );
+  });
+  it.each(["OTel", "OTLP", "telemetry export", "Grafana"])(
+    "finds environment telemetry settings for %s",
+    (query) => {
+      expect(searchSettings(query)).toContainEqual(
+        expect.objectContaining({
+          id: "telemetry-export",
+          to: "/settings/diagnostics",
+          targetId: "telemetry-export",
+          scope: "environment",
+        }),
+      );
+    },
+  );
+  it.each(["send shortcut", "multiline", "new line"])("finds Send shortcut for %s", (query) => {
+    expect(searchSettings(query).map((item) => item.id)).toContain("send-shortcut");
+  });
+
   it("matches titles, sections, and remembered setting details", () => {
     expect(searchSettings("word", ITEMS).map((item) => item.id)).toEqual(["word-wrap"]);
     expect(searchSettings("network", ITEMS).map((item) => item.id)).toEqual(["network-access"]);
@@ -170,7 +193,7 @@ describe("settings search targets", () => {
     const streaming = getSettingsSearchTargetScope("response-streaming")!;
     expect(streaming.scope).toBe("project-defaults");
     expect(isSettingsSearchScopeAvailable(streaming.scope, "project")).toBe(true);
-    for (const id of ["legacy-plan-mode", "legacy-context-window-indicator", "legacy-sidebar"]) {
+    for (const id of ["legacy-plan-mode", "legacy-context-window-indicator"]) {
       expect(getSettingsSearchTargetScope(id)!.scope).toBeNull();
     }
   });

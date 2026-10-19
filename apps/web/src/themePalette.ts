@@ -7,12 +7,12 @@ import "culori/css";
 import { converter, parse } from "culori/fn";
 import {
   BUILT_IN_THEMES,
-  CHATGPT_THEME,
   EMBER_THEME,
   GROVE_THEME,
   IRIS_THEME,
   OCEAN_THEME,
   T3_CHAT_THEME,
+  SYNARA_THEME,
   T3_CODE_LIGHT_THEME_COLORS,
   T3_CODE_DARK_THEME_COLORS,
   RESERVED_THEME_IDS,
@@ -29,7 +29,14 @@ import { primaryServerEnvironmentThemesAtom } from "./state/server";
 
 export {
   CHATGPT_THEME,
-  EMBER_THEME, GROVE_THEME, IRIS_THEME, OCEAN_THEME, T3_CHAT_THEME, THEME_COLOR_ROLES };
+  EMBER_THEME,
+  GROVE_THEME,
+  IRIS_THEME,
+  OCEAN_THEME,
+  T3_CHAT_THEME,
+  SYNARA_THEME,
+  THEME_COLOR_ROLES,
+};
 export type { ThemeAppearance, ThemeColorRole, ThemeColors, ThemeDefinition, ThemeVariants };
 
 const T3_CHAT_THEME_ID = "t3-chat" as const;

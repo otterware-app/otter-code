@@ -1,4 +1,4 @@
-import { ChevronRightIcon, ExternalLinkIcon, SearchIcon } from "lucide-react";
+import { ChevronRightIcon, ExternalLinkIcon, SearchIcon } from "~/lib/icons";
 import { useAtomRefresh, useAtomValue } from "@effect/atom-react";
 import * as Cause from "effect/Cause";
 import * as Data from "effect/Data";

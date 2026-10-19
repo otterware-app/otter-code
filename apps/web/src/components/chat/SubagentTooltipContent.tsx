@@ -15,15 +15,8 @@ import { REASONING_EFFORT_OPTION_IDS } from "@t3tools/client-runtime/state/threa
 import { getModelSelectionStringOptionValue, resolveSelectableModel } from "@t3tools/shared/model";
 import { getTraitsSpeedDisplay, TraitsSpeedIcon } from "./TraitsSpeed";
 import type { ReactNode } from "react";
-import {
-  BotIcon,
-  CheckIcon,
-  CircleDashedIcon,
-  CircleXIcon,
-  FolderIcon,
-  GitBranchIcon,
-  TerminalIcon,
-} from "lucide-react";
+import { CircleDashedIcon, CircleXIcon } from "lucide-react";
+import { BotIcon, CheckIcon, FolderIcon, GitBranchIcon, TerminalIcon } from "~/lib/icons";
 import { ThreadHoverCard } from "../ThreadHoverCard";
 import { MiddleTruncate } from "../ui/middle-truncate";
 import { ProviderInstanceIcon } from "./ProviderInstanceIcon";

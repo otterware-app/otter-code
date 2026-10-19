@@ -1,6 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import { AuthSettingsWriteScope, type EnvironmentId, sessionGrantsScope } from "@t3tools/contracts";
-import { ChevronDownIcon, PlusIcon, RotateCcwIcon, XIcon } from "lucide-react";
+import { ChevronDownIcon, PlusIcon, RotateCcwIcon, XIcon } from "~/lib/icons";
 import * as Option from "effect/Option";
 import { AsyncResult, Atom } from "effect/reactivity";
 import { useRef, useState } from "react";

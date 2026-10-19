@@ -8,17 +8,8 @@ import {
 import { safeErrorLogAttributes } from "@t3tools/client-runtime/errors";
 import { scopedThreadKey } from "@t3tools/client-runtime/environment";
 import type { ReviewDiffPreviewSourceRequest, ScopedThreadRef } from "@t3tools/contracts";
-import {
-  ChevronDownIcon,
-  ChevronUpIcon,
-  Columns2Icon,
-  FileTextIcon,
-  FolderTreeIcon,
-  GitCompareArrowsIcon,
-  PilcrowIcon,
-  Rows3Icon,
-  TextWrapIcon,
-} from "lucide-react";
+import { FileTextIcon, FolderTreeIcon, GitCompareArrowsIcon, PilcrowIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronUpIcon, Columns2Icon, Rows3Icon, TextWrapIcon } from "~/lib/icons";
 import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown } from "lucide";
 import * as Schema from "effect/Schema";
 import { useEffect, useRef, useState } from "react";

@@ -5,7 +5,7 @@ import {
   formatContextWindowCompactionMessage,
   formatContextWindowCost,
 } from "./ContextWindowMeter.logic";
-import { Minimize2Icon } from "lucide-react";
+import { ContextCompactionIcon } from "~/lib/icons";
 import { composerFloatingLayerProps } from "./composerEventScope";
 
 function formatPercentage(value: number | null): string | null {
@@ -28,7 +28,7 @@ export function ContextWindowMeter(props: {
   const { usage, modelDisplayName, onCompact, compactDisabled, compactDisabledReason } = props;
   const usedPercentage = formatPercentage(usage.usedPercentage);
   const normalizedPercentage = Math.max(0, Math.min(100, usage.usedPercentage ?? 0));
-  const radius = 9.75;
+  const radius = 6;
   const circumference = 2 * Math.PI * radius;
   const dashOffset = circumference * (1 - normalizedPercentage / 100);
   const totalProcessedTokens = usage.totalProcessedTokens ?? null;
@@ -45,37 +45,36 @@ export function ContextWindowMeter(props: {
         delay={150}
         closeDelay={onCompact ? 150 : 0}
         render={
-          <Button
-            size="icon-sm"
-            variant="ghost-muted"
-            className="size-7"
+          <button
+            type="button"
+            className="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full p-0.5 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring/60"
             aria-label={
               usage.maxTokens !== null && usedPercentage
                 ? `Context window ${usedPercentage} used`
                 : `Context window ${formatContextWindowTokens(usage.usedTokens)} tokens used`
             }
           >
-            <span className="relative flex size-5 items-center justify-center">
+            <span className="relative flex size-4 items-center justify-center">
               <svg
-                viewBox="0 0 24 24"
+                viewBox="0 0 16 16"
                 className="-rotate-90 absolute inset-0 size-full transform-gpu mx-0!"
                 aria-hidden="true"
               >
                 <circle
-                  cx="12"
-                  cy="12"
+                  cx="8"
+                  cy="8"
                   r={radius}
                   fill="none"
-                  className="stroke-muted-foreground/24"
-                  strokeWidth="3"
+                  className="stroke-muted-foreground/25 dark:stroke-muted-foreground/40"
+                  strokeWidth="2"
                 />
                 <circle
-                  cx="12"
-                  cy="12"
+                  cx="8"
+                  cy="8"
                   r={radius}
                   fill="none"
                   stroke={usageColor}
-                  strokeWidth="3"
+                  strokeWidth="2"
                   strokeLinecap="round"
                   strokeDasharray={circumference}
                   strokeDashoffset={dashOffset}
@@ -83,7 +82,7 @@ export function ContextWindowMeter(props: {
                 />
               </svg>
             </span>
-          </Button>
+          </button>
         }
       />
       <PopoverPopup
@@ -97,7 +96,7 @@ export function ContextWindowMeter(props: {
       >
         <div className="flex flex-col gap-2 p-(--floating-content-inset)">
           <div className="flex items-center justify-between gap-3">
-            <div className="font-medium text-muted-foreground text-xs">Context Window</div>
+            <div className="font-medium text-muted-foreground text-xs">Context window</div>
             {usage.maxTokens !== null && usedPercentage ? (
               <div className="text-secondary-label text-2xs tabular-nums">
                 <span>{usedPercentage}</span>
@@ -158,8 +157,8 @@ export function ContextWindowMeter(props: {
                 disabled={compactDisabled}
                 onClick={onCompact}
               >
-                <Minimize2Icon aria-hidden="true" />
-                Compact context
+                <ContextCompactionIcon aria-hidden="true" />
+                Compact now
               </Button>
               {compactDisabled && compactDisabledReason ? (
                 <div className="text-pretty text-secondary-label text-2xs">
@@ -175,5 +174,5 @@ export function ContextWindowMeter(props: {
 }
 
 export function ContextWindowMeterPlaceholder() {
-  return <span aria-hidden="true" className="size-7 shrink-0" />;
+  return <span aria-hidden="true" className="size-5 shrink-0" />;
 }

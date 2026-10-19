@@ -1,4 +1,5 @@
 import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
+import { FoldersIcon as LayersIcon } from "~/lib/icons";
 import { applyPullRequestDraftFilterChange } from "@t3tools/client-runtime/pull-request-query";
 import { Spinner } from "~/components/ui/spinner";
 import type { PullRequestSpeedActionResult } from "~/components/pullRequest/PullRequestSpeedActions";
@@ -19,7 +20,7 @@ import type {
 } from "@t3tools/contracts";
 import { useAtomValue } from "@effect/atom-react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { ArrowDownUpIcon, LayersIcon, Plug2Icon } from "lucide-react";
+import { ArrowDownUpIcon, Plug2Icon } from "lucide-react";
 import { useEffect, useEffectEvent, useRef, useState, type ComponentProps } from "react";
 
 import {
@@ -1096,11 +1097,7 @@ export function PullRequestsPage() {
   );
   const panelToggleControls = (
     <PanelLayoutControls
-      showTerminalControl={false}
       showThreadPanelControl={false}
-      terminalAvailable={false}
-      terminalOpen={false}
-      terminalShortcutLabel={null}
       threadPanelOpen={false}
       threadPanelPresentation="inline"
       threadPanelShortcutLabel={null}
@@ -1109,7 +1106,6 @@ export function PullRequestsPage() {
       rightPanelOpen={rightPanelState.isOpen}
       rightPanelShortcutLabel={shortcutLabelForCommand(keybindings, "rightPanel.toggle")}
       rightPanelUnavailableLabel="Select a pull request first"
-      onToggleTerminal={() => undefined}
       onToggleRightPanel={toggleRightPanel}
     />
   );

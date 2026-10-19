@@ -11,15 +11,8 @@ import type {
   PullRequestReviewThread,
   ScopedThreadRef,
 } from "@t3tools/contracts";
-import {
-  ArrowDownUpIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-  HammerIcon,
-  ListFilterIcon,
-  TagIcon,
-  UsersIcon,
-} from "lucide-react";
+import { ArrowDownUpIcon, ListFilterIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronRightIcon, HammerIcon, TagIcon, UsersIcon } from "~/lib/icons";
 import * as Schema from "effect/Schema";
 import { useRef, useState, type ReactNode } from "react";
 

@@ -13,7 +13,6 @@ import {
   isSidebarThreadWorking,
   orderItemsByPreferredIds,
   pinOrderKeyBetween,
-  resolveProjectStatusIndicator,
   resolveSidebarSweepKeys,
   resolveSidebarThreadStatus,
   resolveSidebarV2TopStatus,
@@ -25,7 +24,6 @@ import {
   resolveSidebarDropTarget,
   planSidebarThreadDrop,
   sortPinnedThreadsForSidebar,
-  sortProjectsForSidebar,
   sortScopedProjectsForSidebar,
   sortSidebarV2ProjectGroups,
   shouldNavigateAfterThreadPark,
@@ -580,40 +578,6 @@ describe("resolveThreadStatusPill", () => {
   });
 });
 
-describe("resolveProjectStatusIndicator", () => {
-  it("ranks waiting below active work and above plan-ready", () => {
-    const waiting = {
-      label: "Waiting" as const,
-      colorClass: "text-sidebar-muted-foreground",
-      dotClass: "bg-sidebar-muted-foreground",
-      pulse: false,
-    };
-
-    expect(
-      resolveProjectStatusIndicator([
-        waiting,
-        {
-          label: "Working",
-          colorClass: "text-sky-600",
-          dotClass: "bg-sky-500",
-          pulse: true,
-        },
-      ]),
-    ).toMatchObject({ label: "Working" });
-    expect(
-      resolveProjectStatusIndicator([
-        {
-          label: "Plan Ready",
-          colorClass: "text-violet-600",
-          dotClass: "bg-violet-500",
-          pulse: false,
-        },
-        waiting,
-      ]),
-    ).toMatchObject({ label: "Waiting" });
-  });
-});
-
 function makeProject(overrides: Partial<Project> = {}): Project {
   const { defaultModelSelection, ...rest } = overrides;
   return {
@@ -694,55 +658,6 @@ describe("getFallbackThreadIdAfterDelete", () => {
     expect(fallbackThreadId).toBe(ThreadId.make("thread-next"));
   });
 });
-describe("sortProjectsForSidebar", () => {
-  it("sorts projects by the most recent user message across their threads", () => {
-    const projects = [
-      makeProject({ id: ProjectId.make("project-1"), title: "Older project" }),
-      makeProject({ id: ProjectId.make("project-2"), title: "Newer project" }),
-    ];
-    const threads = [
-      makeThread({
-        projectId: ProjectId.make("project-1"),
-        updatedAt: "2026-03-09T10:20:00.000Z",
-        messages: [
-          {
-            id: "message-1" as never,
-            role: "user",
-            text: "older project user message",
-            runId: null,
-            createdAt: "2026-03-09T10:01:00.000Z",
-            updatedAt: "2026-03-09T10:01:00.000Z",
-            streaming: false,
-          },
-        ],
-      }),
-      makeThread({
-        id: ThreadId.make("thread-2"),
-        projectId: ProjectId.make("project-2"),
-        updatedAt: "2026-03-09T10:05:00.000Z",
-        messages: [
-          {
-            id: "message-2" as never,
-            role: "user",
-            text: "newer project user message",
-            runId: null,
-            createdAt: "2026-03-09T10:05:00.000Z",
-            updatedAt: "2026-03-09T10:05:00.000Z",
-            streaming: false,
-          },
-        ],
-      }),
-    ];
-
-    const sorted = sortProjectsForSidebar(projects, threads, "updated_at");
-
-    expect(sorted.map((project) => project.id)).toEqual([
-      ProjectId.make("project-2"),
-      ProjectId.make("project-1"),
-    ]);
-  });
-});
-
 describe("sortScopedProjectsForSidebar", () => {
   it("keeps identical project ids in different environments separate", () => {
     const remoteEnvironmentId = EnvironmentId.make("environment-remote");

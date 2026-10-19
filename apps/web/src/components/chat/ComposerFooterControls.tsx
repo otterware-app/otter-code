@@ -1,3 +1,4 @@
+import { BotIcon } from "~/lib/icons";
 import type {
   ModelSelection,
   ProviderInstanceId,
@@ -5,7 +6,7 @@ import type {
   RuntimeMode,
 } from "@t3tools/contracts";
 import { createModelSelection } from "@t3tools/shared/model";
-import { BotIcon, PencilRulerIcon } from "lucide-react";
+import { PencilRulerIcon } from "lucide-react";
 import { type ComponentProps, memo } from "react";
 
 import type { ContextWindowSnapshot } from "../../lib/contextWindow";
@@ -97,10 +98,15 @@ export const ComposerFooterModeControls = memo(function ComposerFooterModeContro
                 data-composer-shortcut="composer.mode"
                 size={size}
                 aria-label="Runtime mode"
+                className={props.runtimeMode === "full-access" ? "text-permission" : undefined}
               />
             }
           >
-            <ComposerControlIcon icon={RuntimeModeIcon} size={size} />
+            <ComposerControlIcon
+              icon={RuntimeModeIcon}
+              size={size}
+              className={props.runtimeMode === "full-access" ? "text-permission" : undefined}
+            />
             <SelectValue data-composer-control-label>{runtimeModeOption.label}</SelectValue>
           </TooltipTrigger>
           <SelectPopup alignItemWithTrigger={false} {...composerFloatingLayerProps}>

@@ -223,6 +223,24 @@
           ],
           "preamble": [
             "Unmodified KaTeX_* mathematical fonts. Reserved Font Names include KaTeX_Main, KaTeX_Math, KaTeX_AMS, and KaTeX_Caligraphic."
+]
+        }
+      ]
+    },
+    {
+      "bundles": ["assets", "desktop", "mobile", "web"],
+      "license": "MIT",
+      "name": "Synara",
+      "sourceUrl": "https://github.com/Emanuele-web04/synara",
+      "generatedNotices": [
+        {
+          "licenseId": "MIT",
+          "copyrights": [
+            "Copyright (c) 2026 T3 Tools Inc.",
+            "Copyright (c) 2026 Emanuele Di Pietro"
+          ],
+          "preamble": [
+            "The workspace design, icon registry, ASCII background, theme palettes, and native window material include adaptations from Synara."
           ]
         }
       ]

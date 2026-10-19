@@ -1,7 +1,8 @@
 import { Toolbar } from "@base-ui/react/toolbar";
 import { type ProviderInstanceId } from "@t3tools/contracts";
 import { memo, useLayoutEffect, useRef, useState } from "react";
-import { SparklesIcon, StarIcon } from "lucide-react";
+import { SparklesIcon } from "lucide-react";
+import { StarIcon } from "~/lib/icons";
 import { ProviderInstanceIcon } from "./ProviderInstanceIcon";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { cn } from "~/lib/utils";

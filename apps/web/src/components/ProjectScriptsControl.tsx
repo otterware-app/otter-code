@@ -12,7 +12,8 @@ import {
   squashAtomCommandFailure,
 } from "@t3tools/client-runtime/state/runtime";
 import { projectScriptMenuLabel } from "@t3tools/shared/projectScripts";
-import { ChevronDownIcon, DownloadIcon, PlusIcon, SettingsIcon, WrenchIcon } from "lucide-react";
+import { WrenchIcon } from "lucide-react";
+import { ChevronDownIcon, DownloadIcon, PlusIcon, SettingsIcon } from "~/lib/icons";
 import React, { useState } from "react";
 
 import { commandForProjectScript, primaryProjectScript } from "~/projectScripts";

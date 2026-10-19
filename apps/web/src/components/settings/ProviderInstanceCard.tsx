@@ -1,17 +1,16 @@
 import { Spinner } from "~/components/ui/spinner";
 
+import { AlertTriangleIcon, Trash2Icon } from "lucide-react";
 import {
-  AlertTriangleIcon,
   CheckIcon,
   ArrowUpCircleIcon,
   CopyIcon,
   DownloadIcon,
   ExternalLinkIcon,
-  LayersIcon,
+  FoldersIcon as LayersIcon,
   PlusIcon,
-  Trash2Icon,
   XIcon,
-} from "lucide-react";
+} from "~/lib/icons";
 import { Lock as LockGlyph, LockOpen } from "lucide";
 import * as Arr from "effect/Array";
 import * as Result from "effect/Result";

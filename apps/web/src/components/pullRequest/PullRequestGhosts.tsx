@@ -1,14 +1,14 @@
 import type { PullRequestListEntry, PullRequestSummary } from "@t3tools/contracts";
+import { UserPlusIcon } from "lucide-react";
 import {
   ArrowLeftIcon,
   ChevronRightIcon,
   EllipsisIcon,
   ExternalLinkIcon,
-  PanelRightIcon,
+  PanelRightCloseIcon as PanelRightIcon,
   TagIcon,
-  UserPlusIcon,
   UsersIcon,
-} from "lucide-react";
+} from "~/lib/icons";
 import type { ReactNode } from "react";
 import {
   capitalizeTerm,

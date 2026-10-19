@@ -2,7 +2,7 @@ import { SettingsGroup } from "./SettingsGroup";
 import { AuthSettingsWriteScope } from "@t3tools/contracts";
 import { usePrimaryEnvironmentId, usePrimaryEnvironment } from "../../state/environments";
 import { useEnvironmentScope, useEnvironmentsWithScope } from "../../state/session";
-import { InfoIcon, Undo2Icon } from "lucide-react";
+import { InfoIcon, Undo2Icon } from "~/lib/icons";
 import { DEFAULT_SERVER_SETTINGS, type ServerSettings } from "@t3tools/contracts";
 import * as Equal from "effect/Equal";
 import { useLocation, useNavigate } from "@tanstack/react-router";
@@ -18,6 +18,7 @@ import { Button } from "../ui/button";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { useOptionalSettingsScope } from "./SettingsScopeContext";
 import { SettingsScopeSentence } from "./SettingsScopeSentence";
+import { SETTINGS_SECTION_LABELS } from "./settingsSearch";
 import {
   isProjectScopedSettingKey,
   listProjectOverrides,
@@ -555,6 +556,10 @@ export function SettingsPageContainer({
   width?: WorkspacePageWidth;
 }) {
   const navigate = useNavigate();
+  const pathname = useLocation({ select: (location) => location.pathname });
+  const pageTitle = Object.entries(SETTINGS_SECTION_LABELS).find(
+    ([path]) => path === pathname,
+  )?.[1];
   const hash = useLocation({ select: (location) => location.hash });
   const highlightTarget = useLocation({
     select: (location) => location.state.settingsTargetHighlight !== false,
@@ -581,6 +586,9 @@ export function SettingsPageContainer({
         data-settings-page-scroll
       >
         <WorkspacePageContainer width={width} className={cn("gap-8", className)}>
+          {pageTitle ? (
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">{pageTitle}</h1>
+          ) : null}
           <SettingsScopeSentence />
           {children}
         </WorkspacePageContainer>

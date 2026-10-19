@@ -9,20 +9,18 @@ import { useAtomValue } from "@effect/atom-react";
 import { useNavigate } from "@tanstack/react-router";
 import * as Option from "effect/Option";
 import { AsyncResult } from "effect/reactivity";
+import { GitCommitHorizontalIcon, SlackIcon, UserRoundIcon } from "lucide-react";
 import {
   ArrowLeftIcon,
   ArrowUpRightIcon,
   CheckIcon,
   CopyIcon,
   GitBranchIcon,
-  GitCommitHorizontalIcon,
   LinkIcon,
   PaperclipIcon,
   RefreshCwIcon,
   SettingsIcon,
-  SlackIcon,
-  UserRoundIcon,
-} from "lucide-react";
+} from "~/lib/icons";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useCopyToClipboard } from "~/hooks/useCopyToClipboard";
 import { cn } from "~/lib/utils";

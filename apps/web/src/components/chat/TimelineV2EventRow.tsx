@@ -1,3 +1,4 @@
+import { ChevronDownIcon } from "~/lib/icons";
 import { WorkLogBlock } from "./WorkLog";
 import { scopeThreadRef } from "@t3tools/client-runtime/environment";
 import { useAtomValue } from "@effect/atom-react";
@@ -8,7 +9,6 @@ import {
 } from "@t3tools/client-runtime/state/subagent-display";
 import { memo, use, useState } from "react";
 import ChatMarkdown from "../ChatMarkdown";
-import { ChevronDownIcon } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { V2ItemInspector } from "./V2ItemInspector";
 import { Collapsible, CollapsibleTrigger, CollapsiblePanel } from "../ui/collapsible";

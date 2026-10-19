@@ -9,12 +9,8 @@ import type { EnvironmentId, OrchestrationV2ThreadShell, ThreadId } from "@t3too
 import type { ClientSettings } from "@t3tools/contracts/settings";
 import * as Option from "effect/Option";
 import type { AtomRegistry } from "effect/reactivity";
-import {
-  CircleAlertIcon,
-  CircleCheckIcon,
-  MessageCircleQuestionIcon,
-  ShieldQuestionIcon,
-} from "lucide-react";
+import { MessageCircleQuestionIcon, ShieldQuestionIcon } from "lucide-react";
+import { CircleAlertIcon, CircleCheckIcon } from "~/lib/icons";
 
 import { getClientSettings, subscribeClientSettings } from "../hooks/useSettings";
 import { isWindowsPlatform } from "../lib/utils";

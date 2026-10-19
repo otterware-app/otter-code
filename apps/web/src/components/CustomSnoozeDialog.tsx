@@ -7,7 +7,7 @@ import {
   type CustomSnoozeInput,
 } from "@t3tools/client-runtime/state/thread-settled";
 import { Button } from "./ui/button";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon } from "~/lib/icons";
 import { Calendar } from "./ui/calendar";
 import { weekStartsOn } from "../timestampFormat";
 import { useNowMinute } from "../hooks/useNowMinute";

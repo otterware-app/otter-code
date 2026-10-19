@@ -1,5 +1,5 @@
 import type { EnvironmentId } from "@t3tools/contracts";
-import { ExternalLinkIcon } from "lucide-react";
+import { ExternalLinkIcon } from "~/lib/icons";
 import { useState } from "react";
 
 import { useEnvironmentSettings } from "../../hooks/useSettings";

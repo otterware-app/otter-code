@@ -52,6 +52,20 @@
         // Keep this small boot-time copy in sync with the built-in palettes so
         // the selected theme is visible before the app has mounted.
         const BUILT_IN_THEME_PALETTES = {
+          synara: {
+            light: {
+              background: "oklch(1 0 0)",
+              foreground: "oklch(0.159066 0 0)",
+              accent: "oklch(0.159066 0 0)",
+              chrome: "oklch(1 0 0)",
+            },
+            dark: {
+              background: "oklch(0.177638 0 0)",
+              foreground: "oklch(0.991069 0 0)",
+              accent: "oklch(0.991069 0 0)",
+              chrome: "oklch(0.173042 0 0)",
+            },
+          },
           "t3-chat": {
             light: {
               background: "oklch(0.982446 0.010114 325.653)",
@@ -133,6 +147,7 @@
           "system",
           "light",
           "dark",
+          "synara",
           "t3-chat",
           "grove",
           "ocean",

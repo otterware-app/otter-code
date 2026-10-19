@@ -1,4 +1,4 @@
-import { InfoIcon } from "lucide-react";
+import { InfoIcon } from "~/lib/icons";
 import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 

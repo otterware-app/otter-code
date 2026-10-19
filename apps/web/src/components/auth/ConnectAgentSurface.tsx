@@ -7,7 +7,8 @@ import {
 } from "@t3tools/contracts";
 import { Radio as RadioPrimitive } from "@base-ui/react/radio";
 import { isLoopbackHost } from "@t3tools/shared/preview";
-import { EyeIcon, type LucideIcon } from "lucide-react";
+import type { LucideIcon } from "~/lib/icons";
+import { EyeIcon } from "~/lib/icons";
 import type * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";

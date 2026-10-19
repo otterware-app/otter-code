@@ -3,7 +3,7 @@ import {
   capitalizeTerm,
   sourceControlClients,
 } from "@t3tools/client-runtime/source-control-clients";
-import { ArrowRightIcon } from "lucide-react";
+import { ArrowRightIcon } from "~/lib/icons";
 
 import { cn } from "~/lib/utils";
 

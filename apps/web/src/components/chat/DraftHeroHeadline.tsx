@@ -1,9 +1,10 @@
+import { T3Wordmark } from "../T3Wordmark";
 import type { DraftId } from "~/composerDraftStore";
 import { composerDraftHasUserContent, useComposerDraftStore } from "~/composerDraftStore";
 import { resolveEnvironmentMachineKind, type ScopedProjectRef } from "@t3tools/contracts";
 import { scopedProjectKey, scopeProjectRef } from "@t3tools/client-runtime/environment";
 import { isScratchProject } from "@t3tools/client-runtime/state/projects";
-import { FolderPlusIcon } from "lucide-react";
+import { FolderAddIcon as FolderPlusIcon } from "~/lib/icons";
 import { useAtomValue } from "@effect/atom-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -42,7 +43,6 @@ import {
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { InlineButton } from "../ui/button";
 import { DraftProjectName } from "./DraftProjectName";
-import { DraftHeroProjectHeading } from "./DraftHeroProjectHeading";
 import { resolveProjectSettings } from "@t3tools/shared/projectSettings";
 const ADD_PROJECT_VALUE = "add-project";
 interface PickerItem {
@@ -78,7 +78,7 @@ export function DraftHeroHeadline({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerQuery, setPickerQuery] = useState("");
   const pickerFilter = useComboboxFilter();
-  const { space, projectFilter } = useActiveProjectSpace();
+  const { projectFilter } = useActiveProjectSpace();
   const environmentLabelById = new Map(
     environments.map((environment) => [environment.environmentId, environment.label] as const),
   );
@@ -123,14 +123,11 @@ export function DraftHeroHeadline({
   const canChooseProject = projectPickerEntries.length > 0;
   const shouldShowProjectMenu = canChooseProject;
   // The project that hosts threads without a project is not a row: the line
-  // under the headline is the way into it. A project group offers only its
-  // own projects.
+  // under the headline is the way into it.
   const menuEntries = projectPickerEntries.filter(
     ({ group, targetProject }) =>
       !isScratchProject(targetProject, scratchWorkspaceRootFor(targetProject.environmentId)) &&
-      (space.kind !== "group" ||
-        projectFilter === null ||
-        group.memberProjects.some((project) => projectFilter(project))),
+      (projectFilter === null || group.memberProjects.some((project) => projectFilter(project))),
   );
   const activeProject =
     activeProjectRef === null
@@ -311,7 +308,13 @@ export function DraftHeroHeadline({
       <DraftProjectName value={activeProjectTitle ?? "Add a project"} singleLine />
     </button>
   );
-
+  const headingLabel = isScratchDraft
+    ? "What should we work on?"
+    : hasResolvedProject
+      ? `What should we do in ${activeProjectDisplayName}?`
+      : canChooseProject
+        ? `${activeProjectDisplayName ?? "Choose a project"} to start`
+        : "Add a project to start";
   const noProjectShortcut = shortcutLabelForCommand(keybindings, "chat.newWithoutProject");
   const orStartWithoutProject =
     scratchWorkspaceRoot !== null && !isScratchDraft && (hasResolvedProject || canChooseProject) ? (
@@ -337,22 +340,22 @@ export function DraftHeroHeadline({
       </Tooltip>
     ) : null;
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col items-center">
-      {hasResolvedProject && !isScratchDraft ? (
-        <DraftHeroProjectHeading projectName={activeProjectDisplayName ?? "Choose a project"}>
-          {projectSelector}
-        </DraftHeroProjectHeading>
-      ) : (
-        <h1 className="w-full text-center font-normal text-2xl text-foreground tracking-tight sm:text-3xl">
-          {isScratchDraft ? (
-            <>What should we work on?</>
-          ) : canChooseProject ? (
-            <>{projectSelector} to start</>
-          ) : (
-            <>Add a project to start</>
-          )}
-        </h1>
-      )}
+    <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-5 px-5">
+      <T3Wordmark className="size-10 text-foreground" />
+      <h1
+        aria-label={headingLabel}
+        className="pointer-events-auto w-full text-center font-normal text-2xl text-foreground tracking-tight sm:text-3xl"
+      >
+        {isScratchDraft ? (
+          <>What should we work on?</>
+        ) : hasResolvedProject ? (
+          <>What should we do in {projectSelector}?</>
+        ) : canChooseProject ? (
+          <>{projectSelector} to start</>
+        ) : (
+          <>Add a project to start</>
+        )}
+      </h1>
       {scratchWorkspaceRoot === null ? null : (
         <p className="mt-2 flex h-6 w-full items-center justify-center text-sm">
           {isScratchDraft ? projectSelector : orStartWithoutProject}

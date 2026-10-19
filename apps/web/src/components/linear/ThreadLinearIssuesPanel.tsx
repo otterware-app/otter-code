@@ -1,12 +1,12 @@
 import type { ScopedThreadRef, ThreadLinearIssueLink } from "@t3tools/contracts";
+import { UnlinkIcon } from "lucide-react";
 import {
   ArrowUpRightIcon,
   LinkIcon,
   ListTodoIcon,
   MoreHorizontalIcon,
   PlusIcon,
-  UnlinkIcon,
-} from "lucide-react";
+} from "~/lib/icons";
 import { writeTextToClipboard } from "~/hooks/useCopyToClipboard";
 import { useLinearIssueLinking } from "~/hooks/useLinearIssueLinking";
 import { cn } from "~/lib/utils";

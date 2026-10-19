@@ -19,7 +19,6 @@ import { useLocation, useNavigate } from "@tanstack/react-router";
 import {
   memo,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type ButtonHTMLAttributes,
@@ -217,30 +216,21 @@ export const SpaceRail = memo(function SpaceRail({ className }: { className?: st
   );
   const moreButtonRef = useRef<HTMLButtonElement | null>(null);
   const threadsShowing = !isSidebarUtilityPage(pathname);
-  const projectGroups = useMemo(() => {
-    const labels = new Map(
-      environmentIdentities.map((entry) => [entry.environmentId, entry.label]),
-    );
-    return buildSidebarProjectSnapshots({
-      projects: projects.filter((project) => !project.isScratch),
-      settings: groupingSettings,
-      primaryEnvironmentId,
-      resolveEnvironmentLabel: (environmentId) => labels.get(environmentId) ?? null,
-    }).toSorted((left, right) => left.displayName.localeCompare(right.displayName));
-  }, [environmentIdentities, groupingSettings, primaryEnvironmentId, projects]);
-  const projectByKey = useMemo(
-    () => new Map(projectGroups.map((project) => [project.projectKey, project])),
-    [projectGroups],
+  const environmentLabels = new Map(
+    environmentIdentities.map((entry) => [entry.environmentId, entry.label]),
   );
-  const shortcuts = useMemo(
-    () =>
-      resolveRailShortcuts({
-        keys: railShortcuts,
-        spaceIds: new Set(spaces.map((entry) => entry.id)),
-        projectKeys: new Set(projectGroups.map((project) => project.projectKey)),
-      }),
-    [projectGroups, railShortcuts, spaces],
-  );
+  const projectGroups = buildSidebarProjectSnapshots({
+    projects: projects.filter((project) => !project.isScratch),
+    settings: groupingSettings,
+    primaryEnvironmentId,
+    resolveEnvironmentLabel: (environmentId) => environmentLabels.get(environmentId) ?? null,
+  }).toSorted((left, right) => left.displayName.localeCompare(right.displayName));
+  const projectByKey = new Map(projectGroups.map((project) => [project.projectKey, project]));
+  const shortcuts = resolveRailShortcuts({
+    keys: railShortcuts,
+    spaceIds: new Set(spaces.map((entry) => entry.id)),
+    projectKeys: new Set(projectGroups.map((project) => project.projectKey)),
+  });
   const selectedShortcut = activeRailShortcutKey({
     threadsShowing,
     space,

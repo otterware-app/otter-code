@@ -1,11 +1,4 @@
-import {
-  useMemo,
-  useReducer,
-  useRef,
-  type KeyboardEvent,
-  type MouseEvent,
-  type RefObject,
-} from "react";
+import { useReducer, useRef, type KeyboardEvent, type MouseEvent, type RefObject } from "react";
 
 import { FolderIcon, SettingsIcon } from "../../lib/icons";
 import {
@@ -49,36 +42,26 @@ export function SidebarProjectHeading({
 }) {
   const primaryEnvironmentId = usePrimaryEnvironmentId();
   const machineByEnvironmentId = useEnvironmentMachines();
-  const showEnvironments = useMemo(() => projectGroupsSpanEnvironments(groups), [groups]);
-  const items = useMemo(
-    () => [
-      { value: "all", label: spaceName },
-      ...groups.map((group) => ({ value: group.projectKey, label: group.displayName })),
-    ],
-    [groups, spaceName],
-  );
-  const projectByKey = useMemo(
-    () => new Map(groups.map((group) => [group.projectKey, group])),
-    [groups],
-  );
-  const selectedProject = scopeKey === null ? null : (projectByKey.get(scopeKey) ?? null);
-  const selectedItem = items.find((item) => item.value === (scopeKey ?? "all")) ?? items[0]!;
   const [menuState, dispatch] = useReducer(reduceSidebarProjectScopeMenuState, {
     open: false,
     query: "",
   });
   const filter = useComboboxFilter();
-  const filteredItems = useMemo(
-    () =>
-      filterSidebarProjectScopeItems({
-        items,
-        query: menuState.query,
-        matches: (item, query) => filter.contains(item, query, (candidate) => candidate.label),
-      }),
-    [filter, items, menuState.query],
-  );
   const highlightedKey = useRef<string | null>(null);
   const suppressNextScopeChange = useRef(false);
+  const showEnvironments = projectGroupsSpanEnvironments(groups);
+  const items = [
+    { value: "all", label: spaceName },
+    ...groups.map((group) => ({ value: group.projectKey, label: group.displayName })),
+  ];
+  const projectByKey = new Map(groups.map((group) => [group.projectKey, group]));
+  const selectedProject = scopeKey === null ? null : (projectByKey.get(scopeKey) ?? null);
+  const selectedItem = items.find((item) => item.value === (scopeKey ?? "all")) ?? items[0]!;
+  const filteredItems = filterSidebarProjectScopeItems({
+    items,
+    query: menuState.query,
+    matches: (item, query) => filter.contains(item, query, (candidate) => candidate.label),
+  });
 
   const openSettings = (
     event: MouseEvent<HTMLElement> | KeyboardEvent<HTMLInputElement>,

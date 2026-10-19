@@ -550,6 +550,10 @@
     "./speech": {
       "types": "./src/speech.ts",
       "import": "./src/speech.ts"
+    },
+    "./otterAccounts": {
+      "types": "./src/otterAccounts.ts",
+      "import": "./src/otterAccounts.ts"
     }
   },
   "scripts": {

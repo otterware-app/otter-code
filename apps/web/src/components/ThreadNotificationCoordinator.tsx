@@ -7,12 +7,8 @@ import { useAtomValue } from "@effect/atom-react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import type { EnvironmentId, OrchestrationV2ThreadShell, ThreadId } from "@t3tools/contracts";
 import * as Option from "effect/Option";
-import {
-  CircleAlertIcon,
-  CircleCheckIcon,
-  MessageCircleQuestionIcon,
-  ShieldQuestionIcon,
-} from "lucide-react";
+import { MessageCircleQuestionIcon, ShieldQuestionIcon } from "lucide-react";
+import { CircleAlertIcon, CircleCheckIcon } from "~/lib/icons";
 import { useEffect, useRef } from "react";
 
 import { getClientSettings, useClientSettings } from "../hooks/useSettings";

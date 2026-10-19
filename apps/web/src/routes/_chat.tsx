@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { isCommandPaletteOpen } from "../commandPaletteBus";
 import { ThreadRouteView } from "../components/ThreadRouteView";
 import { ThreadLinkPrompt } from "../components/promptLinks/ThreadLinkPrompt";
-import { useClientSettings, useLegacySidebarEnabled } from "../hooks/useSettings";
+import { useClientSettings } from "../hooks/useSettings";
 import { openCommandPalette } from "../commandPaletteBus";
 import { useProjects } from "../state/entities";
 import { isPreviewAvailableFor } from "../browser/previewRuntime";
@@ -45,18 +45,15 @@ function ChatRouteGlobalShortcuts() {
     AuthPreviewOperateScope,
   );
   const keybindings = useAtomValue(primaryServerKeybindingsAtom);
-  const legacySidebarEnabled = useLegacySidebarEnabled();
   const projectGroupingSettings = useClientSettings(selectProjectGroupingSettings);
   const projects = useProjects();
   const primaryEnvironmentId = usePrimaryEnvironmentId();
   const { scratchEnvironmentId, startScratchThread } = useScratchProject();
   const { space, projectFilter } = useActiveProjectSpace();
-  // Counted within the rail's space: a group of one project has no choice to
-  // make. A space with no projects counts every project, as new threads do.
   const projectGroupCount = (() => {
     const spaceProjects = projectFilter === null ? projects : projects.filter(projectFilter);
     return buildSidebarProjectSnapshots({
-      projects: spaceProjects.length > 0 ? spaceProjects : projects,
+      projects: spaceProjects,
       settings: projectGroupingSettings,
       primaryEnvironmentId,
       resolveEnvironmentLabel: () => null,
@@ -95,6 +92,27 @@ function ChatRouteGlobalShortcuts() {
         clearSelection();
         return;
       }
+
+      if (
+        (command === "chat.new" || command === "chat.newLocal") &&
+        projectGroupCount === 0 &&
+        space.kind !== "chats"
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        const scratchTarget =
+          space.kind === "all"
+            ? scratchEnvironmentId(
+                activeThread?.environmentId ??
+                  activeDraftThread?.environmentId ??
+                  primaryEnvironmentId,
+              )
+            : null;
+        if (scratchTarget !== null) void startScratchThread(scratchTarget);
+        else openCommandPalette({ open: "add-project" });
+        return;
+      }
+
       if (command === "chat.newLocal") {
         event.preventDefault();
         event.stopPropagation();
@@ -128,7 +146,7 @@ function ChatRouteGlobalShortcuts() {
       if (command === "chat.new") {
         event.preventDefault();
         event.stopPropagation();
-        if (!legacySidebarEnabled && projectGroupCount > 1) {
+        if (projectGroupCount > 1) {
           openCommandPalette({ open: "new-thread-in" });
           return;
         }
@@ -202,7 +220,6 @@ function ChatRouteGlobalShortcuts() {
     selectedThreadKeysSize,
     space.kind,
     startScratchThread,
-    legacySidebarEnabled,
     terminalOpen,
   ]);
   return null;

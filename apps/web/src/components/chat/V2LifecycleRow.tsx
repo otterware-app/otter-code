@@ -30,16 +30,15 @@ import {
   type ScopedThreadRef,
 } from "@t3tools/contracts";
 import type { TimestampFormat } from "@t3tools/contracts/settings";
+import { ArrowRightLeftIcon, MessageSquareIcon } from "lucide-react";
 import {
   BotIcon,
   ChevronRightIcon,
-  ArrowRightLeftIcon,
   ArrowRightIcon,
   GitForkIcon,
-  MessageSquareIcon,
-  MinusIcon,
+  ContextCompactionIcon,
   XIcon,
-} from "lucide-react";
+} from "~/lib/icons";
 
 import { Tooltip, TooltipTrigger, TooltipPopup } from "../ui/tooltip";
 import {
@@ -56,6 +55,7 @@ import { TimelineSystemDivider } from "./TimelineSystemDivider";
 import { subagentResumedSince } from "./V2LifecycleRow.logic";
 import { Button, InlineButton } from "../ui/button";
 import { T3Wordmark } from "../T3Wordmark";
+import { contextCompactionLabel } from "./contextCompaction";
 
 const LIFECYCLE_TYPES = new Set<OrchestrationV2TurnItem["type"]>([
   "run_interrupt_request",
@@ -117,16 +117,13 @@ export function V2LifecycleRow(props: {
       item.beforeTokenCount === undefined && item.afterTokenCount === undefined
         ? null
         : `${item.beforeTokenCount ?? "?"} → ${item.afterTokenCount ?? "?"} tokens`;
-    const label =
-      item.status === "failed"
-        ? "Context compaction failed"
-        : item.status === "cancelled" || item.status === "interrupted"
-          ? "Context compaction stopped"
-          : item.status === "pending" || item.status === "running" || item.status === "waiting"
-            ? "Compacting context"
-            : "Context compacted";
+    const label = contextCompactionLabel(item.status);
     return (
-      <TimelineSystemDivider label={label} detail={item.summary ?? tokenDetail} icon={MinusIcon} />
+      <TimelineSystemDivider
+        label={label}
+        detail={item.summary ?? tokenDetail}
+        icon={ContextCompactionIcon}
+      />
     );
   }
   if (item.type === "handoff") {

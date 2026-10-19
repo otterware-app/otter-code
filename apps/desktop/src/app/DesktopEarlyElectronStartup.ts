@@ -49,6 +49,13 @@ const decodeEarlyDesktopSettingsJson = Schema.decodeSync(EarlyDesktopSettingsJso
 const isDevelopmentEnvironment = (env: NodeJS.ProcessEnv): boolean =>
   trimNonEmpty(env.VITE_DEV_SERVER_URL) !== null;
 
+export function resolveDevelopmentMacAppName(env: NodeJS.ProcessEnv): string | null {
+  if (!isDevelopmentEnvironment(env)) return null;
+  const appId = trimNonEmpty(env.T3CODE_DESKTOP_APP_USER_MODEL_ID);
+  const suffix = appId?.replace(/^dev\.otterware\.code\.dev\.?/, "");
+  return suffix ? `Otter Code Dev ${suffix}` : "Otter Code Dev";
+}
+
 function resolveEarlyDesktopSettingsPath(input: {
   readonly env: NodeJS.ProcessEnv;
   readonly homeDirectory: string;

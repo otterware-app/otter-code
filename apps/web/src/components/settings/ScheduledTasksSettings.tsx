@@ -3,15 +3,14 @@ import { connectionStatusTitle } from "@t3tools/client-runtime/connection";
 import * as Option from "effect/Option";
 import { AsyncResult } from "effect/reactivity";
 import {
-  Clock3Icon,
   CopyIcon,
   InboxIcon,
   MoreHorizontalIcon,
   PencilIcon,
   PlayIcon,
   PlusIcon,
-  Trash2Icon,
-} from "lucide-react";
+} from "~/lib/icons";
+import { Clock3Icon, Trash2Icon } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import type {
   EnvironmentId,

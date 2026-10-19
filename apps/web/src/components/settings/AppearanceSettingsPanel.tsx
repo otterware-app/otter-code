@@ -30,6 +30,7 @@ import {
 } from "./settingsLayout";
 import { searchableSetting } from "./settingsSearch";
 import { PanelAnimationsPreview } from "./PanelAnimationsPreview";
+import { WindowAppearanceSettings } from "./WindowAppearanceSettings";
 import { TypographySection } from "./TypographySettings";
 
 const ENVIRONMENT_IDENTIFICATION_LABELS: Record<EnvironmentIdentificationMode, string> = {
@@ -432,6 +433,7 @@ export function AppearanceSettingsPanel() {
         />
       </SettingsSection>
 
+      <WindowAppearanceSettings />
       <TypographySection />
     </SettingsPageContainer>
   );

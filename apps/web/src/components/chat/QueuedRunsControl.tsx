@@ -9,13 +9,8 @@ import type {
   RunId,
   ThreadId,
 } from "@t3tools/contracts";
-import {
-  Clock3Icon,
-  CornerUpRightIcon,
-  GripVerticalIcon,
-  ListOrderedIcon,
-  PencilIcon,
-} from "lucide-react";
+import { Clock3Icon, CornerUpRightIcon, GripVerticalIcon, ListOrderedIcon } from "lucide-react";
+import { PencilIcon } from "~/lib/icons";
 import { useId, useImperativeHandle, useRef, useState, type Ref } from "react";
 
 import { useAssetUrls } from "../../assets/assetUrls";

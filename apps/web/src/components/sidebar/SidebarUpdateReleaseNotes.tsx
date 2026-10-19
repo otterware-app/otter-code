@@ -1,5 +1,5 @@
 import type { DesktopBridge, DesktopUpdateState } from "@t3tools/contracts";
-import { ExternalLinkIcon } from "lucide-react";
+import { ExternalLinkIcon } from "~/lib/icons";
 
 import {
   getDesktopUpdateReleaseHistoryUrl,

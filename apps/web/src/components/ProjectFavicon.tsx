@@ -36,6 +36,7 @@ export function ProjectFavicon(input: {
   project: ProjectFaviconProject;
   className?: string | undefined;
   fallbackIcon?: ComponentType<{ className?: string }>;
+  fallback?: "monogram" | "icon";
 }) {
   const { project } = input;
   const src = useAtomValue(
@@ -82,13 +83,14 @@ export function ProjectFavicon(input: {
     );
   }
   const FallbackIcon = input.fallbackIcon ?? FolderCodeIcon;
+  const fallbackProjectName = input.fallback === "icon" ? undefined : project.title;
 
   if (!src || isProjectFaviconFallbackUrl(src)) {
     return (
       <ProjectFaviconFallback
         className={input.className}
         icon={FallbackIcon}
-        projectName={project.title}
+        projectName={fallbackProjectName}
       />
     );
   }
@@ -105,7 +107,7 @@ export function ProjectFavicon(input: {
       src={src}
       className={input.className}
       fallbackIcon={FallbackIcon}
-      fallbackProjectName={project.title}
+      fallbackProjectName={fallbackProjectName}
     />
   );
 }

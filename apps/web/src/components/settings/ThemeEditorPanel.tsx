@@ -1,4 +1,5 @@
-import { MousePointer2Icon, PaintbrushIcon, PlusIcon, XIcon } from "lucide-react";
+import { MousePointer2Icon, PaintbrushIcon } from "lucide-react";
+import { PlusIcon, XIcon } from "~/lib/icons";
 import { ChevronDown, ChevronUp } from "lucide";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import {

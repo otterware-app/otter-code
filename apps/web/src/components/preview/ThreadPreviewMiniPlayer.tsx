@@ -1,7 +1,8 @@
 import { FILL_PREVIEW_VIEWPORT, type ScopedThreadRef } from "@t3tools/contracts";
 import { previewPdfAssetUrl } from "@t3tools/shared/preview";
 import { useEnvironmentHttpBaseUrl } from "~/state/environments";
-import { PanelRightIcon, PictureInPicture2, XIcon } from "lucide-react";
+import { PictureInPicture2 } from "lucide-react";
+import { PanelRightCloseIcon as PanelRightIcon, XIcon } from "~/lib/icons";
 import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,

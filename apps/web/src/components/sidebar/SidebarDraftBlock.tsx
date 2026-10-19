@@ -1,6 +1,6 @@
+import { NewThreadIcon as SquarePenIcon, XIcon } from "~/lib/icons";
 import { discardComposerDraft } from "../../lib/discardComposerDraft";
 import { replaceComposerContextReferences } from "@t3tools/shared/composerContextReferences";
-import { SquarePenIcon, XIcon } from "lucide-react";
 import {
   memo,
   useState,

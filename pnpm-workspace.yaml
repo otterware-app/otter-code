@@ -34,13 +34,6 @@ catalog:
   "@alchemy.run/drizzle": 2.0.0-beta.85
   "@alchemy.run/planetscale": 2.0.0-beta.85
   "@alchemy.run/test": 2.0.0-beta.85
-  "@clerk/backend": 3.27.0
-  "@clerk/clerk-js": 6.42.3
-  "@clerk/electron": 0.1.10
-  "@clerk/electron-passkeys": 0.0.3
-  "@clerk/expo": 4.15.1
-  "@clerk/react": 6.18.6
-  "@clerk/shared": 4.44.1
   # Must match the version alchemy depends on: the relay overrides its
   # Cloudflare retry policy through this package's Retry service.
   "@distilled.cloud/cloudflare": 1.0.0-rc.18
@@ -219,7 +212,7 @@ patchedDependencies:
   "@effect/vitest@4.1.2": patches/@effect__vitest@4.1.2.patch
   expo-sharing@58.0.22: patches/expo-sharing@58.0.22.patch
   expo-widgets@58.0.27: patches/expo-widgets@58.0.27.patch
-  react-native-screens@5.0.0-t3.30: patches/react-native-screens@5.0.0-t3.30.patch
+  react-native-screens@5.0.0-t3.44: patches/react-native-screens@5.0.0-t3.44.patch
   "@ff-labs/fff-node@0.11.0": patches/@ff-labs__fff-node@0.11.0.patch
   # Exports the dependency-light subpaths mobile and the web diff parser import, and makes find
   # cover folded files and collapsed context (onRevealSearchMatch).

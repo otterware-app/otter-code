@@ -1,9 +1,3 @@
-import { PullRequestGlyph } from "../pullRequest/pullRequestIcons";
-import { type ToolActivityIcon } from "@t3tools/contracts";
-import { toolActivityFaviconUrl } from "@t3tools/shared/favicon";
-import { getProjectFaviconCacheKey } from "@t3tools/shared/projectFavicon";
-import { use, useState } from "react";
-import { T3Wordmark } from "../T3Wordmark";
 import {
   BotIcon,
   BrainIcon,
@@ -11,18 +5,22 @@ import {
   CircleAlertIcon,
   EyeIcon,
   GlobeIcon,
+  HammerIcon,
   ListTodoIcon,
   MessageCircleIcon,
   SearchIcon,
-  SmartphoneIcon,
-  SquarePenIcon,
+  NewThreadIcon as SquarePenIcon,
   TerminalIcon,
-  HammerIcon,
-  WrenchIcon,
-  Code2Icon,
   XIcon,
   ZapIcon,
-} from "lucide-react";
+} from "~/lib/icons";
+import { PullRequestGlyph } from "../pullRequest/pullRequestIcons";
+import { type ToolActivityIcon } from "@t3tools/contracts";
+import { toolActivityFaviconUrl } from "@t3tools/shared/favicon";
+import { getProjectFaviconCacheKey } from "@t3tools/shared/projectFavicon";
+import { use, useState } from "react";
+import { T3Wordmark } from "../T3Wordmark";
+import { SmartphoneIcon, WrenchIcon, Code2Icon } from "lucide-react";
 import { useAssetUrlState } from "../../assets/assetUrls";
 import { cn } from "~/lib/utils";
 import { TimelineRowCtx } from "./timelineRowContext";

@@ -1,5 +1,5 @@
 import type { EnvironmentId } from "@t3tools/contracts";
-import { CheckIcon, ChevronDownIcon } from "lucide-react";
+import { CheckIcon, ChevronDownIcon } from "~/lib/icons";
 import { useState } from "react";
 
 import { buildBaseRefChoices, filterBaseRefChoices } from "~/lib/baseRefChoices";

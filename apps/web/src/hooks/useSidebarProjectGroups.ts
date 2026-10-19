@@ -10,8 +10,11 @@ import { useDelegatedUnderParent, useProjects, useQuietThreadShells } from "../s
 import { legacyProjectCwdPreferenceKey, useUiStateStore } from "../uiStateStore";
 import { useClientSettings } from "./useSettings";
 
-export function useSidebarProjectGroups() {
-  const projects = useProjects();
+export function useSidebarProjectGroups(
+  projectFilter: ((project: ProjectSpaceProject) => boolean) | null = null,
+) {
+  const allProjects = useProjects();
+  const projects = projectFilter === null ? allProjects : allProjects.filter(projectFilter);
   // Activity order lags a running thread's streaming ticks until its next
   // real change; reading every tick re-rendered the whole sidebar with it.
   const threads = useQuietThreadShells();

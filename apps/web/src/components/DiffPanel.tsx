@@ -13,9 +13,6 @@ import {
   type ScopedThreadRef,
 } from "@t3tools/contracts";
 import {
-  ChevronDownIcon,
-  ChevronUpIcon,
-  Columns2Icon,
   FlaskConicalOffIcon,
   FileTextIcon,
   FolderTreeIcon,

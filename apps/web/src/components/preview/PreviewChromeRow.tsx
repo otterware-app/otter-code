@@ -1,12 +1,11 @@
 import { RefreshIcon } from "~/components/ui/refresh-icon";
+import { MousePointerClick, PictureInPicture2 } from "lucide-react";
 import {
-  ArrowLeft,
-  ArrowRight,
-  Camera,
-  ExternalLink,
-  MousePointerClick,
-  PictureInPicture2,
-} from "lucide-react";
+  ArrowLeftIcon as ArrowLeft,
+  ArrowRightIcon as ArrowRight,
+  CameraIcon as Camera,
+  ExternalLinkIcon as ExternalLink,
+} from "~/lib/icons";
 import {
   type FormEvent,
   type KeyboardEvent,

@@ -1,4 +1,5 @@
-import { ChevronsLeftRightEllipsisIcon, PlusIcon, TerminalIcon } from "lucide-react";
+import { TerminalIcon } from "~/lib/icons";
+import { ChevronsLeftRightEllipsisIcon, PlusIcon } from "lucide-react";
 import { useAtomValue } from "@effect/atom-react";
 import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
 import {

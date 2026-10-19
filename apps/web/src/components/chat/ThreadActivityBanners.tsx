@@ -1,3 +1,4 @@
+import { GitBranchIcon, MessageCircleIcon } from "~/lib/icons";
 import type {
   OrchestrationV2PendingBackgroundTask,
   OrchestrationV2ProviderGoal,
@@ -11,14 +12,7 @@ import {
 import { childThreadInputsTitle } from "@t3tools/client-runtime/state/threads";
 import { formatDuration } from "@t3tools/shared/orchestrationTiming";
 import * as DateTime from "effect/DateTime";
-import {
-  CircleDashedIcon,
-  GitBranchIcon,
-  MessageCircleIcon,
-  ShieldQuestionIcon,
-  TargetIcon,
-  TerminalIcon,
-} from "lucide-react";
+import { CircleDashedIcon, ShieldQuestionIcon, TargetIcon, TerminalIcon } from "lucide-react";
 import { Fragment } from "react";
 import { tickTextContent } from "~/lib/tickTextContent";
 import { cn } from "~/lib/utils";

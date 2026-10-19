@@ -99,13 +99,16 @@ export function installChatRouteCommands(router: AnyRouter): () => void {
     };
   };
   // Counted within the rail's space: a group of one project has no choice to make.
-  const readProjectGroupCount = () =>
-    buildSidebarProjectSnapshots({
-      projects: readSpaceProjects().projects,
+  const readProjectGroupCount = () => {
+    const { projectFilter } = readActiveProjectSpace();
+    const projects = readProjects();
+    return buildSidebarProjectSnapshots({
+      projects: projectFilter === null ? projects : projects.filter(projectFilter),
       settings: selectProjectGroupingSettings(getClientSettings()),
       primaryEnvironmentId: appAtomRegistry.get(primaryEnvironmentIdAtom),
       resolveEnvironmentLabel: () => null,
     }).length;
+  };
   const canOperatePreview = (environmentId: EnvironmentId) =>
     readEnvironmentScope(environmentId, AuthPreviewOperateScope);
 
@@ -123,7 +126,20 @@ export function installChatRouteCommands(router: AnyRouter): () => void {
     event.stopPropagation();
   };
 
+  // A space without projects has no project to start in: All starts a chat
+  // without one where the machine offers it; otherwise the user adds a project.
+  const startInEmptySpace = (event: KeyboardEvent) => {
+    const { space } = readActiveProjectSpace();
+    if (space.kind === "chats" || readProjectGroupCount() > 0) return false;
+    claim(event);
+    const environmentId = space.kind === "all" ? readScratchEnvironmentId() : null;
+    if (environmentId !== null) void scratch.startScratchThread(environmentId);
+    else openCommandPalette({ open: "add-project" });
+    return true;
+  };
+
   const startNewLocal: CommandHandler = (event) => {
+    if (startInEmptySpace(event)) return;
     claim(event);
     void startNewThreadFromContext(readThreadContext());
   };
@@ -146,6 +162,7 @@ export function installChatRouteCommands(router: AnyRouter): () => void {
         void scratch.startScratchThread(environmentId);
       },
       "chat.new": (event) => {
+        if (startInEmptySpace(event)) return;
         // In Chats, chat.new starts without a project too, unless the machine
         // offers no such home; then it falls through to the ordinary new thread.
         if (readActiveProjectSpace().space.kind === "chats") {
@@ -156,8 +173,7 @@ export function installChatRouteCommands(router: AnyRouter): () => void {
             return;
           }
         }
-        // Pre-hydration settings are the defaults, where the legacy sidebar is off.
-        if (!getClientSettings().legacySidebarEnabled && readProjectGroupCount() > 1) {
+        if (readProjectGroupCount() > 1) {
           claim(event);
           openCommandPalette({ open: "new-thread-in" });
           return;

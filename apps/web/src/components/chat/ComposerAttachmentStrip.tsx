@@ -6,7 +6,7 @@ import type {
   SnapShotSource,
 } from "@t3tools/contracts";
 import { formatAttachmentSize } from "@t3tools/client-runtime/state/attachments";
-import { CircleAlertIcon, PaperclipIcon, PlayIcon, XIcon } from "lucide-react";
+import { CircleAlertIcon, PlayIcon, PlusIcon, XIcon } from "~/lib/icons";
 import { type ComponentProps, useLayoutEffect, useRef } from "react";
 
 import {
@@ -707,7 +707,7 @@ export function ComposerAttachButton({
             />
           }
         >
-          <PaperclipIcon />
+          <PlusIcon />
         </TooltipTrigger>
         <TooltipPopup>Attach files</TooltipPopup>
       </Tooltip>

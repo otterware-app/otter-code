@@ -1,6 +1,6 @@
 import { useAtomCommand } from "~/state/use-atom-command";
 import type { EnvironmentId, PullRequestLabelCandidate, PullRequestRef } from "@t3tools/contracts";
-import { CheckIcon, TagIcon } from "lucide-react";
+import { CheckIcon, TagIcon } from "~/lib/icons";
 import { useState } from "react";
 
 import { pullRequestEnvironment } from "~/state/pullRequests";

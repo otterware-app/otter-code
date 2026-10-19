@@ -9,15 +9,11 @@ import {
   PERSISTED_STATE_KEY,
   type PersistedUiState,
   persistState,
-  reorderProjects,
-  resolveProjectExpanded,
-  setProjectExpanded,
   type UiState,
 } from "./uiStateStore";
 
 function makeUiState(overrides: Partial<UiState> = {}): UiState {
   return {
-    projectExpandedById: {},
     projectOrder: [],
     sidebarProjectScopeKeys: [],
     sidebarProjectSpaceId: null,
@@ -53,55 +49,11 @@ describe("uiStateStore pure functions", () => {
     expect(next.threadLastVisitedAtById[threadId]).toBe("2026-02-25T12:29:59.999Z");
     expect(markThreadUnread(next, threadId, null)).toBe(next);
   });
-
-  it("resolves project expansion from logical, physical, and legacy preference keys", () => {
-    const physicalKey = "environment:/repo/project";
-    const legacyKey = legacyProjectCwdPreferenceKey("/repo/project");
-
-    expect(resolveProjectExpanded({ logical: false, [physicalKey]: true }, ["logical"])).toBe(
-      false,
-    );
-    expect(resolveProjectExpanded({ [physicalKey]: false }, ["new-logical", physicalKey])).toBe(
-      false,
-    );
-    expect(resolveProjectExpanded({ [legacyKey]: false }, ["new-logical", legacyKey])).toBe(false);
-    expect(resolveProjectExpanded({}, ["new-logical"])).toBe(true);
-  });
-
-  it("sets expansion for every stable key belonging to a logical project", () => {
-    const initialState = makeUiState();
-    const keys = ["logical", "environment-a:/repo", "environment-b:/repo"];
-
-    const next = setProjectExpanded(initialState, keys, false);
-
-    expect(next.projectExpandedById).toEqual({
-      logical: false,
-      "environment-a:/repo": false,
-      "environment-b:/repo": false,
-    });
-    expect(setProjectExpanded(next, keys, false)).toBe(next);
-  });
-
-  it("moves grouped project members together", () => {
-    const keyALocal = "env-local:proj-a";
-    const keyARemote = "env-remote:proj-a";
-    const keyB = "env-local:proj-b";
-    const keyC = "env-local:proj-c";
-    const currentOrder = [keyALocal, keyARemote, keyB, keyC];
-
-    const next = reorderProjects(makeUiState(), currentOrder, [keyALocal, keyARemote], [keyC]);
-
-    expect(next.projectOrder).toEqual([keyB, keyC, keyALocal, keyARemote]);
-  });
 });
 
 describe("parsePersistedState", () => {
   it("hydrates raw UI-owned state without server entities", () => {
     const parsed = parsePersistedState({
-      projectExpandedById: {
-        logical: false,
-        invalid: "no" as unknown as boolean,
-      },
       projectOrder: ["physical-b", "", "physical-a", "physical-b"],
       threadLastVisitedAtById: {
         "environment:thread-1": "2026-02-25T12:35:00.000Z",
@@ -118,9 +70,6 @@ describe("parsePersistedState", () => {
     });
 
     expect(parsed).toEqual({
-      projectExpandedById: {
-        logical: false,
-      },
       projectOrder: ["physical-b", "physical-a"],
       threadLastVisitedAtById: {
         "environment:thread-1": "2026-02-25T12:35:00.000Z",
@@ -151,19 +100,14 @@ describe("parsePersistedState", () => {
     expect(parsed.threadChangedFilesExpandedById).toEqual({});
   });
 
-  it("migrates legacy CWD project preferences into local alias keys", () => {
+  it("migrates legacy CWD project ordering into local alias keys", () => {
     const parsed = parsePersistedState({
-      collapsedProjectCwds: ["/repo/b"],
-      expandedProjectCwds: ["/repo/a"],
       projectOrderCwds: ["/repo/b", "/repo/a"],
     });
     const projectAKey = legacyProjectCwdPreferenceKey("/repo/a");
     const projectBKey = legacyProjectCwdPreferenceKey("/repo/b");
 
     expect(parsed.projectOrder).toEqual([projectBKey, projectAKey]);
-    expect(resolveProjectExpanded(parsed.projectExpandedById, [projectAKey])).toBe(true);
-    expect(resolveProjectExpanded(parsed.projectExpandedById, [projectBKey])).toBe(false);
-    expect(resolveProjectExpanded(parsed.projectExpandedById, ["unknown"])).toBe(true);
   });
 });
 
@@ -202,9 +146,6 @@ describe("uiStateStore persistence", () => {
 
   it("persists raw UI preferences including thread visit markers", () => {
     const state = makeUiState({
-      projectExpandedById: {
-        logical: false,
-      },
       projectOrder: ["physical-b", "physical-a"],
       threadLastVisitedAtById: {
         "environment:thread-1": "2026-02-25T12:35:00.000Z",
@@ -224,15 +165,13 @@ describe("uiStateStore persistence", () => {
       localStorageStub.getItem(PERSISTED_STATE_KEY) ?? "{}",
     ) as PersistedUiState;
     expect(persisted).toEqual({
-      projectExpandedById: {
-        logical: false,
-      },
       projectOrder: ["physical-b", "physical-a"],
       threadLastVisitedAtById: {
         "environment:thread-1": "2026-02-25T12:35:00.000Z",
       },
       defaultAdvertisedEndpointKey: "desktop-core:lan:http",
       sidebarProjectScopeKeys: [],
+      sidebarProjectScopeKey: null,
       sidebarProjectSpaceId: null,
       threadChangedFilesExpansionVersion: 2,
       threadChangedFilesExpandedById: {

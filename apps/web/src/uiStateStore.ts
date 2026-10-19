@@ -2,6 +2,7 @@ import { Debouncer } from "@tanstack/react-pacer";
 import type { PullRequestMergeMethod } from "@t3tools/contracts";
 import { create } from "zustand";
 import { normalizeProjectPathForComparison } from "@t3tools/client-runtime/state/projects";
+import { LEGACY_VOID_SPACE_ID, normalizeProjectSpaceId } from "./projectSpaces";
 
 export const PERSISTED_STATE_KEY = "t3code:ui-state:v1";
 const THREAD_CHANGED_FILES_EXPANSION_VERSION = 2;
@@ -19,11 +20,8 @@ const LEGACY_PERSISTED_STATE_KEYS = [
 ] as const;
 
 export interface PersistedUiState {
-  projectExpandedById?: Record<string, boolean>;
   projectOrder?: string[];
   threadLastVisitedAtById?: Record<string, string>;
-  collapsedProjectCwds?: string[];
-  expandedProjectCwds?: string[];
   projectOrderCwds?: string[];
   defaultAdvertisedEndpointKey?: string | null;
   sidebarProjectScopeKey?: string | null;
@@ -35,11 +33,9 @@ export interface PersistedUiState {
 }
 
 export interface UiProjectState {
-  projectExpandedById: Record<string, boolean>;
   projectOrder: string[];
   sidebarProjectScopeKeys: string[];
-  // The rail's space: a project group id, `CHATS_SPACE_ID`, or null for all
-  // projects. The project scope above narrows within it.
+  // A named Space, Chats, or null for all projects.
   sidebarProjectSpaceId: string | null;
 }
 
@@ -60,7 +56,6 @@ export interface UiState
   extends UiProjectState, UiThreadState, UiEndpointState, UiPullRequestState {}
 
 const initialState: UiState = {
-  projectExpandedById: {},
   projectOrder: [],
   sidebarProjectScopeKeys: [],
   sidebarProjectSpaceId: null,
@@ -71,7 +66,6 @@ const initialState: UiState = {
 };
 
 const LEGACY_PROJECT_CWD_PREFERENCE_PREFIX = "legacy-project-cwd:";
-const LEGACY_PROJECT_EXPANSION_DEFAULT_KEY = "legacy-project-expansion-default";
 let legacyKeysCleanedUp = false;
 
 export function legacyProjectCwdPreferenceKey(cwd: string): string {
@@ -87,17 +81,6 @@ function sanitizeStringArray(value: unknown): string[] {
       value.filter((entry): entry is string => typeof entry === "string" && entry.length > 0),
     ),
   ];
-}
-
-function sanitizeBooleanRecord(value: unknown): Record<string, boolean> {
-  if (!value || typeof value !== "object") {
-    return {};
-  }
-  return Object.fromEntries(
-    Object.entries(value).filter(
-      (entry): entry is [string, boolean] => entry[0].length > 0 && typeof entry[1] === "boolean",
-    ),
-  );
 }
 
 function sanitizeOptionalKey(value: unknown): string | null {
@@ -124,31 +107,12 @@ function isPullRequestMergeMethod(value: unknown): value is PullRequestMergeMeth
 }
 
 export function parsePersistedState(parsed: PersistedUiState): UiState {
-  const projectExpandedById =
-    parsed.projectExpandedById === undefined
-      ? (() => {
-          const migrated: Record<string, boolean> = {};
-          const collapsedProjectCwds = sanitizeStringArray(parsed.collapsedProjectCwds);
-          const expandedProjectCwds = sanitizeStringArray(parsed.expandedProjectCwds);
-          for (const cwd of collapsedProjectCwds) {
-            migrated[legacyProjectCwdPreferenceKey(cwd)] = false;
-          }
-          for (const cwd of expandedProjectCwds) {
-            migrated[legacyProjectCwdPreferenceKey(cwd)] = true;
-          }
-          if (!Array.isArray(parsed.collapsedProjectCwds) && expandedProjectCwds.length > 0) {
-            migrated[LEGACY_PROJECT_EXPANSION_DEFAULT_KEY] = false;
-          }
-          return migrated;
-        })()
-      : sanitizeBooleanRecord(parsed.projectExpandedById);
   const projectOrder =
     parsed.projectOrder === undefined
       ? sanitizeStringArray(parsed.projectOrderCwds).map(legacyProjectCwdPreferenceKey)
       : sanitizeStringArray(parsed.projectOrder);
 
   return {
-    projectExpandedById,
     projectOrder,
     threadLastVisitedAtById: sanitizeTimestampRecord(parsed.threadLastVisitedAtById),
     threadChangedFilesExpandedById:
@@ -156,10 +120,13 @@ export function parsePersistedState(parsed: PersistedUiState): UiState {
         ? sanitizePersistedThreadChangedFilesExpanded(parsed.threadChangedFilesExpandedById)
         : {},
     defaultAdvertisedEndpointKey: sanitizeOptionalKey(parsed.defaultAdvertisedEndpointKey),
-    sidebarProjectScopeKeys: sanitizeStringArray(
-      parsed.sidebarProjectScopeKeys ?? [parsed.sidebarProjectScopeKey],
+    sidebarProjectScopeKeys:
+      parsed.sidebarProjectSpaceId === LEGACY_VOID_SPACE_ID
+        ? []
+        : sanitizeStringArray(parsed.sidebarProjectScopeKeys ?? [parsed.sidebarProjectScopeKey]),
+    sidebarProjectSpaceId: normalizeProjectSpaceId(
+      sanitizeOptionalKey(parsed.sidebarProjectSpaceId),
     ),
-    sidebarProjectSpaceId: sanitizeOptionalKey(parsed.sidebarProjectSpaceId),
     pullRequestMergeMethod: isPullRequestMergeMethod(parsed.pullRequestMergeMethod)
       ? parsed.pullRequestMergeMethod
       : initialState.pullRequestMergeMethod,
@@ -221,15 +188,9 @@ export function persistState(state: UiState): void {
     return;
   }
   try {
-    const projectExpandedById = Object.fromEntries(
-      Object.entries(state.projectExpandedById).filter(
-        ([key]) => key !== LEGACY_PROJECT_EXPANSION_DEFAULT_KEY,
-      ),
-    );
     window.localStorage.setItem(
       PERSISTED_STATE_KEY,
       JSON.stringify({
-        projectExpandedById,
         projectOrder: state.projectOrder,
         threadLastVisitedAtById: state.threadLastVisitedAtById,
         defaultAdvertisedEndpointKey: state.defaultAdvertisedEndpointKey,
@@ -354,7 +315,7 @@ function setSidebarProjectScopeKeys(state: UiState, projectKeys: readonly string
 
 /** Choosing a space clears the project scope: it may name a project outside it. */
 export function setSidebarProjectSpaceId(state: UiState, spaceId: string | null): UiState {
-  const nextId = sanitizeOptionalKey(spaceId);
+  const nextId = normalizeProjectSpaceId(sanitizeOptionalKey(spaceId));
   if (state.sidebarProjectSpaceId === nextId && state.sidebarProjectScopeKeys.length === 0) {
     return state;
   }
@@ -371,83 +332,6 @@ function setPullRequestMergeMethod(state: UiState, method: PullRequestMergeMetho
     : { ...state, pullRequestMergeMethod: method };
 }
 
-export function resolveProjectExpanded(
-  projectExpandedById: Readonly<Record<string, boolean>>,
-  preferenceKeys: readonly string[],
-): boolean {
-  for (const key of preferenceKeys) {
-    const expanded = projectExpandedById[key];
-    if (expanded !== undefined) {
-      return expanded;
-    }
-  }
-  return projectExpandedById[LEGACY_PROJECT_EXPANSION_DEFAULT_KEY] ?? true;
-}
-
-export function setProjectExpanded(
-  state: UiState,
-  projectIds: string | readonly string[],
-  expanded: boolean,
-): UiState {
-  const ids = typeof projectIds === "string" ? [projectIds] : projectIds;
-  const nextEntries = ids.filter((projectId) => state.projectExpandedById[projectId] !== expanded);
-  if (nextEntries.length === 0) {
-    return state;
-  }
-  const projectExpandedById = { ...state.projectExpandedById };
-  for (const projectId of nextEntries) {
-    projectExpandedById[projectId] = expanded;
-  }
-  return {
-    ...state,
-    projectExpandedById,
-  };
-}
-
-export function reorderProjects(
-  state: UiState,
-  currentProjectOrder: readonly string[],
-  draggedProjectIds: readonly string[],
-  targetProjectIds: readonly string[],
-): UiState {
-  if (draggedProjectIds.length === 0) {
-    return state;
-  }
-  const draggedSet = new Set(draggedProjectIds);
-  const targetSet = new Set(targetProjectIds);
-  if (draggedProjectIds.every((id) => targetSet.has(id))) {
-    return state;
-  }
-
-  const originalTargetIndex = currentProjectOrder.findIndex((id) => targetSet.has(id));
-  if (originalTargetIndex < 0) {
-    return state;
-  }
-
-  const projectOrder = [...currentProjectOrder];
-
-  const removed: string[] = [];
-  let draggedBeforeTarget = 0;
-  for (let i = projectOrder.length - 1; i >= 0; i--) {
-    if (draggedSet.has(projectOrder[i]!)) {
-      removed.unshift(projectOrder.splice(i, 1)[0]!);
-      if (i < originalTargetIndex) {
-        draggedBeforeTarget++;
-      }
-    }
-  }
-  if (removed.length === 0) {
-    return state;
-  }
-
-  const insertIndex = originalTargetIndex - Math.max(0, draggedBeforeTarget - 1);
-  projectOrder.splice(insertIndex, 0, ...removed);
-  return {
-    ...state,
-    projectOrder,
-  };
-}
-
 interface UiStateStore extends UiState {
   markThreadVisited: (threadId: string, visitedAt: string) => void;
   markThreadUnread: (threadId: string, latestTurnCompletedAt: string | null | undefined) => void;
@@ -456,12 +340,6 @@ interface UiStateStore extends UiState {
   setSidebarProjectScopeKeys: (projectKeys: readonly string[]) => void;
   setSidebarProjectSpaceId: (spaceId: string | null) => void;
   setPullRequestMergeMethod: (method: PullRequestMergeMethod) => void;
-  setProjectExpanded: (projectIds: string | readonly string[], expanded: boolean) => void;
-  reorderProjects: (
-    currentProjectOrder: readonly string[],
-    draggedProjectIds: readonly string[],
-    targetProjectIds: readonly string[],
-  ) => void;
 }
 
 export const useUiStateStore = create<UiStateStore>((set) => ({
@@ -478,12 +356,6 @@ export const useUiStateStore = create<UiStateStore>((set) => ({
     set((state) => setSidebarProjectScopeKeys(state, projectKeys)),
   setSidebarProjectSpaceId: (spaceId) => set((state) => setSidebarProjectSpaceId(state, spaceId)),
   setPullRequestMergeMethod: (method) => set((state) => setPullRequestMergeMethod(state, method)),
-  setProjectExpanded: (projectIds, expanded) =>
-    set((state) => setProjectExpanded(state, projectIds, expanded)),
-  reorderProjects: (currentProjectOrder, draggedProjectIds, targetProjectIds) =>
-    set((state) =>
-      reorderProjects(state, currentProjectOrder, draggedProjectIds, targetProjectIds),
-    ),
 }));
 
 useUiStateStore.subscribe((state) => debouncedPersistState.maybeExecute(state));

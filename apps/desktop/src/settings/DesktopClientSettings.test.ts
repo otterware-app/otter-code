@@ -63,8 +63,6 @@ const clientSettings: ClientSettings = {
   },
   sidebarProjectSortOrder: "manual",
   sidebarThreadSortOrder: "created_at",
-  sidebarThreadPreviewCount: 6,
-  legacySidebarEnabled: false,
   sidebarWorkingShelfEnabled: false,
   loadBalancingEnabled: false,
   loadBalancingWeights: { "environment-1": 75, "environment-2": 0 },
@@ -212,7 +210,7 @@ describe("DesktopClientSettings", () => {
     ),
   );
 
-  it.effect("loads legacy wrapped client settings documents", () =>
+  it.effect("loads legacy wrapped settings and discards retired sidebar switches", () =>
     withClientSettings(
       Effect.gen(function* () {
         const environment = yield* DesktopEnvironment.DesktopEnvironment;
@@ -223,7 +221,11 @@ describe("DesktopClientSettings", () => {
           environment.clientSettingsPath,
           `{
             "settings": {
-              "timestampFormat": "12-hour"
+              "timestampFormat": "12-hour",
+              "fontSizeCode": 14,
+              "sidebarViewMode": "projects",
+              "legacySidebarEnabled": true,
+              "sidebarThreadPreviewCount": 6
             }
           }\n`,
         );
@@ -232,6 +234,10 @@ describe("DesktopClientSettings", () => {
         assert.isTrue(Option.isSome(persisted));
         if (Option.isSome(persisted)) {
           assert.equal(persisted.value.timestampFormat, "12-hour");
+          assert.equal(persisted.value.fontSizeCode, 14);
+          assert.isFalse(Object.hasOwn(persisted.value, "sidebarViewMode"));
+          assert.isFalse(Object.hasOwn(persisted.value, "legacySidebarEnabled"));
+          assert.isFalse(Object.hasOwn(persisted.value, "sidebarThreadPreviewCount"));
         }
       }),
     ),

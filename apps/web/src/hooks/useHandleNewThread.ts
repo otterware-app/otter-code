@@ -432,14 +432,12 @@ export function useHandleNewThread() {
       : null,
   );
   const allProjects = useProjects();
-  // New threads default to a project in the rail's space, and do not follow
-  // the open thread out of it. A space with no projects (an empty group, or
-  // Chats on a machine without a no-project home) leaves every project open.
+  // A Space never borrows the open thread's project from another Space.
   const { projectFilter } = useActiveProjectSpace();
   const spaceProjects = projectFilter === null ? allProjects : allProjects.filter(projectFilter);
-  const projects = spaceProjects.length > 0 ? spaceProjects : allProjects;
+  const projects = spaceProjects;
   const isProjectInSpace = (() => {
-    if (projectFilter === null || spaceProjects.length === 0) return undefined;
+    if (projectFilter === null) return undefined;
     const keys = new Set(projects.map((project) => `${project.environmentId}:${project.id}`));
     return (projectRef: ScopedProjectRef) =>
       keys.has(`${projectRef.environmentId}:${projectRef.projectId}`);

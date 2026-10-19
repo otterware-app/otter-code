@@ -104,6 +104,7 @@ function makeFakeBrowserWindow() {
     focus: vi.fn(),
     getBounds: vi.fn(() => ({ x: 0, y: 0, width: 1100, height: 780 })),
     getNormalBounds: vi.fn(() => ({ x: 0, y: 0, width: 1100, height: 780 })),
+    getNativeWindowHandle: vi.fn(() => Buffer.alloc(8)),
     isDestroyed: vi.fn(() => false),
     isFullScreen: vi.fn(() => false),
     isMaximized: vi.fn(() => false),
@@ -124,6 +125,7 @@ function makeFakeBrowserWindow() {
     setOpacity: vi.fn(),
     setTitle: vi.fn(),
     setTitleBarOverlay: vi.fn(),
+    setVibrancy: vi.fn(),
     setWindowButtonPosition: vi.fn(),
     show: vi.fn(),
     webContents,
@@ -878,8 +880,8 @@ describe("DesktopWindow", () => {
           yield* desktopWindow.zoomMain(direction);
           const position = fakeWindow.setWindowButtonPosition.mock.lastCall?.[0];
           assert.isDefined(position);
-          // The 14-point native buttons should share the zoomed 43px header's center.
-          const headerCenter = 21.5 * fakeWindow.window.webContents.getZoomFactor();
+          // Native traffic lights stay centered in the title bar as the renderer zooms.
+          const headerCenter = 22 * fakeWindow.window.webContents.getZoomFactor();
           assert.isAtMost(Math.abs(position.y + 7 - headerCenter), 0.5);
           assert.equal(position.x, 14);
         }

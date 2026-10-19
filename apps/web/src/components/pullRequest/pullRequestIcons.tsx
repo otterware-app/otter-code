@@ -1,13 +1,11 @@
+import { GitPullRequestArrowIcon, Link2Icon, Unlink2Icon } from "lucide-react";
 import {
   GitMergeIcon,
-  GitPullRequestArrowIcon,
   GitPullRequestClosedIcon,
   GitPullRequestDraftIcon,
-  LayersIcon,
-  Link2Icon,
-  Unlink2Icon,
+  FoldersIcon as LayersIcon,
   TriangleAlertIcon,
-} from "lucide-react";
+} from "~/lib/icons";
 import type { PullRequestState } from "@t3tools/contracts";
 
 export const PullRequestGlyph = {

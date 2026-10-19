@@ -2,7 +2,7 @@ import type { OrchestrationV2ProviderFailureClass } from "@t3tools/contracts";
 import { memo } from "react";
 import { Alert, AlertAction, AlertDescription } from "../ui/alert";
 import { Button } from "../ui/button";
-import { CircleAlertIcon, XIcon } from "lucide-react";
+import { CircleAlertIcon, XIcon } from "~/lib/icons";
 import { OpenAI } from "../Icons";
 import { ChatGptUsageButton } from "../settings/ChatGptUsageButton";
 import { ExpandableText } from "../settings/ExpandableText";

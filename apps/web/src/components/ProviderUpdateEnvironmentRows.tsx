@@ -1,4 +1,4 @@
-import { CheckIcon } from "lucide-react";
+import { CheckIcon } from "~/lib/icons";
 import { type ReactNode, useRef, useState } from "react";
 import {
   AuthProvidersManageScope,

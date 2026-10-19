@@ -6,6 +6,7 @@ import { CommandPalette } from "./CommandPalette";
 import { useComposerHandleContext } from "../composerHandleContext";
 import { openCommandPalette } from "../commandPaletteBus";
 import { primaryServerKeybindingsAtom } from "../state/server";
+import { isMacPlatform } from "../lib/utils";
 
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => vi.fn(),
@@ -149,7 +150,8 @@ describe("command palette focus restoration", () => {
       field.dispatchEvent(
         new KeyboardEvent("keydown", {
           key: "p",
-          ctrlKey: true,
+          metaKey: isMacPlatform(navigator.platform),
+          ctrlKey: !isMacPlatform(navigator.platform),
           bubbles: true,
           cancelable: true,
         }),

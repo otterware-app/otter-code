@@ -10,7 +10,7 @@ import type {
   EnvironmentId,
   ProviderInstanceConfig,
 } from "@t3tools/contracts";
-import { ExternalLinkIcon, SearchIcon } from "lucide-react";
+import { ExternalLinkIcon, SearchIcon } from "~/lib/icons";
 import { type FormEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { serverEnvironment } from "../../state/server";

@@ -36,9 +36,15 @@ export const resolveUserDataPath = Effect.fn("desktop.userData.resolveUserDataPa
     readonly appDataDirectory: string;
     readonly isDevelopment: boolean;
     readonly platform: NodeJS.Platform;
+    readonly stateDir?: string;
   }) {
     const fs = yield* FileSystem.FileSystem;
     const path = yield* Path.Path;
+    if (input.isDevelopment && input.stateDir !== undefined) {
+      // Chromium cookies share the native encryption identity. A worktree's
+      // profile must not load cookies encrypted by a different dev bundle.
+      return path.join(input.stateDir, "electron");
+    }
     const names = input.isDevelopment
       ? { current: "otter-code-dev", legacy: "Otter Code (Dev)" }
       : { current: "otter-code", legacy: "Otter Code" };

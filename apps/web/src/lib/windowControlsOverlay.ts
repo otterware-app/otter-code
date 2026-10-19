@@ -9,7 +9,7 @@ const ELECTRON_CLASS_NAME = "electron";
 const ELECTRON_WINDOWS_CLASS_NAME = "electron-windows";
 // The workspace topbar the desktop app centers the traffic lights in. macOS has
 // no overlay API to measure, and the lights stay inside it at any zoom level.
-const MACOS_TITLEBAR_HEIGHT = 52;
+const MACOS_TITLEBAR_HEIGHT = 44;
 
 interface WindowControlsOverlayLike {
   readonly visible: boolean;

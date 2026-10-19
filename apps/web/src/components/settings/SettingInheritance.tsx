@@ -6,7 +6,7 @@ import {
   type ServerSettings,
   type WorktreeSubmodules,
 } from "@t3tools/contracts";
-import { CheckIcon, ChevronRightIcon, LayersIcon } from "lucide-react";
+import { CheckIcon, ChevronRightIcon, FoldersIcon as LayersIcon } from "~/lib/icons";
 import * as Equal from "effect/Equal";
 
 import { cn } from "../../lib/utils";

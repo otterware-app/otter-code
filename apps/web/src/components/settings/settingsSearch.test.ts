@@ -45,6 +45,12 @@ const ITEMS: ReadonlyArray<SettingsSearchItem> = [
 ];
 
 describe("searchSettings", () => {
+  it("does not offer the removed Project sidebar switch", () => {
+    expect(getSettingsSearchTargetScope("legacy-sidebar")).toBeNull();
+    expect(searchSettings("project sidebar").map((item) => item.id)).not.toContain(
+      "legacy-sidebar",
+    );
+  });
   it.each(["OTel", "OTLP", "telemetry export", "Grafana"])(
     "finds environment telemetry settings for %s",
     (query) => {
@@ -474,7 +480,7 @@ describe("settings search targets", () => {
     const streaming = getSettingsSearchTargetScope("response-streaming")!;
     expect(streaming.scope).toBe("project-defaults");
     expect(isSettingsSearchScopeAvailable(streaming.scope, "project")).toBe(true);
-    for (const id of ["legacy-plan-mode", "legacy-context-window-indicator", "legacy-sidebar"]) {
+    for (const id of ["legacy-plan-mode", "legacy-context-window-indicator"]) {
       expect(getSettingsSearchTargetScope(id)!.scope).toBeNull();
     }
   });

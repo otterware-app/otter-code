@@ -1,6 +1,6 @@
 import { resolveEnvironmentMachineKind } from "@t3tools/contracts";
 import { useLocation } from "@tanstack/react-router";
-import { CheckIcon, ChevronDownIcon, LayersIcon } from "lucide-react";
+import { CheckIcon, ChevronDownIcon, FoldersIcon as LayersIcon } from "~/lib/icons";
 import { Fragment, useState, type ReactNode } from "react";
 
 import type { SidebarProjectSnapshot } from "../../sidebarProjectGrouping";

@@ -139,7 +139,7 @@ export function useServerUpdate() {
         description:
           selfUpdate === "desktop-managed"
             ? `Desktop app relaunched on ${result.value.targetVersion}.`
-            : `Reconnected on t3@${result.value.targetVersion}.`,
+            : `Reconnected on otter-code@${result.value.targetVersion}.`,
       });
     }
     return { status: "updated" };
@@ -394,7 +394,7 @@ export function OutdatedServerUpdateAction({
     toastManager.add({
       type: "success",
       title: `${serverLabel} updated`,
-      description: `Reconnected on t3@${result.value.targetVersion}.`,
+      description: `Reconnected on otter-code@${result.value.targetVersion}.`,
     });
   };
   if (fromVersion !== undefined && crossesReleaseTrack(fromVersion, targetVersion)) {

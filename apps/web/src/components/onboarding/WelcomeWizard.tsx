@@ -24,15 +24,15 @@ import {
   ThreadId,
 } from "@t3tools/contracts";
 import * as Schema from "effect/Schema";
+import { CloudIcon } from "lucide-react";
 import {
   ArrowRightIcon,
   CheckIcon,
   ChevronRightIcon,
-  CloudIcon,
   LinkIcon,
   MonitorIcon,
   TerminalIcon,
-} from "lucide-react";
+} from "~/lib/icons";
 import { useEffect, useRef, useState } from "react";
 
 import { TYPOGRAPHY_ADVANCED_STORAGE_KEY } from "../../appearanceFonts";

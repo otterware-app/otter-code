@@ -1,5 +1,7 @@
 import { InlineAudioPreview } from "../files/InlineAudioPreview";
 import { filePreviewKind } from "@t3tools/shared/filePreview";
+import { CalendarClockIcon, MessagesSquareIcon, type LucideIcon } from "lucide-react";
+import { ChevronDownIcon, DownloadIcon, EyeIcon, Redo2Icon, PencilIcon } from "~/lib/icons";
 import { findRevealRef } from "./markdownFindContext";
 import {
   type EnvironmentId,
@@ -26,16 +28,6 @@ import {
   isVideoAttachment,
 } from "../../types";
 import ChatMarkdown from "../ChatMarkdown";
-import {
-  CalendarClockIcon,
-  ChevronDownIcon,
-  DownloadIcon,
-  EyeIcon,
-  type LucideIcon,
-  MessagesSquareIcon,
-  Redo2Icon,
-  PencilIcon,
-} from "lucide-react";
 import { Link as LinkIconNode } from "lucide";
 import { Button, InlineButton } from "../ui/button";
 import { useAssetUrlRefresh, useAssetUrls, useAssetUrlState } from "../../assets/assetUrls";

@@ -43,17 +43,8 @@ import { deriveSubagentElapsedMs } from "@t3tools/shared/orchestrationTiming";
 import { groupBy } from "effect/Array";
 import * as DateTime from "effect/DateTime";
 import { useNavigate } from "@tanstack/react-router";
-import {
-  ArrowRightIcon,
-  BotIcon,
-  ChevronDownIcon,
-  CornerLeftUpIcon,
-  GitForkIcon,
-  MoreHorizontalIcon,
-  PlusIcon,
-  SquareIcon,
-  UnplugIcon,
-} from "lucide-react";
+import { CornerLeftUpIcon, SquareIcon, UnplugIcon } from "lucide-react";
+import { ArrowRightIcon, BotIcon, ChevronDownIcon, GitForkIcon, MoreHorizontalIcon, PlusIcon } from "~/lib/icons";
 import { useRef, useState, type ReactNode } from "react";
 
 import { useArchivedThreadSnapshots } from "../../lib/archivedThreadsState";

@@ -1,5 +1,6 @@
 import type { EnvironmentId, PullRequestRef, PullRequestReviewGuideStop } from "@t3tools/contracts";
-import { SparklesIcon, TriangleAlertIcon } from "lucide-react";
+import { SparklesIcon } from "lucide-react";
+import { TriangleAlertIcon } from "~/lib/icons";
 import { useEffect, useEffectEvent } from "react";
 
 import type { ReviewCommentContext } from "~/reviewCommentContext";

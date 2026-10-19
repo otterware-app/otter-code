@@ -13,6 +13,7 @@ import {
   GROVE_THEME,
   IRIS_THEME,
   OCEAN_THEME,
+  SYNARA_THEME,
   THEME_APPEARANCE_MODE_STORAGE_KEY,
   THEME_FOLLOW_SYSTEM_STORAGE_KEY,
   toCanonicalThemeColor,
@@ -151,6 +152,11 @@ describe("index.html boot script", () => {
     storage: Record<string, string>;
     prefersDark: boolean;
   }> = [
+    {
+      name: "Synara follows a dark OS",
+      storage: { [THEME_STORAGE_KEY]: "synara", [THEME_FOLLOW_SYSTEM_STORAGE_KEY]: "true" },
+      prefersDark: true,
+    },
     { name: "no stored preference on a dark OS", storage: {}, prefersDark: true },
     {
       name: "T3 Chat follows a dark OS",
@@ -284,7 +290,14 @@ describe("index.html boot script", () => {
   });
 
   it("keeps every built-in boot splash in sync with the real palettes", () => {
-    for (const theme of [T3_CHAT_THEME, GROVE_THEME, OCEAN_THEME, EMBER_THEME, IRIS_THEME]) {
+    for (const theme of [
+      SYNARA_THEME,
+      T3_CHAT_THEME,
+      GROVE_THEME,
+      OCEAN_THEME,
+      EMBER_THEME,
+      IRIS_THEME,
+    ]) {
       expect(theme.appearance).toBe("light");
       for (const mode of ["light", "dark"] as const) {
         const colors = getThemeColorsForMode(theme, mode);
@@ -305,6 +318,19 @@ describe("index.html boot script", () => {
         expect(boot.metaContent).toBe(colors!.chrome);
       }
     }
+  });
+
+  it("keeps a stored custom palette from shadowing Synara before mount", () => {
+    const boot = runBootScript({
+      storage: {
+        [THEME_STORAGE_KEY]: "synara",
+        [THEME_APPEARANCE_MODE_STORAGE_KEY]: "dark",
+        [CUSTOM_THEMES_STORAGE_KEY]: JSON.stringify([{ ...AURORA_DUAL, id: "synara" }]),
+      },
+      prefersDark: true,
+    });
+    expect(boot.themeId).toBe("synara");
+    expect(boot.backgroundColor).toBe(getThemeColorsForMode(SYNARA_THEME, "dark")!.chrome);
   });
 
   it("applies the matching half of an automatic mix to the splash", () => {

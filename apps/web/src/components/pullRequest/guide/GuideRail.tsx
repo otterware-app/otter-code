@@ -1,5 +1,5 @@
 import type { PullRequestReviewGuideStop } from "@t3tools/contracts";
-import { CheckIcon } from "lucide-react";
+import { CheckIcon } from "~/lib/icons";
 
 import { cn } from "~/lib/utils";
 

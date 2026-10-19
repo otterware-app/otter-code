@@ -278,6 +278,13 @@ function resolveBrowserChromeSurface(): HTMLElement {
 
 export function syncBrowserChromeTheme() {
   if (typeof document === "undefined" || typeof getComputedStyle === "undefined") return;
+  const nativeGlass = document.documentElement.dataset.windowMaterial === "translucent";
+  if (nativeGlass) {
+    // The native window supplies glass behind the body's single translucent
+    // coat. Inline canvas colors here would cover it after every navigation.
+    document.documentElement.style.removeProperty("background-color");
+    document.body.style.removeProperty("background-color");
+  }
   const rootStyles = getComputedStyle(document.documentElement);
   const themeChromeColor = document.documentElement.dataset.themeId
     ? normalizeThemeColor(rootStyles.getPropertyValue("--app-chrome-background"))
@@ -289,8 +296,10 @@ export function syncBrowserChromeTheme() {
   const backgroundColor = themeChromeColor ?? surfaceColor ?? fallbackColor;
   if (!backgroundColor) return;
 
-  document.documentElement.style.backgroundColor = backgroundColor;
-  document.body.style.backgroundColor = backgroundColor;
+  if (!nativeGlass) {
+    document.documentElement.style.backgroundColor = backgroundColor;
+    document.body.style.backgroundColor = backgroundColor;
+  }
   const themeColorMetas = document.querySelectorAll<HTMLMetaElement>(
     `meta[name="${THEME_COLOR_META_NAME}"]`,
   );

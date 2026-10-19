@@ -2,7 +2,8 @@ import { type OrchestrationV2CheckpointFileTotals, type RunId } from "@t3tools/c
 import { type MouseEvent, type ReactNode, memo, useLayoutEffect, useRef, useState } from "react";
 import { type TurnDiffFileChange } from "../../types";
 import { buildTurnDiffTree, type TurnDiffTreeNode } from "../../lib/turnDiffTree";
-import { ChevronRightIcon, FileDiffIcon } from "lucide-react";
+import { FileDiffIcon } from "lucide-react";
+import { ChevronRightIcon } from "~/lib/icons";
 import { ChevronsDownUp, ChevronsUpDown, Folder, FolderClosed } from "lucide";
 import { cn } from "~/lib/utils";
 import { DiffStatLabel, hasNonZeroStat } from "./DiffStatLabel";

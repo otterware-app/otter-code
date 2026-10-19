@@ -102,14 +102,14 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
    * tooltip, and toolbar controls cannot quietly drift apart.
    */
   --control-radius: 0.5rem;
-  --sidebar-content-inset: 0.5rem;
+  --sidebar-content-inset: 0.375rem;
   --sidebar-control-gap: 0.5rem;
   --sidebar-icon-color: color-mix(
     in srgb,
     var(--contrast-sidebar-muted-foreground) 85%,
     var(--sidebar)
   );
-  --sidebar-row-content-inset: 0.625rem;
+  --sidebar-row-content-inset: 0.5rem;
   --command-shell-inset: 0.5rem;
   --command-content-inset: 1rem;
   --floating-content-inset: 0.75rem;
@@ -121,7 +121,7 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   --glass-opacity: 80%;
   --glass-saturation: 1.14;
   --desktop-window-right-resize-inset: 0px;
-  --workspace-topbar-height: 52px;
+  --workspace-topbar-height: 44px;
   --workspace-controls-top: 0px;
   --workspace-controls-left: calc(env(safe-area-inset-left) + 0.75rem);
   --workspace-controls-right: calc(env(safe-area-inset-right) + 0.75rem);
@@ -176,6 +176,8 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
 }
 
 @theme inline {
+  --text-ui: 0.8125rem;
+  --text-ui--line-height: 1.25rem;
   /* Two steps below Tailwind's text-xs (12px) for dense UI: metadata rows,
      badges, counters, keyboard hints and diagnostics tables. 2xs is 11px,
      3xs is 10px. Provider icon overlays use 4xs (8px) and 5xs (7px) to fit
@@ -196,8 +198,8 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   /* The composer's elevation: a soft drop pulled in under the surface, shared
      by the composer, its context strip and attached banners. */
-  --shadow-composer: 0 1px 2px rgb(0 0 0 / 5%);
-  --shadow-composer-dark: 0 14px 32px -18px rgb(0 0 0 / 75%);
+  --shadow-composer: 0 4px 18px -6px rgb(0 0 0 / 7%);
+  --shadow-composer-dark: 0 6px 24px -10px rgb(0 0 0 / 30%);
   /* Overlap the lower toolbar backdrop by one pixel to cover the composer seam. */
   --spacing-composer-seam: calc(var(--spacing) * 4 - 1px);
   /* Dark-mode shade where an attached surface meets the composer: 10px of
@@ -287,6 +289,8 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   --color-sidebar-row-active: var(--sidebar-row-active);
   --color-sidebar-row-selected: var(--sidebar-row-selected);
   --color-sidebar-border: var(--contrast-sidebar-border);
+  --radius-composer: 1.2rem;
+  --color-permission: #e39365;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -1423,6 +1427,14 @@ html[data-theme-id]:not([data-theme-id=""]) {
   --terminal-foreground: var(--app-theme-terminal-foreground);
   --terminal-cursor: var(--app-theme-terminal-cursor);
   --terminal-selection-background: var(--app-theme-terminal-selection-background);
+}
+
+html[data-theme-id="synara"]:not([data-theme-id=""]) {
+  --primary: var(--app-theme-accent);
+  --primary-foreground: var(--app-theme-accent-foreground);
+  --info: var(--app-theme-update);
+  --info-foreground: var(--app-theme-update-foreground);
+  --success: #00a240;
 }
 
 /* Theme-token dependency probes are restored synchronously, before paint. Keep
@@ -2604,4 +2616,83 @@ code {
 [data-workspace-area]:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: -2px;
+}
+
+@utility truncate-fade {
+  overflow: hidden;
+  white-space: nowrap;
+  --_truncate-fade-size: var(--truncate-fade-size, 1.5rem);
+  --_truncate-fade-mask: linear-gradient(
+    to right,
+    #000 0,
+    #000 calc(100% - var(--_truncate-fade-size)),
+    transparent 100%
+  );
+  &:where([dir="rtl"], [dir="rtl"] *) {
+    --_truncate-fade-mask: linear-gradient(
+      to left,
+      #000 0,
+      #000 calc(100% - var(--_truncate-fade-size)),
+      transparent 100%
+    );
+  }
+  -webkit-mask-image: var(--_truncate-fade-mask);
+  mask-image: var(--_truncate-fade-mask);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+@utility truncate-fade-* {
+  --truncate-fade-size: calc(var(--spacing) * --value(integer));
+  --truncate-fade-size: --value([length], [percentage]);
+}
+
+.surface-tab-dividers > [data-surface-tab] + [data-surface-tab]::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: calc(-0.125rem - 0.5px);
+  width: 1px;
+  height: var(--app-chrome-divider-height);
+  translate: 0 -50%;
+  pointer-events: none;
+  background: var(--app-chrome-divider-color);
+  transition: opacity 150ms ease-out;
+}
+
+.surface-tab-dividers > [data-surface-tab]:is([data-surface-tab-active], :hover)::before,
+.surface-tab-dividers
+  > [data-surface-tab]:is([data-surface-tab-active], :hover)
+  + [data-surface-tab]::before {
+  opacity: 0;
+}
+
+@utility scroll-fade-x {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 0.5rem,
+    black calc(100% - 0.5rem),
+    transparent
+  );
+}
+@utility squircle {
+  :root.electron & {
+    -electron-corner-smoothing: system-ui;
+  }
+  @supports (corner-shape: squircle) {
+    :root:not(.electron) & {
+      corner-shape: squircle;
+    }
+  }
+}
+
+@utility app-content-surface {
+  background: var(--background);
+}
+:root {
+  --app-chrome-divider-height: 1.25rem;
+  --app-chrome-divider-color: var(--border);
+  --app-rail-inset-border: color-mix(in srgb, var(--foreground) 9%, transparent);
+  --app-rail-tab-active-surface: var(--card);
 }

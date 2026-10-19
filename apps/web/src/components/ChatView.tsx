@@ -266,6 +266,7 @@ import {
   PullRequestThreadDialogHost,
   RevertConfirmHost,
 } from "./chat/ChatOverlayHosts";
+import { AsciiWaveBackground } from "./chat/AsciiWaveBackground";
 import type { AssistantCitationRequest } from "./chat/AssistantCitationSource";
 import { useCitedHistory } from "./chat/citationProcedure";
 import type { MessagesTimelineHistoryControls } from "./chat/MessagesTimeline";
@@ -320,10 +321,7 @@ import {
   deriveLatestContextWindowSnapshot,
   latestProviderTurnTokenUsage,
 } from "../lib/contextWindow";
-import {
-  MOBILE_COMPOSER_VIEW_TRANSITION_NAME,
-  MOBILE_DRAFT_HEADLINE_VIEW_TRANSITION_NAME,
-} from "./chat/draftHeroTransition";
+import { MOBILE_COMPOSER_VIEW_TRANSITION_NAME } from "./chat/draftHeroTransition";
 import {
   buildLocalDraftThread,
   deriveCommittedServerUserMessageIds,
@@ -1234,6 +1232,7 @@ export default function ChatView(props: ChatViewProps) {
   const canChangeEnvironment =
     hasMultipleEnvironments && !envLocked && draftId !== null && !draftThread?.promotedTo;
 
+  const showAsciiBackground = useClientSettings((settings) => settings.showAsciiBackground);
   const loadBalancingSettings = useClientSettings((settings) => ({
     loadBalancingEnabled: settings.loadBalancingEnabled,
     loadBalancingWeights: settings.loadBalancingWeights,
@@ -3203,7 +3202,7 @@ export default function ChatView(props: ChatViewProps) {
   const content = (
     <div
       ref={setWorkspaceLayoutElement}
-      className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background"
+      className="app-content-surface relative flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background"
     >
       <DeviceSetupDialogHost
         threadKey={activeThreadKey}
@@ -3263,6 +3262,17 @@ export default function ChatView(props: ChatViewProps) {
         </header>
 
         <div className="relative flex min-h-0 min-w-0 flex-1">
+          {timelineMessages.length === 0 && !threadDetailLoading ? (
+            <>
+              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center pb-36">
+                <DraftHeroHeadline
+                  draftId={draftId}
+                  activeProjectRef={activeProjectRef}
+                  activeProjectTitle={activeProject?.title ?? null}
+                />
+              </div>
+            </>
+          ) : null}
           <ThreadFindCanvas
             findOptions={{
               skills: timelineSkills,
@@ -3302,8 +3312,12 @@ export default function ChatView(props: ChatViewProps) {
             />
             <div
               {...conversationArea}
-              className="relative flex min-h-0 flex-1 flex-col bg-background"
+              className="app-content-surface relative flex min-h-0 flex-1 flex-col bg-background"
+              data-chat-canvas
             >
+              {timelineMessages.length === 0 && !threadDetailLoading && showAsciiBackground ? (
+                <AsciiWaveBackground />
+              ) : null}
               <ThreadTimeline
                 pendingApprovals={pendingApprovals}
                 heldApprovalRequestIds={heldApprovalRequestIds}
@@ -3416,35 +3430,13 @@ export default function ChatView(props: ChatViewProps) {
               }}
               inert={isRevertingCheckpoint}
               data-chat-composer-overlay="true"
-              className={
-                isDraftHeroState
-                  ? "pointer-events-none absolute inset-0 z-20 flex items-center"
-                  : "pointer-events-none absolute inset-x-0 bottom-0 z-20 pt-1.5 sm:pt-2"
-              }
+              className="pointer-events-none absolute inset-x-0 bottom-0 z-20 pt-1.5 sm:pt-2"
             >
               <div ref={draftHeroTransitionGroupRef} className="chat-composer-lane w-full">
                 <div
                   data-chat-composer-stack="true"
                   className="group/composer-stack pointer-events-auto relative z-10 mx-auto w-full max-w-(--chat-content-max-width)"
                 >
-                  {isDraftHeroState ? (
-                    <div className="absolute inset-x-0 bottom-full">
-                      <div
-                        className="pb-4 group-has-data-[composer-shoulder-tab]/composer-stack:pb-0"
-                        style={
-                          forceExpandedMobileComposer
-                            ? { viewTransitionName: MOBILE_DRAFT_HEADLINE_VIEW_TRANSITION_NAME }
-                            : undefined
-                        }
-                      >
-                        <DraftHeroHeadline
-                          draftId={draftId}
-                          activeProjectRef={activeProjectRef}
-                          activeProjectTitle={activeProject?.title ?? null}
-                        />
-                      </div>
-                    </div>
-                  ) : null}
                   <div
                     ref={draftHeroComposerAnchorRef}
                     className="relative z-10"
@@ -3634,7 +3626,12 @@ export default function ChatView(props: ChatViewProps) {
                           )}
                         </div>
                       </ComposerSurface.Host>
-                      <div className="min-h-0">
+                      <div
+                        className={cn(
+                          "min-h-0",
+                          isDraftHeroState ? "order-first mb-1" : "order-last",
+                        )}
+                      >
                         <div
                           data-terminal-open={terminalUiState.terminalOpen ? "true" : undefined}
                           className="relative z-0"

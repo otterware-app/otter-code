@@ -3,7 +3,8 @@ import type {
   RuntimeSubagent,
 } from "@t3tools/client-runtime/state/subagentRuntime";
 import type { ProviderDriverKind, ProviderInstanceId, ServerProvider } from "@t3tools/contracts";
-import { ChevronDownIcon, SquareIcon } from "lucide-react";
+import { SquareIcon } from "lucide-react";
+import { ChevronDownIcon } from "~/lib/icons";
 import { useState, type ReactNode } from "react";
 
 import { AgentElapsed } from "./AgentElapsed";

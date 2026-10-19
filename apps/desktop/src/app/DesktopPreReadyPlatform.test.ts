@@ -11,6 +11,7 @@ const {
   hasSwitchMock,
   registerSchemesMock,
   setDesktopNameMock,
+  setNameMock,
   mkdirSyncMock,
   writeFileSyncMock,
   copyFileSyncMock,
@@ -22,6 +23,7 @@ const {
   hasSwitchMock: vi.fn(),
   registerSchemesMock: vi.fn(),
   setDesktopNameMock: vi.fn(),
+  setNameMock: vi.fn(),
   mkdirSyncMock: vi.fn(),
   writeFileSyncMock: vi.fn(),
   copyFileSyncMock: vi.fn(),
@@ -32,6 +34,7 @@ const {
 vi.mock("electron", () => ({
   app: {
     setDesktopName: setDesktopNameMock,
+    setName: setNameMock,
     getVersion: () => "0.0.37",
     isPackaged: true,
     getAppPath: () => "/tmp/.mount_T3/resources/app.asar",
@@ -66,12 +69,36 @@ describe("DesktopPreReadyPlatform", () => {
     hasSwitchMock.mockReset();
     registerSchemesMock.mockReset();
     setDesktopNameMock.mockReset();
+    setNameMock.mockReset();
     mkdirSyncMock.mockReset();
     writeFileSyncMock.mockReset();
     copyFileSyncMock.mockReset();
     execFileSyncMock.mockReset();
     readFileSyncMock.mockReset().mockReturnValue("{}");
   });
+
+  it.effect("fixes the dev Keychain identity before asynchronous startup can begin", () =>
+    Effect.gen(function* () {
+      const nameAfterYield = Promise.resolve().then(() => setNameMock.mock.lastCall?.[0]);
+      yield* DesktopPreReadyPlatform.make;
+      assert.equal(yield* Effect.promise(() => nameAfterYield), "Otter Code Dev t34cc0a90e");
+      assert.equal(appendSwitchMock.mock.calls.length, 0);
+    }).pipe(
+      Effect.provideService(HostProcess.Platform, "darwin"),
+      Effect.provideService(HostProcess.Environment, {
+        VITE_DEV_SERVER_URL: "http://127.0.0.1:5173",
+        T3CODE_DESKTOP_APP_USER_MODEL_ID: "dev.otterware.code.dev.t34cc0a90e",
+      }),
+    ),
+  );
+
+  it.effect("preserves the production macOS encryption identity", () =>
+    DesktopPreReadyPlatform.make.pipe(
+      Effect.provideService(HostProcess.Platform, "darwin"),
+      Effect.provideService(HostProcess.Environment, {}),
+      Effect.map(() => assert.equal(setNameMock.mock.calls.length, 0)),
+    ),
+  );
 
   it.effect("persists Linux scaling synchronously across relaunches and settings rewrites", () => {
     vi.stubEnv("T3CODE_HOME", "/isolated");

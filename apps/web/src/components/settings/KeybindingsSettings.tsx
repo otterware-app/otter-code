@@ -1,16 +1,15 @@
 import { useEnvironmentScope } from "../../state/session";
 import { useEnvironmentsWithScope, readEnvironmentScope } from "../../state/session";
+import { CircleXIcon, FileJsonIcon } from "lucide-react";
 import {
   ChevronDownIcon,
-  CircleXIcon,
   EllipsisIcon,
-  FileJsonIcon,
   MinusIcon,
   PlusIcon,
   SearchIcon,
   TriangleAlertIcon,
   XIcon,
-} from "lucide-react";
+} from "~/lib/icons";
 import { useLocation } from "@tanstack/react-router";
 import {
   type KeyboardEvent,

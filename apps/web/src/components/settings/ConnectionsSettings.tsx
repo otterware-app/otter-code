@@ -1,5 +1,5 @@
 import { SessionPermissions } from "./SessionPermissions";
-import { ChevronRightIcon, EllipsisIcon } from "lucide-react";
+import { ChevronRightIcon, EllipsisIcon } from "~/lib/icons";
 import { useAtomValue } from "@effect/atom-react";
 import { useState } from "react";
 import {
@@ -85,7 +85,7 @@ import {
   supportsDesktopAppUpdate,
 } from "~/versionSkew";
 import { hasCloudPublicConfig } from "~/cloud/publicConfig";
-import { RemoveT3ConnectEnvironmentDialog } from "../clerk/RemoveT3ConnectEnvironmentDialog";
+import { RemoveT3ConnectEnvironmentDialog } from "../accounts/RemoveT3ConnectEnvironmentDialog";
 import { authEnvironment } from "~/state/auth";
 import { environmentCatalog } from "~/connection/catalog";
 import { readEnvironmentScope, useEnvironmentScope } from "~/state/session";

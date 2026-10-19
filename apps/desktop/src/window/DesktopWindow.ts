@@ -39,6 +39,11 @@ import * as ElectronApp from "../electron/ElectronApp.ts";
 import * as DesktopRendererHistory from "../telemetry/DesktopRendererHistory.ts";
 import { makeQuitShortcutHandler } from "./QuitHold.ts";
 import { copyContextMenuImage } from "./ContextMenuImage.ts";
+import {
+  createWindowMaterialApplier,
+  getWindowMaterialOptions,
+  type WindowMaterialAddon,
+} from "./WindowMaterial.ts";
 
 const TITLEBAR_HEIGHT = 40;
 
@@ -323,6 +328,34 @@ export const make = Effect.gen(function* () {
   const clientSettings = yield* DesktopClientSettings.DesktopClientSettings;
   const electronApp = yield* ElectronApp.ElectronApp;
   const rendererHistory = yield* DesktopRendererHistory.DesktopRendererHistory;
+  const applyWindowMaterial = createWindowMaterialApplier(() => {
+    const addonPath = environment.isPackaged
+      ? environment.path.resolve(
+          environment.resourcesPath,
+          "..",
+          "Frameworks",
+          "otter-window-material.node",
+        )
+      : environment.path.resolve(
+          environment.dirname,
+          "..",
+          ".electron-runtime",
+          "window-material",
+          "otter-window-material.node",
+        );
+    try {
+      const addonModule: { exports: Partial<WindowMaterialAddon> } = { exports: {} };
+      process.dlopen(addonModule, addonPath);
+      const { setBackgroundBlurRadius } = addonModule.exports;
+      return typeof setBackgroundBlurRadius === "function" ? { setBackgroundBlurRadius } : null;
+    } catch {
+      return null;
+    }
+  });
+  const readWindowSettings = clientSettings.get.pipe(
+    Effect.map(Option.getOrElse(() => DEFAULT_CLIENT_SETTINGS)),
+    Effect.orElseSucceed(() => DEFAULT_CLIENT_SETTINGS),
+  );
   const backendReadyRef = yield* Ref.make(false);
   let backendHasStarted = false;
   let mainClosedDuringStartup = false;
@@ -380,6 +413,7 @@ export const make = Effect.gen(function* () {
     const iconPaths = yield* assets.iconPaths;
     const iconOption = getIconOption(iconPaths, environment.platform);
     const shouldUseDarkColors = yield* electronTheme.shouldUseDarkColors;
+    const windowSettings = yield* readWindowSettings;
     const persistedSettings = yield* desktopSettings.get;
     const persistedBounds = persistedSettings.mainWindowBounds;
     const displayBoundsResult = yield* Effect.sync(() => {
@@ -411,7 +445,7 @@ export const make = Effect.gen(function* () {
       show: false,
       autoHideMenuBar: true,
       ...(environment.platform === "darwin" ? { disableAutoHideCursor: true } : {}),
-      backgroundColor: getInitialWindowBackgroundColor(shouldUseDarkColors),
+      ...getWindowMaterialOptions(environment.platform, shouldUseDarkColors, windowSettings),
       ...iconOption,
       title: environment.displayName,
       ...getWindowTitleBarOptions(shouldUseDarkColors, environment.platform),
@@ -437,6 +471,7 @@ export const make = Effect.gen(function* () {
     yield* rendererHistory.register(window.webContents, { surface: "main" });
     if (environment.platform === "darwin") {
       window.setAutoHideCursor(false);
+      applyWindowMaterial(window, windowSettings, shouldUseDarkColors);
     }
     let boundsPersistFiber: Fiber.Fiber<void, never> | undefined;
     let pendingBoundsPersistFiber: Fiber.Fiber<void, never> | undefined;
@@ -1095,8 +1130,14 @@ export const make = Effect.gen(function* () {
     }),
     syncAppearance: Effect.gen(function* () {
       const shouldUseDarkColors = yield* electronTheme.shouldUseDarkColors;
+      const main = yield* electronWindow.main;
+      const settings = yield* readWindowSettings;
       yield* electronWindow.syncAllAppearance((window) =>
-        syncWindowAppearance(window, shouldUseDarkColors, environment.platform),
+        environment.platform === "darwin" && Option.isSome(main) && window === main.value
+          ? Effect.sync(() => {
+              if (!window.isDestroyed()) applyWindowMaterial(window, settings, shouldUseDarkColors);
+            })
+          : syncWindowAppearance(window, shouldUseDarkColors, environment.platform),
       );
     }).pipe(Effect.withSpan("desktop.window.syncAppearance")),
   });

@@ -1,7 +1,9 @@
 diff --git a/ios/header/RNSHeaderCoordinator.mm b/ios/header/RNSHeaderCoordinator.mm
 --- a/ios/header/RNSHeaderCoordinator.mm
 +++ b/ios/header/RNSHeaderCoordinator.mm
-@@ -578,7 +578,10 @@
+@@ -593,11 +593,14 @@
+ #endif // RNS_IPHONE_OS_VERSION_AVAILABLE(26_0)
+ 
  #if RNS_IPHONE_OS_VERSION_AVAILABLE(27_0)
 +  // Early iOS 27 betas lack this setter; calling it there crashes on launch.
    if (@available(iOS 27.0, *)) {
@@ -16,3 +18,5 @@ diff --git a/ios/header/RNSHeaderCoordinator.mm b/ios/header/RNSHeaderCoordinato
 +      navItem.navigationBarMinimization = minimization;
 +    }
    }
+ #endif // Check for iOS >= 27
+ 

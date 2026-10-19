@@ -36,19 +36,19 @@ import { restrictToFirstScrollableAncestor, restrictToHorizontalAxis } from "@dn
 import { horizontalListSortingStrategy, SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
-  Smartphone,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  CircleDot,
-  FileDiff,
-  Files,
-  Globe2,
-  ListTodo,
-  MessagesSquare,
-  Plus,
-  TerminalSquare,
-} from "lucide-react";
+  DeviceMobileIcon as Smartphone,
+  ChevronDownIcon as ChevronDown,
+  ChevronLeftIcon as ChevronLeft,
+  ChevronRightIcon as ChevronRight,
+  IssueOpenedIcon as CircleDot,
+  DiffIcon as FileDiff,
+  FoldersIcon as Files,
+  GlobeIcon as Globe2,
+  ListTodoIcon as ListTodo,
+  PlusIcon as Plus,
+  TerminalIcon as TerminalSquare,
+} from "~/lib/icons";
+import { MessagesSquare } from "lucide-react";
 import { Volume2, VolumeOff } from "lucide";
 import {
   type KeyboardEvent as ReactKeyboardEvent,
@@ -106,6 +106,11 @@ import { resolvePullRequestState } from "./pullRequest/pullRequestPresentation";
 import { PullRequestGlyph } from "~/components/pullRequest/pullRequestIcons";
 import { observeResize } from "~/lib/observeResize";
 import { surfaceShortcutKey } from "~/lib/surfaceShortcutKey";
+
+const ACTIVE_PANEL_TAB_STYLE = {
+  backgroundColor: "var(--app-rail-tab-active-surface, var(--card))",
+  boxShadow: "inset 0 0 0 0.5px var(--app-rail-inset-border, var(--border))",
+};
 
 export interface RightPanelTabsProps {
   mode: PreviewPanelMode;
@@ -933,7 +938,7 @@ function RightPanelTab(
   const sideChatState = sideChatTabState(sideChatShell);
   const content = (
     <>
-      <PanelTabCloseButton label={`Close ${title}`} onClick={() => onClose(surface)}>
+      <span className="relative flex size-4 shrink-0 items-center justify-center">
         <SurfaceIcon
           surface={surface}
           previewUrl={props.previewUrl}
@@ -948,7 +953,7 @@ function RightPanelTab(
             aria-hidden
           />
         ) : null}
-      </PanelTabCloseButton>
+      </span>
       {audio === "none" || !audioRuntimeTabId ? null : (
         <Tooltip>
           <TooltipTrigger
@@ -999,11 +1004,17 @@ function RightPanelTab(
                 onDoubleClick={() => {
                   if (surface.kind === "device" && props.canRename) onStartRename(surface.id);
                 }}
-                className="cursor-pointer flex min-w-0 items-center"
+                className={cn(
+                  "cursor-pointer flex min-w-0 flex-1 items-center self-stretch text-left outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring/60",
+                  props.active ? "pr-7" : "group-hover/tab:pr-7 group-focus-within/tab:pr-7",
+                )}
                 aria-label={sideChatState === null ? undefined : `${title}, ${sideChatState}`}
-                onClick={() => onActivate(surface)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onActivate(surface);
+                }}
               >
-                <span className="truncate">{title}</span>
+                <span className="min-w-0 flex-1 truncate-fade truncate-fade-4">{title}</span>
               </button>
             }
           />
@@ -1020,24 +1031,37 @@ function RightPanelTab(
           </TooltipPopup>
         </Tooltip>
       )}
+      <PanelTabCloseButton
+        label={`Close ${title}`}
+        placement="trailing"
+        active={props.active}
+        onClick={() => onClose(surface)}
+      />
     </>
   );
   return (
     <div
       data-active-tab={props.active}
+      data-surface-tab=""
+      data-surface-tab-active={props.active ? "" : undefined}
       onMouseDown={preventTabMiddleButtonDefault}
       onMouseUp={preventTabMiddleButtonDefault}
       onAuxClick={(event) => onAuxClick(event, surface)}
       onContextMenu={(event) => onContextMenu(event, surface)}
+      onClick={() => onActivate(surface)}
       {...listeners}
       ref={setNodeRef}
-      style={{ transform: CSS.Translate.toString(transform), transition }}
+      style={{
+        ...(props.active ? ACTIVE_PANEL_TAB_STYLE : {}),
+        transform: CSS.Translate.toString(transform),
+        transition,
+      }}
       className={cn(
-        "cursor-pointer group/tab flex h-6 max-w-36 shrink-0 items-center gap-0.5 rounded-md pr-2 pl-1.5 text-xs",
+        "cursor-pointer group/tab relative flex h-8 w-[18em] min-w-[min(12em,100%)] shrink basis-[18em] items-center gap-2 rounded-md squircle pr-1 pl-2.5 text-xs font-normal transition-colors",
         props.ownsDesktopTitleBar && "[-webkit-app-region:no-drag]",
         props.active
-          ? "bg-accent text-foreground"
-          : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+          ? "text-foreground"
+          : "text-muted-foreground hover:bg-secondary/70 hover:text-foreground",
         isDragging && "relative z-10",
       )}
     >
@@ -1381,7 +1405,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
           className="min-w-0 flex-1"
           data-right-panel-tab-list
         >
-          <div className="flex h-full w-max min-w-full items-center gap-1">
+          <div className="surface-tab-dividers flex h-full w-max max-w-full items-center gap-1">
             <SortableTabList surfaces={props.surfaces} onMove={props.onMoveSurface}>
               {props.surfaces.map((surface) => {
                 const previewTabId = previewTabIdOf(surface, props.previewSessions);

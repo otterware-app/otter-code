@@ -1,5 +1,6 @@
 import { memo, type MouseEventHandler, type PointerEventHandler } from "react";
-import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, Minimize2Icon, PlayIcon } from "lucide-react";
+import { Minimize2Icon } from "lucide-react";
+import { CheckIcon, ChevronDownIcon, ChevronLeftIcon, PlayIcon } from "~/lib/icons";
 import { CornerUpRight, ListPlus } from "lucide";
 import { MorphIcon } from "~/components/MorphIcon";
 import { useEnvironmentIdentificationMode } from "~/hooks/useSettings";

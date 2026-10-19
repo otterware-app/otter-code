@@ -3,7 +3,7 @@
 // lazily: it holds every lucide icon as one chunk, where `lucide-react/dynamic`
 // emits a separate chunk per icon (~1,900), which dominated build output.
 import * as Lucide from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "~/lib/icons";
 
 const iconComponents = new Set<unknown>(Object.values(Lucide.icons));
 const lucideExports: Record<string, unknown> = Lucide;

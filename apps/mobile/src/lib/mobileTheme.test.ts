@@ -18,8 +18,10 @@ import {
   createMobileThemeSelectionPatch,
   createMobileThemeVariables,
   DEFAULT_MOBILE_THEME_ID,
+  MOBILE_THEME_OPTIONS,
   flattenThemeColor,
   getMobileThemeVariables,
+  normalizeMobileThemeId,
   resolveMobileThemeIds,
   themeColorWithAlpha,
   themeColorToNativeColor,
@@ -57,6 +59,19 @@ function compositeOver(overlay: string, background: string): string {
 }
 
 describe("mobile themes", () => {
+  it("offers T3 Code and Synara as separate choices in both appearances", () => {
+    expect(MOBILE_THEME_OPTIONS.find((option) => option.id === "t3-code")?.label).toBe("T3 Code");
+    expect(MOBILE_THEME_OPTIONS.find((option) => option.id === "synara")?.label).toBe("Synara");
+    expect(normalizeMobileThemeId("synara")).toBe("synara");
+    for (const appearance of ["light", "dark"] as const) {
+      const t3 = getMobileThemeVariables("t3-code", appearance);
+      const synara = getMobileThemeVariables("synara", appearance);
+      expect(t3["--color-screen"]).not.toBe(synara["--color-screen"]);
+      expect(synara["--color-screen"]).toBe(appearance === "light" ? "#ffffff" : "#111111");
+      expect(synara["--color-primary"]).toBe(appearance === "light" ? "#0d0d0d" : "#fcfcfc");
+      expect(synara["--color-md-link"]).toBe(appearance === "light" ? "#c74614" : "#f2612d");
+    }
+  });
   it("declares every runtime theme variable in the static stylesheet", () => {
     const generatedVariables = createMobileThemeVariables(T3_CHAT_THEME.colors, "light");
     expect(Object.keys(readDefaultMobileThemeVariables("light")).sort()).toEqual(
@@ -83,20 +98,30 @@ describe("mobile themes", () => {
       expect(variables["--color-thread-canvas"]).toBe(variables["--color-screen"]);
       expect(variables["--color-drawer"]).toBe(themeColorToNativeColor(colors.sidebar));
       expect(variables["--color-thread-hover"]).toBe(
-        themeColorToNativeColor(colors.sidebarRowHover),
+        themeId === "synara"
+          ? flattenThemeColor(
+              themeColorToNativeColor(colors.sidebarRowHover),
+              themeColorToNativeColor(colors.canvas),
+            )
+          : themeColorToNativeColor(colors.sidebarRowHover),
       );
       expect(variables["--color-card"]).toBe(themeColorToNativeColor(colors.surface));
       expect(variables["--color-composer-surface"]).toBe(
         themeColorWithAlpha(variables["--color-grouped-card"], appearance === "dark" ? 0.9 : 0.94),
       );
       expect(variables["--color-thread-selected"]).toBe(
-        themeColorToNativeColor(colors.sidebarRowActive),
+        themeId === "synara"
+          ? flattenThemeColor(
+              themeColorToNativeColor(colors.sidebarRowActive),
+              themeColorToNativeColor(colors.canvas),
+            )
+          : themeColorToNativeColor(colors.sidebarRowActive),
       );
       expect(variables["--color-thread-selected-foreground"]).toBe(
         themeColorToNativeColor(colors.sidebarForeground),
       );
       expect(variables["--color-primary"]).toBe(themeColorToNativeColor(colors.messageAction));
-      if (themeId !== DEFAULT_MOBILE_THEME_ID) {
+      if (themeId !== DEFAULT_MOBILE_THEME_ID && themeId !== "synara") {
         expect(variables["--color-user-bubble"]).toBe(
           themeColorToNativeColor(colors.messageSurface),
         );

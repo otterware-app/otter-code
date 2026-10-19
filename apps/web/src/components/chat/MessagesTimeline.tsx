@@ -1,6 +1,6 @@
 import { ThreadFindTimelineContext } from "./ThreadFindProvider";
 import { MarkdownFindContext } from "./markdownFindContext";
-import { useChatCanvas } from "./ChatCanvasContext";
+import { useChatCanvasActions } from "./ChatCanvasContext";
 import { WorkLogBlock } from "./WorkLog";
 import type { WorktreeSetupSnapshot } from "@t3tools/contracts";
 import { deriveTimelineMinimapItems } from "./timelineMinimapItems";
@@ -42,7 +42,7 @@ import {
 import { type TimelineEntry } from "../../session-logic";
 import type { CodexArtifactTemplate } from "@t3tools/shared/codexArtifactTemplates";
 import { type ChatFileAttachment, type TurnDiffSummary } from "../../types";
-import { ArrowRightIcon, BotIcon, Minimize2Icon } from "lucide-react";
+import { ArrowRightIcon, BotIcon, ContextCompactionIcon } from "~/lib/icons";
 import { ChevronDown, ChevronRight } from "lucide";
 import { MorphIcon } from "~/components/MorphIcon";
 import { ExpandedImagePreview } from "./ExpandedImagePreview";
@@ -1310,7 +1310,7 @@ function ContextCompactionTimelineRow({
 }) {
   const content = (
     <span className="flex items-center gap-1.5">
-      <Minimize2Icon aria-hidden="true" className="size-3" />
+      <ContextCompactionIcon aria-hidden="true" className="size-3" />
       {row.tokenCounts ? (
         <>
           Context compacted {row.tokenCounts.before}

@@ -1,5 +1,6 @@
 import type { RuntimeMode } from "@t3tools/contracts";
-import { type LucideIcon, LockIcon, LockOpenIcon, PenLineIcon, SparklesIcon } from "lucide-react";
+import { LockIcon, PenLineIcon, SparklesIcon } from "lucide-react";
+import { FullAccessIcon, type LucideIcon } from "~/lib/icons";
 
 export const runtimeModeConfig: Record<
   RuntimeMode,
@@ -23,7 +24,7 @@ export const runtimeModeConfig: Record<
   "full-access": {
     label: "Full access",
     description: "Allow commands and edits without prompts.",
-    icon: LockOpenIcon,
+    icon: FullAccessIcon,
   },
 };
 

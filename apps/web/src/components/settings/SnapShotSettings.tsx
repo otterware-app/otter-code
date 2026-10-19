@@ -6,7 +6,7 @@ import {
   type DesktopSnapShotSetupAction,
   type SnapShotShortcut,
 } from "@t3tools/contracts";
-import { PlayIcon } from "lucide-react";
+import { PlayIcon } from "~/lib/icons";
 import { settlePromise } from "@t3tools/client-runtime/state/runtime";
 import * as Cause from "effect/Cause";
 import { useContext, useRef, useState } from "react";

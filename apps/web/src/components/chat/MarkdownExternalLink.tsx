@@ -1,5 +1,5 @@
+import { GlobeIcon } from "~/lib/icons";
 import { faviconUrlForOrigin } from "@t3tools/shared/favicon";
-import { GlobeIcon } from "lucide-react";
 import { Children, Fragment, memo, useState, type ReactNode } from "react";
 
 import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";

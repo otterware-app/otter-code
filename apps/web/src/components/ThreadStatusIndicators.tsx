@@ -16,7 +16,8 @@ import {
   type ThreadPullRequestLink,
   type VcsStatusResult,
 } from "@t3tools/contracts";
-import { FolderGit2Icon, TerminalIcon } from "lucide-react";
+import { FolderGit2Icon } from "lucide-react";
+import { TerminalIcon } from "~/lib/icons";
 import { useEnvironment, usePrimaryEnvironmentId } from "../state/environments";
 import { EnvironmentMachineIcon } from "./EnvironmentMachineIcon";
 import { useProject } from "../state/entities";

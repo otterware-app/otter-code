@@ -1,10 +1,11 @@
+import { LinkIcon } from "~/lib/icons";
 import {
   type AddProjectRemoteSource,
   type NewProjectPublishTarget,
 } from "@t3tools/client-runtime/operations/projects";
 import { sourceControlClients } from "@t3tools/client-runtime/source-control-clients";
 import type { SourceControlProviderKind } from "@t3tools/contracts";
-import { FolderGit2Icon, LinkIcon } from "lucide-react";
+import { FolderGit2Icon } from "lucide-react";
 import { type ReactNode, useState } from "react";
 
 import { sourceControlIcon } from "~/sourceControlPresentation";

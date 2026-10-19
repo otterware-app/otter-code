@@ -28,13 +28,12 @@ import {
 } from "@t3tools/contracts";
 import {
   ArrowDownUpIcon,
-  ArrowLeftIcon,
   CircleDotIcon,
   FileDiffIcon,
   GitCommitHorizontalIcon,
   MessageSquareIcon,
-  PanelRightIcon,
 } from "lucide-react";
+import { ArrowLeftIcon, PanelRightCloseIcon as PanelRightIcon } from "~/lib/icons";
 import {
   lazy,
   Suspense,

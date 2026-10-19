@@ -976,6 +976,8 @@ export const DESKTOP_FILE_EXCLUSIONS = [
   "!apps/desktop/resources/browser-secret/**/*",
   "!apps/desktop/prod-resources/browser-secret",
   "!apps/desktop/prod-resources/browser-secret/**/*",
+  "!apps/desktop/prod-resources/window-material",
+  "!apps/desktop/prod-resources/window-material/**/*",
   "!apps/desktop/prod-resources/windows-server",
   "!apps/desktop/prod-resources/windows-server/**/*",
   "!apps/desktop/prod-resources/wsl-runtime.tar.gz",
@@ -983,11 +985,9 @@ export const DESKTOP_FILE_EXCLUSIONS = [
   "!apps/desktop/gnome-extension",
   "!apps/desktop/gnome-extension/**/*",
 ] as const;
-// electron-builder drops every *.d.ts below node_modules from app.asar, which
-// strips TypeScript's standard library (lib.*.d.ts) and leaves tsserver unable
-// to type `Set` or `string`. Mac and Linux ship the package as loose files in
-// resources/node_modules instead, where Node resolution from app.asar finds it.
-// Windows runs tsserver from server.asar, which is packed by hand and keeps them.
+// electron-builder drops node_modules *.d.ts from app.asar, including tsserver's lib.*.d.ts.
+// Mac and Linux ship tsserver as loose files in resources/node_modules, which app.asar still
+// resolves; Windows runs it from the hand-packed server.asar, which keeps them.
 export const TSSERVER_RESOURCE_SOURCE_DIR = "apps/desktop/prod-resources/typescript-tsserver";
 export const TSSERVER_FILE_EXCLUSIONS = [
   "!**/node_modules/typescript-tsserver/**/*",
@@ -2501,6 +2501,13 @@ export const createBuildConfig = Effect.fn("createBuildConfig")(function* (
       target: target === "dmg" ? [target, "zip"] : [target],
       icon: "icon.icns",
       category: "public.app-category.developer-tools",
+      extraFiles: [
+        {
+          from: "apps/desktop/prod-resources/window-material/otter-window-material.node",
+          to: "Frameworks/otter-window-material.node",
+        },
+      ],
+      binaries: ["Contents/Frameworks/otter-window-material.node"],
       extendInfo: {
         // macOS 26 offers Messages/Mail codes in every text field unless opted out.
         NSAutoFillRequiresTextContentTypeForOneTimeCodeOnMac: true,
@@ -3457,6 +3464,22 @@ const buildDesktopArtifactUnlocked = Effect.fn("buildDesktopArtifactUnlocked")(f
     arch: options.arch,
     verbose: options.verbose,
   });
+  if (options.platform === "mac") {
+    yield* runCommand(
+      ChildProcess.make(
+        "node",
+        [
+          path.join(repoRoot, "apps/desktop/scripts/build-window-material.mjs"),
+          "--arch",
+          options.arch,
+          "--output",
+          path.join(stageResourcesDir, "window-material", "otter-window-material.node"),
+        ],
+        { cwd: repoRoot },
+      ),
+      { label: "build macOS window material", verbose: options.verbose },
+    );
+  }
 
   yield* assertPlatformBuildResources(
     options.platform,

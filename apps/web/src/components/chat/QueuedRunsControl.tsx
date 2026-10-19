@@ -17,10 +17,10 @@ import {
   ChevronDownIcon,
   Clock3Icon,
   MessagesSquareIcon,
-  PencilIcon,
   XIcon,
 } from "lucide-react";
 import * as DateTime from "effect/DateTime";
+import { PencilIcon } from "~/lib/icons";
 import { useId, useImperativeHandle, useRef, useState, type ReactNode, type Ref } from "react";
 
 import { useAssetUrls } from "../../assets/assetUrls";

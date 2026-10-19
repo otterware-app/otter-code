@@ -1,5 +1,6 @@
+import { EyeIcon, FoldersIcon as LayersIcon, UsersIcon, type LucideIcon } from "~/lib/icons";
 import type { EnvironmentId, PullRequestAction } from "@t3tools/contracts";
-import { EyeIcon, LayersIcon, PenLineIcon, UsersIcon, type LucideIcon } from "lucide-react";
+import { PenLineIcon } from "lucide-react";
 import type { RefCallback } from "react";
 
 import { cn } from "~/lib/utils";

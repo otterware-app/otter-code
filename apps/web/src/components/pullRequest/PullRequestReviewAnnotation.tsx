@@ -7,7 +7,8 @@ import type {
   PullRequestThreadCommentsResult,
   PullRequestThreadComment,
 } from "@t3tools/contracts";
-import { HammerIcon, MessageSquareIcon, Trash2Icon } from "lucide-react";
+import { MessageSquareIcon, Trash2Icon } from "lucide-react";
+import { HammerIcon } from "~/lib/icons";
 import { Circle, CircleCheck } from "lucide";
 import { useRef, useState } from "react";
 import { settlePromise, squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";

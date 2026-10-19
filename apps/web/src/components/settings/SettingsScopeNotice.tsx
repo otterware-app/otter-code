@@ -1,6 +1,6 @@
 import { resolveEnvironmentMachineKind, type EnvironmentId } from "@t3tools/contracts";
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { ChevronRightIcon, LayersIcon } from "lucide-react";
+import { ChevronRightIcon, FoldersIcon as LayersIcon } from "~/lib/icons";
 import type { ReactNode } from "react";
 
 import { cn } from "../../lib/utils";

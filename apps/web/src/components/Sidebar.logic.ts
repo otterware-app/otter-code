@@ -60,7 +60,7 @@ export function shouldNavigateAfterThreadPark(input: {
   );
 }
 
-const THREAD_JUMP_HINT_SHOW_DELAY_MS = 200;
+export const THREAD_JUMP_HINT_SHOW_DELAY_MS = 200;
 
 export function resolveSidebarRowAccessibility(input: {
   readonly title: string;
@@ -74,7 +74,6 @@ export function resolveSidebarRowAccessibility(input: {
   };
 }
 
-// Each prewarm retains growing thread detail and a live subscription, multiplying heap and server load.
 const SIDEBAR_ROW_SUBSCRIPTION_OVERSCAN_PX = 160;
 
 export function useSidebarRowSubscriptionLease(isActive: boolean): {

@@ -1,5 +1,5 @@
 import type { ComponentProps } from "react";
-import { ExternalLinkIcon } from "lucide-react";
+import { ExternalLinkIcon } from "~/lib/icons";
 import { CHATGPT_USAGE_URL } from "@t3tools/shared/usageLimits";
 import { ensureLocalApi } from "../../localApi";
 import { Button } from "../ui/button";

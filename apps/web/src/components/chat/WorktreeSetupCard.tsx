@@ -4,15 +4,8 @@ import {
   type WorktreeSetupStage,
 } from "@t3tools/contracts";
 import { formatDuration } from "@t3tools/shared/orchestrationTiming";
-import {
-  CheckIcon,
-  CircleAlertIcon,
-  CircleIcon,
-  LaptopIcon,
-  MinusIcon,
-  TerminalIcon,
-  XIcon,
-} from "lucide-react";
+import { CircleIcon, LaptopIcon } from "lucide-react";
+import { CheckIcon, CircleAlertIcon, MinusIcon, TerminalIcon, XIcon } from "~/lib/icons";
 import { ChevronDown, ChevronRight } from "lucide";
 import { useState, type ReactNode } from "react";
 

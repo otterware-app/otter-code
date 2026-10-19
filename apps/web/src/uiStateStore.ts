@@ -2,6 +2,7 @@ import { Debouncer } from "@tanstack/react-pacer";
 import type { PullRequestMergeMethod } from "@t3tools/contracts";
 import { create } from "zustand";
 import { normalizeProjectPathForComparison } from "@t3tools/client-runtime/state/projects";
+import { LEGACY_VOID_SPACE_ID, normalizeProjectSpaceId } from "./projectSpaces";
 
 export const PERSISTED_STATE_KEY = "t3code:ui-state:v1";
 const THREAD_CHANGED_FILES_EXPANSION_VERSION = 2;
@@ -38,8 +39,7 @@ export interface UiProjectState {
   projectExpandedById: Record<string, boolean>;
   projectOrder: string[];
   sidebarProjectScopeKeys: string[];
-  // The rail's space: a project group id, `CHATS_SPACE_ID`, or null for all
-  // projects. The project scope above narrows within it.
+  // A named Space, Chats, or null for all projects.
   sidebarProjectSpaceId: string | null;
 }
 
@@ -156,10 +156,13 @@ export function parsePersistedState(parsed: PersistedUiState): UiState {
         ? sanitizePersistedThreadChangedFilesExpanded(parsed.threadChangedFilesExpandedById)
         : {},
     defaultAdvertisedEndpointKey: sanitizeOptionalKey(parsed.defaultAdvertisedEndpointKey),
-    sidebarProjectScopeKeys: sanitizeStringArray(
-      parsed.sidebarProjectScopeKeys ?? [parsed.sidebarProjectScopeKey],
+    sidebarProjectScopeKeys:
+      parsed.sidebarProjectSpaceId === LEGACY_VOID_SPACE_ID
+        ? []
+        : sanitizeStringArray(parsed.sidebarProjectScopeKeys ?? [parsed.sidebarProjectScopeKey]),
+    sidebarProjectSpaceId: normalizeProjectSpaceId(
+      sanitizeOptionalKey(parsed.sidebarProjectSpaceId),
     ),
-    sidebarProjectSpaceId: sanitizeOptionalKey(parsed.sidebarProjectSpaceId),
     pullRequestMergeMethod: isPullRequestMergeMethod(parsed.pullRequestMergeMethod)
       ? parsed.pullRequestMergeMethod
       : initialState.pullRequestMergeMethod,
@@ -354,7 +357,7 @@ function setSidebarProjectScopeKeys(state: UiState, projectKeys: readonly string
 
 /** Choosing a space clears the project scope: it may name a project outside it. */
 export function setSidebarProjectSpaceId(state: UiState, spaceId: string | null): UiState {
-  const nextId = sanitizeOptionalKey(spaceId);
+  const nextId = normalizeProjectSpaceId(sanitizeOptionalKey(spaceId));
   if (state.sidebarProjectSpaceId === nextId && state.sidebarProjectScopeKeys.length === 0) {
     return state;
   }
@@ -404,50 +407,6 @@ export function setProjectExpanded(
   };
 }
 
-export function reorderProjects(
-  state: UiState,
-  currentProjectOrder: readonly string[],
-  draggedProjectIds: readonly string[],
-  targetProjectIds: readonly string[],
-): UiState {
-  if (draggedProjectIds.length === 0) {
-    return state;
-  }
-  const draggedSet = new Set(draggedProjectIds);
-  const targetSet = new Set(targetProjectIds);
-  if (draggedProjectIds.every((id) => targetSet.has(id))) {
-    return state;
-  }
-
-  const originalTargetIndex = currentProjectOrder.findIndex((id) => targetSet.has(id));
-  if (originalTargetIndex < 0) {
-    return state;
-  }
-
-  const projectOrder = [...currentProjectOrder];
-
-  const removed: string[] = [];
-  let draggedBeforeTarget = 0;
-  for (let i = projectOrder.length - 1; i >= 0; i--) {
-    if (draggedSet.has(projectOrder[i]!)) {
-      removed.unshift(projectOrder.splice(i, 1)[0]!);
-      if (i < originalTargetIndex) {
-        draggedBeforeTarget++;
-      }
-    }
-  }
-  if (removed.length === 0) {
-    return state;
-  }
-
-  const insertIndex = originalTargetIndex - Math.max(0, draggedBeforeTarget - 1);
-  projectOrder.splice(insertIndex, 0, ...removed);
-  return {
-    ...state,
-    projectOrder,
-  };
-}
-
 interface UiStateStore extends UiState {
   markThreadVisited: (threadId: string, visitedAt: string) => void;
   markThreadUnread: (threadId: string, latestTurnCompletedAt: string | null | undefined) => void;
@@ -457,11 +416,6 @@ interface UiStateStore extends UiState {
   setSidebarProjectSpaceId: (spaceId: string | null) => void;
   setPullRequestMergeMethod: (method: PullRequestMergeMethod) => void;
   setProjectExpanded: (projectIds: string | readonly string[], expanded: boolean) => void;
-  reorderProjects: (
-    currentProjectOrder: readonly string[],
-    draggedProjectIds: readonly string[],
-    targetProjectIds: readonly string[],
-  ) => void;
 }
 
 export const useUiStateStore = create<UiStateStore>((set) => ({
@@ -480,10 +434,6 @@ export const useUiStateStore = create<UiStateStore>((set) => ({
   setPullRequestMergeMethod: (method) => set((state) => setPullRequestMergeMethod(state, method)),
   setProjectExpanded: (projectIds, expanded) =>
     set((state) => setProjectExpanded(state, projectIds, expanded)),
-  reorderProjects: (currentProjectOrder, draggedProjectIds, targetProjectIds) =>
-    set((state) =>
-      reorderProjects(state, currentProjectOrder, draggedProjectIds, targetProjectIds),
-    ),
 }));
 
 useUiStateStore.subscribe((state) => debouncedPersistState.maybeExecute(state));

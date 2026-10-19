@@ -1,6 +1,6 @@
 import { DeviceHostUpdates } from "./DeviceHostUpdates";
 import type { DevicePlatform, DeviceServiceState, EnvironmentId } from "@t3tools/contracts";
-import { Check } from "lucide-react";
+import { CheckIcon as Check } from "~/lib/icons";
 import { Check as CheckGlyph, CircleAlert } from "lucide";
 import { AuthSettingsWriteScope } from "@t3tools/contracts";
 import { useAtomMount } from "@effect/atom-react";

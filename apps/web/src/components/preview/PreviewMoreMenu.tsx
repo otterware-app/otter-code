@@ -1,5 +1,6 @@
 import type { DesktopPreviewColorScheme } from "@t3tools/contracts";
-import { Minus, MoreVertical, Plus as PlusIcon, RotateCcw } from "lucide-react";
+import { MoreVertical } from "lucide-react";
+import { MinusIcon as Minus, Plus as PlusIcon, RotateCcwIcon as RotateCcw } from "~/lib/icons";
 
 import { Button } from "~/components/ui/button";
 import {

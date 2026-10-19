@@ -8,7 +8,8 @@ import type {
 } from "@t3tools/contracts";
 import { formatAttachmentSize } from "@t3tools/client-runtime/state/attachments";
 import { videoMimeType } from "@t3tools/shared/video";
-import { MessageCircleIcon, MousePointerClickIcon } from "lucide-react";
+import { MousePointerClickIcon } from "lucide-react";
+import { MessageCircleIcon } from "~/lib/icons";
 import { createContext, type MouseEvent, type ReactElement, type ReactNode, use } from "react";
 import type { EnvironmentId } from "@t3tools/contracts";
 

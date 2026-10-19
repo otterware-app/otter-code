@@ -1,6 +1,6 @@
 import type { AnyRouter } from "@tanstack/react-router";
 import type { PullRequestReviewGuideResult } from "@t3tools/contracts";
-import { CircleAlertIcon, CircleCheckIcon } from "lucide-react";
+import { CircleAlertIcon, CircleCheckIcon } from "~/lib/icons";
 import { AsyncResult, type AtomRegistry } from "effect/reactivity";
 
 import { getClientSettings } from "~/hooks/useSettings";

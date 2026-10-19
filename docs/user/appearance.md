@@ -3,7 +3,7 @@
 On web and desktop, open **Settings → Appearance** to choose a theme and follow the system
 appearance or stay in light or dark mode. To use different themes for light and dark mode, select
 the corresponding preview within each theme. Appearance preferences are saved separately on each
-device or browser.
+device or browser. **T3 Code** and **Synara** are separate built-in themes, each\nwith light and dark appearances.
 
 On web and desktop, use **Change theme** in the command palette to select a theme without leaving chat.
 Press **Cmd+Option+A** on macOS or **Ctrl+Alt+A** on Windows/Linux to open the theme picker directly.
@@ -23,7 +23,7 @@ of the selected theme.
 
 ## Composer context
 
-Git-backed projects show branch and worktree controls below the composer while you create a thread.
+Git-backed projects show branch and worktree controls above the composer while you create a thread.
 The controls retreat as the composer docks after you send the first message.
 
 Turn on **Composer context** to keep those controls visible after the thread starts. This preference
@@ -43,10 +43,19 @@ preference is saved separately on each device.
 
 ## Motion
 
-The main sidebar, right panel, and terminal drawer open and close immediately by default. Move the
-**Panel animations** slider above 0 ms to add motion, up to 400 ms, unless reduced motion is enabled
-in your operating system. Moving between threads always snaps to the selected thread's panel state
-without replaying its transitions.
+The main sidebar, right panel, and terminal drawer use a 125 ms transition by default. Set
+**Panel animations** to 0 ms for instant changes, or adjust it up to 400 ms. Reduced motion enabled
+in your operating system keeps transitions still. Moving between threads always snaps to the
+selected thread's panel state without replaying its transitions.
+
+## Window and new chats
+
+On macOS desktop, choose **Window material → Translucent** to let the desktop show through.
+Adjust **Opacity** and **Blur**, or enable **Sidebar only** to keep the conversation solid.
+Choose **Solid** to turn transparency off.
+
+New chats have an animated ASCII background. Turn **Animated background** off to hide it.
+Your operating system's reduced-motion preference keeps the field still.
 
 ## Custom themes
 

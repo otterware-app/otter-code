@@ -137,7 +137,7 @@ export function ThreadPanelHeaderControl(props: PanelLayoutControlsProps) {
       className="absolute top-[var(--workspace-controls-top)] right-[calc(env(safe-area-inset-right)+0.75rem)] z-50 flex h-[var(--workspace-topbar-height)] items-center [-webkit-app-region:no-drag]"
       data-workspace-titlebar-controls
     >
-      <PanelLayoutControls {...props} showTerminalControl={false} showRightPanelControl={false} />
+      <PanelLayoutControls {...props} showRightPanelControl={false} />
     </div>
   );
 }

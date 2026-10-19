@@ -3,7 +3,7 @@ import {
   type DesktopUpdateState,
   managedUpdatesDenial,
 } from "@t3tools/contracts";
-import { TriangleAlertIcon } from "lucide-react";
+import { TriangleAlertIcon } from "~/lib/icons";
 import { type ComponentProps, useId, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { settlePromise, squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";

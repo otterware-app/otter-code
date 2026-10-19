@@ -3,7 +3,8 @@ import {
   sourceControlClients,
 } from "@t3tools/client-runtime/source-control-clients";
 import type { EnvironmentId, PullRequestDetailView, PullRequestRef } from "@t3tools/contracts";
-import { MessageSquareIcon, Trash2Icon, XIcon } from "lucide-react";
+import { MessageSquareIcon, Trash2Icon } from "lucide-react";
+import { XIcon } from "~/lib/icons";
 import { useRef, useState } from "react";
 
 import { Button } from "../ui/button";

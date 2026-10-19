@@ -232,7 +232,8 @@ import { observeResize } from "~/lib/observeResize";
 
 const isEnvironmentRequestInvalidError = Schema.is(EnvironmentRequestInvalidError);
 import { toastManager } from "../ui/toast";
-import { BuildingIcon, PlayIcon } from "lucide-react";
+import { BuildingIcon } from "lucide-react";
+import { PlayIcon } from "~/lib/icons";
 import { Button } from "../ui/button";
 import { useManagedPolicy } from "../../state/managedPolicy";
 import { proposedPlanTitle } from "@t3tools/shared/proposedPlanText";
@@ -3406,7 +3407,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                     buildContextClipboardFragment={buildContextClipboardFragmentStable}
                     importContextFragment={importContextFragmentStable}
                     skills={selectedProviderSkills}
-                    className={cn(showMobilePendingAnswerActions && "max-sm:pb-12")}
+                    className={cn("min-h-12", showMobilePendingAnswerActions && "max-sm:pb-12")}
                     onChange={onPromptChangeStable}
                     onCommandKeyDown={onComposerCommandKeyStable}
                     onPageScrollKeyDown={onPageScrollKeyDown}

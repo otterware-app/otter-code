@@ -1,5 +1,6 @@
 import type { EnvironmentMachineKind } from "@t3tools/contracts";
-import { CloudIcon, LaptopIcon, MonitorIcon, ServerIcon, type LucideProps } from "lucide-react";
+import { CloudIcon, LaptopIcon, ServerIcon, type LucideProps } from "lucide-react";
+import { MonitorIcon } from "~/lib/icons";
 import type { FunctionComponent, SVGProps } from "react";
 import { LinuxIcon } from "./Icons";
 

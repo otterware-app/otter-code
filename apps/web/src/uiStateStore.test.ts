@@ -9,7 +9,6 @@ import {
   PERSISTED_STATE_KEY,
   type PersistedUiState,
   persistState,
-  reorderProjects,
   resolveProjectExpanded,
   setProjectExpanded,
   type UiState,
@@ -80,18 +79,6 @@ describe("uiStateStore pure functions", () => {
       "environment-b:/repo": false,
     });
     expect(setProjectExpanded(next, keys, false)).toBe(next);
-  });
-
-  it("moves grouped project members together", () => {
-    const keyALocal = "env-local:proj-a";
-    const keyARemote = "env-remote:proj-a";
-    const keyB = "env-local:proj-b";
-    const keyC = "env-local:proj-c";
-    const currentOrder = [keyALocal, keyARemote, keyB, keyC];
-
-    const next = reorderProjects(makeUiState(), currentOrder, [keyALocal, keyARemote], [keyC]);
-
-    expect(next.projectOrder).toEqual([keyB, keyC, keyALocal, keyARemote]);
   });
 });
 
@@ -233,6 +220,7 @@ describe("uiStateStore persistence", () => {
       },
       defaultAdvertisedEndpointKey: "desktop-core:lan:http",
       sidebarProjectScopeKeys: [],
+      sidebarProjectScopeKey: null,
       sidebarProjectSpaceId: null,
       threadChangedFilesExpansionVersion: 2,
       threadChangedFilesExpandedById: {

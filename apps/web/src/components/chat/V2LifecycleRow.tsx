@@ -34,15 +34,8 @@ import {
   type ScopedThreadRef,
 } from "@t3tools/contracts";
 import type { TimestampFormat } from "@t3tools/contracts/settings";
-import {
-  BotIcon,
-  ChevronRightIcon,
-  CircleStopIcon,
-  ArrowRightLeftIcon,
-  ArrowRightIcon,
-  GitForkIcon,
-  MessageSquareIcon,
-} from "lucide-react";
+import { ArrowRightLeftIcon, MessageSquareIcon } from "lucide-react";
+import { BotIcon, ChevronRightIcon, ArrowRightIcon, GitForkIcon, XIcon } from "~/lib/icons";
 
 import { Tooltip, TooltipTrigger, TooltipPopup } from "../ui/tooltip";
 import {
@@ -76,7 +69,8 @@ export function V2LifecycleRow(props: {
       <TimelineSystemDivider
         label="Run interrupted"
         detail={item.message}
-        icon={CircleStopIcon}
+        tone="danger"
+        icon={XIcon}
         wrapDetail
       />
     );

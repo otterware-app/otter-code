@@ -9,14 +9,8 @@ import {
   resolveThreadPullRequestChains,
   visibleThreadPullRequests,
 } from "@t3tools/client-runtime/thread-pull-requests";
-import {
-  ArrowUpRightIcon,
-  EyeIcon,
-  EyeOffIcon,
-  LinkIcon,
-  MoreHorizontalIcon,
-  PlusIcon,
-} from "lucide-react";
+import { EyeOffIcon } from "lucide-react";
+import { ArrowUpRightIcon, EyeIcon, LinkIcon, MoreHorizontalIcon, PlusIcon } from "~/lib/icons";
 import { LegendList } from "@legendapp/list/react";
 import { memo, useState } from "react";
 

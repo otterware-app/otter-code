@@ -26,19 +26,21 @@ import {
 import {
   FileSpreadsheetIcon,
   FileTextIcon,
-  GlobeIcon,
   ImageIcon,
-  InfoIcon,
-  LightbulbIcon,
   MailIcon,
   MessageSquareIcon,
   MessageSquareWarningIcon,
-  OctagonAlertIcon,
   PresentationIcon,
   SparklesIcon,
-  TriangleAlertIcon,
-  type LucideIcon,
 } from "lucide-react";
+import type { LucideIcon } from "~/lib/icons";
+import {
+  GlobeIcon,
+  InfoIcon,
+  LightbulbIcon,
+  OctagonAlertIcon,
+  TriangleAlertIcon,
+} from "~/lib/icons";
 import {
   AssetWorkspaceAssetNotFoundError,
   AuthPreviewOperateScope,

@@ -9,9 +9,6 @@ import { safeErrorLogAttributes } from "@t3tools/client-runtime/errors";
 import { scopedThreadKey } from "@t3tools/client-runtime/environment";
 import type { ReviewDiffPreviewSourceRequest, ScopedThreadRef } from "@t3tools/contracts";
 import {
-  ChevronDownIcon,
-  ChevronUpIcon,
-  Columns2Icon,
   FlaskConicalOffIcon,
   FileTextIcon,
   FolderTreeIcon,

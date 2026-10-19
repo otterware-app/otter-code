@@ -1,3 +1,12 @@
+import {
+  ArrowUpRightIcon,
+  BookOpenIcon,
+  CopyIcon,
+  HammerIcon,
+  LinkIcon,
+  MoreHorizontalIcon,
+  RotateCcwIcon,
+} from "~/lib/icons";
 import { useAtomValue } from "@effect/atom-react";
 import {
   canEditPullRequestMaintainerEdits,

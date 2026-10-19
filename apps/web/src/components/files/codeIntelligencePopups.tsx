@@ -6,20 +6,22 @@ import {
   CircleX,
   Component,
   FileText,
-  Folder,
   Hash,
-  Info,
   KeyRound,
   LetterText,
   ListTree,
   Plug,
   SquareDashed,
-  TriangleAlert,
   Type,
   Variable,
   Wrench,
-  type LucideIcon,
 } from "lucide-react";
+import {
+  FolderIcon as Folder,
+  InfoIcon as Info,
+  TriangleAlertIcon as TriangleAlert,
+  type LucideIcon,
+} from "~/lib/icons";
 import { memo, Suspense, use, type CSSProperties, type ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import { useTheme } from "~/hooks/useTheme";

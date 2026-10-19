@@ -1,5 +1,5 @@
 import type { ReviewBranchCommitsResult, RunId } from "@t3tools/contracts";
-import { CheckIcon, ChevronDownIcon } from "lucide-react";
+import { CheckIcon, ChevronDownIcon } from "~/lib/icons";
 import { useState, type ReactNode } from "react";
 
 import { useClientSettings } from "~/hooks/useSettings";

@@ -1,6 +1,19 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { mailConversationFromPath } from "./mailRoute";
+import { mailConversationFromPath, mailFrameRedirect } from "./mailRoute";
+
+it("redirects Mail's own AI workspace and retired project links to the inbox", () => {
+  expect(mailFrameRedirect("/chats/new")).toBe("/all/inbox");
+  expect(mailFrameRedirect("/chats/chat-1?tab=mail")).toBe("/all/inbox");
+  expect(mailFrameRedirect("/projects/project-1")).toBe("/all/inbox");
+  expect(mailFrameRedirect("/__chats__/new")).toBe("/all/inbox");
+  expect(mailFrameRedirect("/__projects__/project-1")).toBe("/all/inbox");
+  expect(mailFrameRedirect("/%5F%5Fchats%5F%5F/new")).toBe("/all/inbox");
+  expect(mailFrameRedirect("/all/inbox")).toBeNull();
+  expect(mailFrameRedirect("/robin@otter.example/INBOX/m1")).toBeNull();
+  expect(mailFrameRedirect("/settings/general")).toBeNull();
+  expect(mailFrameRedirect("/%ZZ/INBOX/m1")).toBeNull();
+});
 
 describe("mailConversationFromPath", () => {
   it("reads a conversation in an account's mailbox", () => {

@@ -424,7 +424,7 @@ export type SettingsPane =
   | "keybindings"
   | "accounts"
   | "agents"
-  /** The agent panel's browser (Mac): links, extensions, browsing data. */
+  /** The browser (Mac): links, extensions, browsing data. */
   | "browser"
   | "integrations"
   /** The Otter account page, opened from the user button at the bottom of the nav. */
@@ -682,8 +682,6 @@ export const gmailApi = {
 
   resetView: (viewId: string): Promise<{ ok: boolean }> => ipc("gmail:resetView", { viewId }),
 
-  importViews: (views: MailView[]): Promise<MailView[]> => ipc("gmail:importViews", { views }),
-
   openSettings: (target?: SettingsTarget): Promise<void> => ipc("window:openSettings", target),
   closeMainWindow: (): Promise<void> => ipc("window:closeMain"),
 
@@ -727,7 +725,7 @@ export const gmailApi = {
   /**
    * Starts a turn and returns at once; it streams as `agent:chatEvent`.
    * Without `sessionId` the provider opens a session and reports it in a
-   * `session` event; Hermes legacy chats chain via `previousResponseId`.
+   * `session` event; Hermes chats without one chain via `previousResponseId`.
    */
   agentSend: (params: {
     provider: ProviderKind;

@@ -7,6 +7,7 @@ import * as DateTime from "effect/DateTime";
 import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as McpProviderSessions from "@t3tools/provider-core/server/McpProviderSessions";
 import * as Schema from "effect/Schema";
 import { HttpBody, HttpClient, HttpRouter } from "effect/http";
 
@@ -51,6 +52,7 @@ import { PullRequestReviewGuideService } from "../../pullRequest/PullRequestRevi
 
 // The upstream toolkits merged beside the suite's resolve these lazily.
 const layerStubServices = Layer.mergeAll(
+  McpProviderSessions.layer,
   Layer.mock(GitVcsDriver)({}),
   Layer.mock(ManagedProjectFolders)({ namedProjectsRoot: "/tmp/otterware-test-unused-projects" }),
   Layer.mock(PreviewManager)({}),
@@ -117,7 +119,7 @@ describe("Calendar module", () => {
       Effect.gen(function* () {
         const activation = yield* Deferred.make<void>();
         const parked = yield* Deferred.make<void>();
-        const layerRoutes = McpHttpServer.layer.pipe(Layer.provide(McpSessionRegistry.layer));
+        const layerRoutes = McpHttpServer.layer.pipe(Layer.provideMerge(McpSessionRegistry.layer));
         const suite = yield* HttpRouter.serve(layerRoutes, {
           disableListenLog: true,
           disableLogger: true,
@@ -169,7 +171,10 @@ describe("Calendar module", () => {
           },
         });
 
-        const credential = yield* McpSessionRegistry.issueActiveMcpCredential({
+        const sessions = yield* McpSessionRegistry.McpSessionRegistry.pipe(
+          Effect.provideContext(suite),
+        );
+        const credential = yield* sessions.issue({
           threadId: ThreadId.make("thread-calendar"),
           providerInstanceId: ProviderInstanceId.make("claudeAgent"),
         });

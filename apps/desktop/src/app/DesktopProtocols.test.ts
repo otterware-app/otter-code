@@ -192,7 +192,7 @@ describe("DesktopProtocols", () => {
 
         assert.isTrue(Exit.hasInterrupts(exit));
         assert.deepEqual(events, [
-          "setPath:userData:/tmp/app-data/otter-code",
+          "setPath:userData:/tmp/app-data/otterware",
           "requestSingleInstanceLock",
           "quit",
         ]);

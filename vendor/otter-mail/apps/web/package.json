@@ -1,6 +1,6 @@
 {
   "name": "@otter-mail/web",
-  "version": "0.13.11",
+  "version": "0.13.12",
   "private": true,
   "description": "Vendored from Otter Mail by scripts/otterware/sync-otter-mail.ts. Do not edit.",
   "type": "module",
@@ -20,8 +20,8 @@
     "culori": "^4.0.2",
     "lucide-react": "^0.542.0",
     "radix-ui": "^1.4.3",
-    "react": "19.2.6",
-    "react-dom": "19.2.6",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "react-markdown": "^9.1.0",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.3.1",

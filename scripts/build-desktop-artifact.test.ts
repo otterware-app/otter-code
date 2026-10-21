@@ -499,7 +499,7 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
         },
       ]);
       assert.equal(suite.detectUpdateChannel, false);
-      assert.notProperty(code, "publish");
+      assert.isNull(code.publish);
     }).pipe(
       Effect.provide(
         Layer.merge(
@@ -550,14 +550,7 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
 
       assert.isNull(preview.publish);
       assert.isNull(previewChannel.publish);
-      assert.deepStrictEqual(release.publish, [
-        {
-          provider: "github",
-          owner: "otterware-app",
-          repo: "otter-code",
-          releaseType: "release",
-        },
-      ]);
+      assert.isNull(release.publish);
     }).pipe(
       Effect.provide(
         ConfigProvider.layer(

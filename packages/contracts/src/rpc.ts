@@ -2134,7 +2134,9 @@ export const WsRpcGroup = RpcGroup.make(
   WsOrchestrationV2SubscribeShellRpc,
   WsOrchestrationV2SubscribeThreadRpc,
   WsOrchestrationV2SubscribeCommandOutputRpc,
-).merge(SuiteRpcGroup).middleware(RpcScopeAuthorization);
+)
+  .merge(SuiteRpcGroup)
+  .middleware(RpcScopeAuthorization);
 
 // Otter's own methods, also part of WsRpcGroup. The server builds their
 // handlers apart from upstream's handler object, which sits at TypeScript's

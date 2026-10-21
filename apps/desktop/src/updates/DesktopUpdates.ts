@@ -1075,7 +1075,12 @@ export const make = Effect.gen(function* () {
 
       const settings = yield* desktopSettings.get;
       const disabledReason = yield* resolveDisabledReason;
-      yield* setState(yield* baseUpdateState(isOtterwareVersion(environment.appVersion) ? "latest" : settings.updateChannel, disabledReason));
+      yield* setState(
+        yield* baseUpdateState(
+          isOtterwareVersion(environment.appVersion) ? "latest" : settings.updateChannel,
+          disabledReason,
+        ),
+      );
       if (Option.isSome(disabledReason)) {
         return;
       }

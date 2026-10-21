@@ -221,7 +221,7 @@ describe("DesktopLinuxUrlHandler", () => {
         DesktopLinuxUrlHandler.renderUrlHandlerDesktopEntry({
           displayName: "Otter Code (Alpha)",
           execTarget: process.execPath,
-          scheme: "ottercode",
+          scheme: "otterware",
           iconPath: "/home/alice/.local/share/icons/com.t3tools.T3Code.desktop.png",
         }),
       );

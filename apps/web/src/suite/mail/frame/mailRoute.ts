@@ -2,7 +2,7 @@
  * Reads Mail's routes (its router.tsx): `/<mailbox>/<label>/<messageId>` with
  * `?account=` when the conversation lives in another mailbox than the one
  * shown (the combined mailbox, views, searches). Mailboxes are account ids
- * (addresses), or `all`, `projects` and view ids.
+ * (addresses), or `all` and view ids.
  */
 export interface MailConversationRef {
   readonly accountId: string;
@@ -28,4 +28,13 @@ export function mailPathSegments(path: string): string[] | null {
   } catch {
     return null;
   }
+}
+
+/** Mail's AI workspace belongs to Code's side chat; old project links no longer resolve. */
+export function mailFrameRedirect(path: string): string | null {
+  const [space] = mailPathSegments(path) ?? [];
+  // An explicit inbox avoids reopening the saved Chats location through `/`.
+  return ["chats", "__chats__", "projects", "__projects__"].includes(space ?? "")
+    ? "/all/inbox"
+    : null;
 }

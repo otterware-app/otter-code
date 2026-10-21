@@ -373,6 +373,57 @@ export const acceptLinkResponseSchema = z.object({
 })
 export type AcceptLinkResponse = z.infer<typeof acceptLinkResponseSchema>
 
+/**
+ * A link opened without signing in: anyone with it views what it shares,
+ * read-only. Nothing here names the people or drive behind it.
+ */
+export const linkDocumentSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  updatedAt: z.string().datetime(),
+  /** Its current version, the one the link shows. */
+  version: z.object({
+    number: z.number().int().positive(),
+    entryPath: z.string(),
+    byteSize: z.number().int().nonnegative(),
+  }),
+})
+export type LinkDocument = z.infer<typeof linkDocumentSchema>
+
+export const linkFolderSchema = z.object({ id: z.string(), name: z.string() })
+export type LinkFolder = z.infer<typeof linkFolderSchema>
+
+export const sharedLinkResponseSchema = z.object({
+  data: z.object({
+    type: z.enum(['folder', 'artifact']),
+    /** The shared folder's or document's name. */
+    name: z.string(),
+    /** A folder link: the folder open in it, the shared one or one inside. */
+    folder: linkFolderSchema
+      .extend({
+        /** From the shared folder down to this one. */
+        path: z.array(linkFolderSchema),
+        folders: z.array(linkFolderSchema),
+        documents: z.array(linkDocumentSchema),
+      })
+      .nullable(),
+    /** A document link: the document. */
+    document: linkDocumentSchema.nullable(),
+  }),
+})
+export type SharedLinkResponse = z.infer<typeof sharedLinkResponseSchema>
+
+export const linkPreviewResponseSchema = z.object({
+  data: z.object({
+    document: linkDocumentSchema,
+    url: z.string().url(),
+    expiresAt: z.string().datetime(),
+    contentType: z.string(),
+    resourceBaseUrl: z.string().url(),
+  }),
+})
+export type LinkPreviewResponse = z.infer<typeof linkPreviewResponseSchema>
+
 export const peopleResponseSchema = z.object({ data: z.array(personSchema) })
 
 // ---------------------------------------------------------------------------

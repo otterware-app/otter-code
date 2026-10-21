@@ -27,8 +27,6 @@ import { CLI_RELEASE_BASE_URL_ENV } from "@t3tools/shared/cliRelease";
 import { isOtterwareVersion, OTTERWARE_SERVER_UPDATE_NOTICE } from "@t3tools/shared/otterware";
 
 import packageJson from "../../package.json" with { type: "json" };
-
-import packageJson from "../../package.json" with { type: "json" };
 import * as ServerConfig from "../config.ts";
 import * as DesktopAppUpdate from "../desktopUpdate/DesktopAppUpdate.ts";
 import * as ProcessRunner from "../processRunner.ts";

@@ -208,7 +208,7 @@ const UploadFileTool = Tool.make("drive_upload_file", {
   .annotate(Tool.OpenWorld, true);
 const ShareDocumentTool = Tool.make("drive_share_document", {
   description:
-    "Change document sharing only when the user asks. linkRole sets anyone-with-the-link access (none/viewer/editor); recipients must sign in to Drive. grant adds emails as viewer/editor, revoke removes direct email grants. Notifications are disabled. Multiple changes commit separately: on failure re-read access instead of retrying. Returns the shareable link, or null when link sharing is off. Requires a user login; API keys cannot share.",
+    "Change document sharing only when the user asks. linkRole sets anyone-with-the-link access (none/viewer/editor); anyone with the link can view published content without signing in, and editing requires signing in. grant adds emails as viewer/editor, revoke removes direct email grants. Notifications are disabled. Multiple changes commit separately: on failure re-read access instead of retrying. Returns the shareable link, or null when link sharing is off. Requires a user login; API keys cannot share.",
   parameters: Schema.Struct({ document: DocumentReference, ...SharingParameters }),
   success: SharingResult,
   failure: DriveToolError,

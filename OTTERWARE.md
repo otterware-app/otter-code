@@ -221,8 +221,8 @@ Upload alone does not change sharing; shared-drive members already have access.
 
 Use `drive_get_share_link` / `drive_get_folder_sharing` to inspect access. Only when asked,
 use `drive_share_document` / `drive_share_folder` to grant/revoke emails or set `linkRole`
-(`none`, `viewer`, `editor`). A link recipient must sign in to Drive. Folder access is
-recursive; shared-drive email grants change membership, but drive roots cannot have links.
+(`none`, `viewer`, `editor`). Public viewer links work without sign-in; editing requires a signed-in Drive account.
+Folder access is recursive; shared-drive email grants change membership, but drive roots cannot have links.
 Notifications are disabled. Changes are separate API transactions: after an error inspect
 access before making another change. Sharing requires a user login, not an API key.
 

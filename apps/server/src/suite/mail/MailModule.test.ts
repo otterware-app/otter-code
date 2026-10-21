@@ -8,6 +8,7 @@ import * as Fiber from "effect/Fiber";
 import * as Stream from "effect/Stream";
 import { encodeMailBytes, type SuiteMailEvent } from "@t3tools/contracts/suite";
 import * as Layer from "effect/Layer";
+import * as McpProviderSessions from "@t3tools/provider-core/server/McpProviderSessions";
 import * as Schema from "effect/Schema";
 import { HttpBody, HttpClient, HttpRouter } from "effect/http";
 
@@ -50,6 +51,7 @@ process.env.OTTER_MAIL_FAKE_DEMO = "1";
 import { PullRequestReviewGuideService } from "../../pullRequest/PullRequestReviewGuideService.ts";
 
 const layerStubServices = Layer.mergeAll(
+  McpProviderSessions.layer,
   Layer.mock(GitVcsDriver)({}),
   Layer.mock(ManagedProjectFolders)({ namedProjectsRoot: "/tmp/otterware-test-unused-projects" }),
   Layer.mock(PreviewManager)({}),
@@ -117,7 +119,7 @@ it.effect(
   () =>
     Effect.scoped(
       Effect.gen(function* () {
-        const layerRoutes = McpHttpServer.layer.pipe(Layer.provide(McpSessionRegistry.layer));
+        const layerRoutes = McpHttpServer.layer.pipe(Layer.provideMerge(McpSessionRegistry.layer));
         const suiteContext = yield* HttpRouter.serve(layerRoutes, {
           disableListenLog: true,
           disableLogger: true,
@@ -135,7 +137,10 @@ it.effect(
           Layer.build,
         );
 
-        const credential = yield* McpSessionRegistry.issueActiveMcpCredential({
+        const sessions = yield* McpSessionRegistry.McpSessionRegistry.pipe(
+          Effect.provideContext(suiteContext),
+        );
+        const credential = yield* sessions.issue({
           threadId: ThreadId.make("thread-mail"),
           providerInstanceId: ProviderInstanceId.make("claudeAgent"),
         });
@@ -164,7 +169,7 @@ it.effect(
         expect(byName.get("mail_search_mail")?.annotations?.readOnlyHint).toBe(true);
         expect(byName.get("mail_send_email")?.annotations?.destructiveHint).toBe(true);
         expect(byName.has("mail_save_view")).toBe(true);
-        expect(byName.has("mail_list_projects")).toBe(true);
+        expect(byName.has("mail_list_projects")).toBe(false);
         // The Calendar module owns calendar tools, Otter Code owns themes.
         expect(byName.has("mail_list_events")).toBe(false);
         expect(byName.has("mail_use_theme")).toBe(false);

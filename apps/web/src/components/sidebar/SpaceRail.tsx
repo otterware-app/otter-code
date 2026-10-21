@@ -79,7 +79,7 @@ import {
   pruneRemovedRailShortcuts,
   railProjectShortcutKey,
   railSpaceShortcutKey,
-  RAIL_ITEM_LABELS,
+  RAIL_ITEM_LABELS as CODE_RAIL_ITEM_LABELS,
   reorderRailKeys,
   resolveRailShortcuts,
   toggleRailShortcut,
@@ -89,6 +89,7 @@ import {
 
 const RAIL_BUTTON =
   "relative flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-sidebar-muted-foreground/65 outline-hidden ring-ring hover:bg-sidebar-row-hover hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-inset [-webkit-app-region:no-drag]";
+const RAIL_ITEM_LABELS = { ...CODE_RAIL_ITEM_LABELS, home: "Code" };
 const RAIL_GLYPHS: Readonly<Record<RailItemId, LucideIcon>> = {
   home: HomeIcon,
   spaces: FoldersIcon,

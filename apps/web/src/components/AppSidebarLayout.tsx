@@ -358,7 +358,10 @@ export function AppSidebarLayout({ children }: { children: ReactNode }) {
   // Full-width pages: the rail is their way out, so phones (rail in the sheet) keep the sidebar.
   const sidebarHidden =
     frame !== null &&
-    (pathname === "/usage" || pathname === "/pull-requests" || pathname === "/spaces" || isSuiteModulePath(pathname));
+    (pathname === "/usage" ||
+      pathname === "/pull-requests" ||
+      pathname === "/spaces" ||
+      isSuiteModulePath(pathname));
   const [sidebarWidth, setSidebarWidth] = useState(readInitialThreadSidebarWidth);
   const [titlebarControlsWidth, setTitlebarControlsWidth] = useState<number | null>(null);
   // Subscribed rather than read once: the clamp must track live window size,

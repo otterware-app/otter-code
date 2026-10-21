@@ -34,7 +34,6 @@ import {
   DiffIcon as FileDiff,
   FoldersIcon as Files,
   GlobeIcon as Globe2,
-  HardDriveIcon as HardDrive,
   ListTodoIcon as ListTodo,
   PlusIcon as Plus,
   TerminalIcon as TerminalSquare,
@@ -54,6 +53,7 @@ import {
 import { isElectron } from "~/env";
 import type { DesktopPreviewOverlay } from "~/previewStateStore";
 import type { RightPanelSurface } from "~/rightPanelStore";
+import { HardDrive } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { resolveShortcutCommand, type ShortcutMatchContext } from "~/keybindings";
 import { readLocalApi } from "~/localApi";

@@ -13,7 +13,7 @@ ${TOOL_INSTRUCTIONS.split("\n")
       .replace(" or calendars", "")
       .replace(" or calendar", "")
       .replace(
-        /\b(list_accounts|search_mail|list_threads|get_thread|get_attachment|update_threads|save_draft|send_email|list_projects|create_project|add_to_project|update_project|set_project_status|list_views|save_view|delete_view)\b/g,
+        /\b(list_accounts|search_mail|list_threads|get_thread|get_attachment|update_threads|save_draft|send_email|list_views|save_view|delete_view)\b/g,
         "mail_$1",
       ),
   )

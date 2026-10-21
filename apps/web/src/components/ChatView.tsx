@@ -160,6 +160,7 @@ import {
   useEffect,
   useEffectEvent,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -1393,6 +1394,9 @@ export default function ChatView(props: ChatViewProps) {
     return inserted;
   };
   const citeAssistantTextStable = useStableCallback(citeAssistantText);
+  const citeDriveDocumentStable = useStableCallback((markdown: string) => {
+    composerRef.current?.insertTextAtEnd(`${markdown} `, { ensureLeadingBoundary: true });
+  });
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [isWorkspaceFileDragActive, setIsWorkspaceFileDragActive] = useState(false);
   const [optimisticUserMessages, setOptimisticUserMessages] = useState<ChatMessage[]>([]);
@@ -3016,14 +3020,16 @@ export default function ChatView(props: ChatViewProps) {
   const [dockedDraftHeroThreadKey, setDockedDraftHeroThreadKey] = useState<string | null>(null);
   const draftHeroDockRequested =
     activeThreadKey !== null && dockedDraftHeroThreadKey === activeThreadKey;
-  const isDraftHeroState = !compact && resolveDraftHeroState({
-    isLocalDraftThread,
-    hasTimelineEntries: timelineEntries.length > 0,
-    isWorking,
-    draftHeroDockRequested,
-    backgroundSubmissionPending,
-    hasWorktreeSetupCard: worktreeSetup !== null,
-  });
+  const isDraftHeroState =
+    !compact &&
+    resolveDraftHeroState({
+      isLocalDraftThread,
+      hasTimelineEntries: timelineEntries.length > 0,
+      isWorking,
+      draftHeroDockRequested,
+      backgroundSubmissionPending,
+      hasWorktreeSetupCard: worktreeSetup !== null,
+    });
   const {
     transitionGroupRef: draftHeroTransitionGroupRef,
     composerAnchorRef: draftHeroComposerAnchorRef,
@@ -4779,7 +4785,13 @@ export default function ChatView(props: ChatViewProps) {
       window.removeEventListener("focus", onWindowFocus);
       if (frame !== null) window.cancelAnimationFrame(frame);
     };
-  }, [activeThread?.id, compact, focusComposerStable, isMobileViewport, terminalUiState.terminalOpen]);
+  }, [
+    activeThread?.id,
+    compact,
+    focusComposerStable,
+    isMobileViewport,
+    terminalUiState.terminalOpen,
+  ]);
 
   useEffect(() => {
     if (!activeThread?.id) return;
@@ -5837,7 +5849,8 @@ export default function ChatView(props: ChatViewProps) {
     }) satisfies ChatShortcutHandler;
   useChatShortcuts({
     enabled: activeThreadId !== null,
-    acceptsEvent: (event) => !compact || eventPathContainsSelector(event, "[data-chat-view-compact]"),
+    acceptsEvent: (event) =>
+      !compact || eventPathContainsSelector(event, "[data-chat-view-compact]"),
     acceptsCommand: (command) => !compact || COMPACT_SHORTCUT_COMMANDS.has(command),
     keybindings,
     scriptKeybindings,
@@ -8086,6 +8099,7 @@ export default function ChatView(props: ChatViewProps) {
         onBack: linkedLinearIssueCount > 1 ? addLinearIssuesSurfaceStable : undefined,
         onCite: citeAssistantTextStable,
       }}
+      onCiteDriveDocument={citeDriveDocumentStable}
       files={{
         projectName: activeProject?.title ?? null,
         workspaceRoot: activeWorkspaceRoot,

@@ -7,6 +7,7 @@ import { buildRuntimeInstructions } from "@t3tools/provider-core/server/runtimeI
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
+import * as McpProviderSessions from "@t3tools/provider-core/server/McpProviderSessions";
 import * as Path from "effect/Path";
 import * as Schema from "effect/Schema";
 import { HttpBody, HttpClient, HttpRouter } from "effect/http";
@@ -48,6 +49,7 @@ import { PullRequestReviewGuideService } from "../pullRequest/PullRequestReviewG
 // The upstream toolkits merged beside the suite's resolve these lazily; the
 // suite tool under test needs none of them.
 const layerStubServices = Layer.mergeAll(
+  McpProviderSessions.layer,
   Layer.mock(GitVcsDriver)({}),
   Layer.mock(ManagedProjectFolders)({ namedProjectsRoot: "/tmp/otterware-test-unused-projects" }),
   Layer.mock(PreviewManager)({}),
@@ -128,7 +130,7 @@ const firstJson = (body: string) => body.match(/\{.*\}/s)?.[0] ?? body;
 it.effect("an agent in a thread lists and calls suite_capabilities over /mcp", () =>
   Effect.scoped(
     Effect.gen(function* () {
-      const layerRoutes = McpHttpServer.layer.pipe(Layer.provide(McpSessionRegistry.layer));
+      const layerRoutes = McpHttpServer.layer.pipe(Layer.provideMerge(McpSessionRegistry.layer));
       const suiteContext = yield* HttpRouter.serve(layerRoutes, {
         disableListenLog: true,
         disableLogger: true,
@@ -147,7 +149,10 @@ it.effect("an agent in a thread lists and calls suite_capabilities over /mcp", (
         Layer.build,
       );
 
-      const credential = yield* McpSessionRegistry.issueActiveMcpCredential({
+      const sessions = yield* McpSessionRegistry.McpSessionRegistry.pipe(
+        Effect.provideContext(suiteContext),
+      );
+      const credential = yield* sessions.issue({
         threadId: ThreadId.make("thread-suite"),
         providerInstanceId: ProviderInstanceId.make("claudeAgent"),
       });

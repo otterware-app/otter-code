@@ -65,12 +65,6 @@ const buildDefines = () => ({
   __GOOGLE_CLIENT_SECRET__: JSON.stringify(
     process.env.OTTER_MAIL_GOOGLE_CLIENT_SECRET?.trim() ?? "",
   ),
-  __GOOGLE_LEGACY_CLIENT_ID__: JSON.stringify(
-    process.env.OTTER_MAIL_GOOGLE_LEGACY_CLIENT_ID?.trim() ?? "",
-  ),
-  __GOOGLE_LEGACY_CLIENT_SECRET__: JSON.stringify(
-    process.env.OTTER_MAIL_GOOGLE_LEGACY_CLIENT_SECRET?.trim() ?? "",
-  ),
 });
 
 /** Only database drivers from auth adapters Mail's client never calls may stay external. */

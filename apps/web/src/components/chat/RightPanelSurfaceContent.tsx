@@ -82,6 +82,7 @@ export function RightPanelSurfaceContent(props: {
   readonly pullRequest: RightPanelPullRequestProps;
   readonly linearIssues: Pick<ComponentProps<typeof LinearIssueDetailPanel>, "onBack" | "onCite">;
   readonly files: RightPanelFileProps;
+  readonly onCiteDriveDocument: (markdown: string) => void;
 }) {
   const { surface, threadRef, visible } = props;
   if (surface === null) return null;
@@ -185,7 +186,13 @@ export function RightPanelSurfaceContent(props: {
       );
     case "drive-documents":
     case "drive-document":
-      return <DriveRightPanelSurface surface={surface} threadRef={threadRef} onCite={props.linearIssues.onCite} />;
+      return (
+        <DriveRightPanelSurface
+          surface={surface}
+          threadRef={threadRef}
+          onCite={props.onCiteDriveDocument}
+        />
+      );
     case "device":
       return (
         <Suspense fallback={null}>

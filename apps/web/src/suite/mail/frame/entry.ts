@@ -18,7 +18,7 @@ import { receiveMailGoogleAuth } from "../mailGoogleAuth";
 import { receiveMailMicrosoftAuth } from "../mailMicrosoftAuth";
 import { showGoogleAuthPrompt } from "./googleAuthPrompt";
 import { FRAME_CHANNELS, inertAnswer, isFrameChannel } from "./frameChannels";
-import { mailConversationFromPath, mailPathSegments } from "./mailRoute";
+import { mailConversationFromPath, mailFrameRedirect, mailPathSegments } from "./mailRoute";
 import { startThemeBridge } from "./themeBridge";
 
 /** Mail's build-time constants (its vite.config.ts `define`), as globals for its modules. */
@@ -356,6 +356,11 @@ function boot(host: OtterMailHost): void {
   let reported = "";
   const report = () => {
     const path = location.hash.replace(/^#/, "") || "/";
+    const redirect = mailFrameRedirect(path);
+    if (redirect !== null) {
+      location.replace(`#${redirect}`);
+      return;
+    }
     const segments = mailPathSegments(path);
     const hidden =
       segments?.[0] === "settings" && HIDDEN_SETTINGS_PANES.some((pane) => pane === segments[1]);
@@ -405,7 +410,9 @@ function injectFrameStyles(): void {
   style.textContent = `
 [aria-label="Toggle agent panel"],
 [data-tour="agent"],
-:has(+ [data-tour="agent"]):not(:has([data-tour])) { display: none !important; }
+[data-tour="chats"],
+:has(+ [data-tour="agent"]):not(:has([data-tour])),
+:has(+ [data-tour="chats"]):not(:has([data-tour])) { display: none !important; }
 [data-otterware-hidden] { display: none !important; }
 `;
   document.head.append(style);
@@ -440,7 +447,7 @@ if (host === null) {
   document.body.textContent = "Open Mail from Otterware.";
 } else {
   // Mail's own agent panel starts closed; Otterware's side chat is beside the frame.
-  localStorage.setItem("gmail:chat-open", "0");
+  localStorage.setItem("gmail:chat-window-open", "0");
   injectFrameStyles();
   boot(host);
   await import("otter-mail:renderer");

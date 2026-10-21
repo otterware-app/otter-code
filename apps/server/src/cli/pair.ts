@@ -65,7 +65,7 @@ export class NoRunningServerError extends Schema.TaggedError<NoRunningServerErro
 ) {
   override get message(): string {
     return [
-      "No running T3 Code server found.",
+      "No running Otter Code server found.",
       ...this.checkedStatePaths.map((statePath) => `  checked ${statePath}`),
       "Start one with `npx otter-code serve`, or connect this machine with T3 Connect: `npx otter-code connect`.",
     ].join("\n");

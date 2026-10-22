@@ -71,6 +71,7 @@ export function PreviewExtensionToolbar({ threadRef, webContentsId, visible }: P
   const openPreview = useAtomCommand(previewEnvironment.open, { reportFailure: false });
   const menuButtonRef = useRef<HTMLButtonElement | null>(null);
   // The preview showing is Chrome's active tab, and gets the pages extensions open.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Tells Chrome extensions which preview is the active tab.
   useEffect(() => {
     if (visible && webContentsId !== null) {
       void previewExtensions?.setActiveTab(webContentsId).catch(() => undefined);

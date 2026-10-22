@@ -8,7 +8,7 @@
     transparent
   );
   --app-frame: transparent;
-  --sidebar-panel-surface: transparent;
+  --sidebar-panel-surface: var(--sidebar);
   --app-chrome-background: transparent;
   --surface-grain: none;
 }
@@ -26,9 +26,12 @@
   background: var(--window-glass-coat);
 }
 
-:root[data-window-material="translucent"] [data-app-frame],
-:root[data-window-material="translucent"] [data-slot="sidebar-inner"] {
+:root[data-window-material="translucent"] [data-app-frame] {
   background: transparent;
+}
+
+:root[data-window-material="translucent"] [data-slot="sidebar-inner"] {
+  background: var(--sidebar-panel-surface);
 }
 
 :root[data-window-translucency="window"] {
@@ -57,8 +60,28 @@
   background: var(--background);
 }
 
+/* HTML replies use the theme canvas, so the conversation must share that
+   opaque surface while the surrounding window chrome keeps its glass. */
+:root[data-window-translucency="window"] [data-chat-surface="conversation"] {
+  background: var(--background);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-window-translucency="window"] [data-panel-animations="true"] [data-chat-surface] {
+    transition: background-color var(--panel-animation-duration) ease-out;
+  }
+}
+
 :root[data-window-translucency="window"] [data-slot="composer-shell"] {
   --chat-composer-glass-surface: var(--popover);
+}
+
+:root[data-window-translucency="window"]
+  [data-chat-surface="conversation"]
+  [data-slot="composer-shell"] {
+  --glass-opacity: 100%;
+  --glass-blur: 0px;
+  --window-raised-surface: var(--chat-composer-glass-surface);
 }
 
 :root[data-window-translucency="window"] [data-slot="composer-host"]::before {

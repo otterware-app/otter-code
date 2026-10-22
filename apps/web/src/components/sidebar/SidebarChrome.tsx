@@ -153,7 +153,7 @@ export function SidebarSpaceHeading({
 }
 // Settings, Usage, Pull Requests and updates live in the space rail; their pages
 // offer Back here, to the thread they were opened over.
-export const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
+const SidebarUtilityMenu = memo(function SidebarUtilityMenu() {
   const navigateToMainApp = useNavigateToMainApp();
   const { isMobile, setOpenMobile } = useSidebar();
   const isOnUtilityPage = useLocation({

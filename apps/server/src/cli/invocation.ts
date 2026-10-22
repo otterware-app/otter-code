@@ -190,7 +190,8 @@ export const resolveHostCliCommand = Effect.fn("invocation.resolveHostCliCommand
     // An empty subcommand names the root `t3` command.
     [prefix.trimEnd(), ...args.map((arg) => hostShellWord(platform, arg))].join(" ");
   const command = yield* resolveCliCommand(subcommand);
-  if (command !== `otter-code ${subcommand}`) return { command: withArgs(command), launcher: false };
+  if (command !== `otter-code ${subcommand}`)
+    return { command: withArgs(command), launcher: false };
   const onPath = yield* resolveCommandPath("otter-code");
   if (onPath !== null) {
     const shim = (yield* HostProcess.Environment).T3CODE_CLI_PATH?.trim();

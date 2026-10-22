@@ -95,6 +95,7 @@ function activeProjectSpace(input: {
 
 export function useActiveProjectSpace() {
   const storedSpaceId = useUiStateStore((store) => store.sidebarProjectSpaceId);
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Migrates a stored legacy space ID once.
   useEffect(() => {
     if (
       storedSpaceId === LEGACY_VOID_SPACE_ID &&

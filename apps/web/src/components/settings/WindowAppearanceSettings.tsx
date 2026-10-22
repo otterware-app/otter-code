@@ -77,7 +77,7 @@ export function WindowAppearanceSettings() {
         <>
           <SettingsRow
             {...searchableSetting("window-material")}
-            description="Choose a solid window or glass with the desktop visible behind it."
+            description="Choose a solid window or glass behind the navigation rail, header, and new chats."
             control={
               <div className="w-full sm:w-40">
                 <Select
@@ -102,10 +102,10 @@ export function WindowAppearanceSettings() {
             <>
               <SettingsRow
                 {...searchableSetting("window-sidebar-only")}
-                description="Keep the chat surface solid and make only the sidebar transparent."
+                description="Keep new chats and the header solid too, with only the navigation rail transparent."
                 control={
                   <Switch
-                    aria-label="Sidebar only"
+                    aria-label="Rail only"
                     checked={settings.windowSidebarOnly}
                     onCheckedChange={(windowSidebarOnly) => update({ windowSidebarOnly })}
                   />

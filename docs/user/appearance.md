@@ -50,9 +50,11 @@ selected thread's panel state without replaying its transitions.
 
 ## Window and new chats
 
-On macOS desktop, choose **Window material → Translucent** to let the desktop show through.
-Adjust **Opacity** and **Blur**, or enable **Sidebar only** to keep the conversation solid.
-Choose **Solid** to turn transparency off.
+On macOS desktop, choose **Window material → Translucent** to let the desktop show through the
+navigation rail, header, and new chats. The thread-list sidebar stays solid. Sending the first
+prompt makes the conversation and composer solid for reading. Adjust **Opacity** and **Blur**, or
+enable **Rail only** to keep new chats and the header solid too. Choose **Solid** to turn transparency
+off.
 
 New chats have an animated ASCII background. Turn **Animated background** off to hide it.
 Your operating system's reduced-motion preference keeps the field still.

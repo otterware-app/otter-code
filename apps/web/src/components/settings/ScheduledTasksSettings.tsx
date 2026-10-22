@@ -1,8 +1,15 @@
 import { useAtomValue } from "@effect/atom-react";
 import { connectionStatusTitle } from "@t3tools/client-runtime/connection";
 import { AsyncResult } from "effect/reactivity";
-import { Trash2Icon } from "lucide-react";
-import { CopyIcon, InboxIcon, MoreHorizontalIcon, PencilIcon, PlayIcon, PlusIcon } from "~/lib/icons";
+import { Clock3Icon, Trash2Icon } from "lucide-react";
+import {
+  CopyIcon,
+  InboxIcon,
+  MoreHorizontalIcon,
+  PencilIcon,
+  PlayIcon,
+  PlusIcon,
+} from "~/lib/icons";
 import { type ReactNode, useRef, useState } from "react";
 import type {
   EnvironmentId,

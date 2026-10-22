@@ -726,6 +726,7 @@ export default function DiffPanel({
     (singleFilePath !== null &&
       (singleFileEntry?.fileDiff.cacheKey?.endsWith(":pending") !== true ||
         fileStates.get(singleFilePath)?.error === true));
+  // oxlint-disable-next-line t3code/react-effect-budget -- Loads the lazily fetched file shown in single-file mode.
   useEffect(() => {
     if (lazySource && singleFilePath !== null && !singleFileReady) requestFile(singleFilePath);
   }, [lazySource, requestFile, singleFilePath, singleFileReady]);
@@ -785,6 +786,7 @@ export default function DiffPanel({
     codeViewScroll.flush();
     codeViewReveal.flush();
   });
+  // oxlint-disable-next-line t3code/react-effect-budget -- Scrolls the code view to the selected file.
   useEffect(() => {
     if (selectedDiffFileKey) codeViewReveal.request(selectedDiffFileKey);
     // oxlint-disable-next-line react/exhaustive-effect-dependencies -- A remounted viewer or a repeated reveal request scrolls to the same file again.

@@ -200,28 +200,30 @@ export const makeLinearClient = Effect.gen(function* () {
    * Linear asks agents to move a delegated issue into the team's first
    * "started" state unless it is already started, completed, or canceled.
    */
-  const markIssueStarted = (token: string, issueId: string) =>
-    Effect.gen(function* () {
-      const data = yield* graphql(
-        "issue states",
-        token,
-        'query($id: String!) { issue(id: $id) { state { type } team { states(filter: { type: { eq: "started" } }) { nodes { id position } } } } }',
-        { id: issueId },
-        Schema.decodeUnknownEffect(IssueStates),
-      );
-      if (["started", "completed", "canceled"].includes(data.issue.state.type)) return;
-      const first = data.issue.team.states.nodes.toSorted(
-        (left, right) => left.position - right.position,
-      )[0];
-      if (!first) return;
-      yield* graphql(
-        "issueUpdate",
-        token,
-        "mutation($id: String!, $stateId: String!) { issueUpdate(id: $id, input: { stateId: $stateId }) { success } }",
-        { id: issueId, stateId: first.id },
-        () => Effect.void,
-      );
-    });
+  const markIssueStarted = Effect.fn("relay.linear.mark_issue_started")(function* (
+    token: string,
+    issueId: string,
+  ) {
+    const data = yield* graphql(
+      "issue states",
+      token,
+      'query($id: String!) { issue(id: $id) { state { type } team { states(filter: { type: { eq: "started" } }) { nodes { id position } } } } }',
+      { id: issueId },
+      Schema.decodeUnknownEffect(IssueStates),
+    );
+    if (["started", "completed", "canceled"].includes(data.issue.state.type)) return;
+    const first = data.issue.team.states.nodes.toSorted(
+      (left, right) => left.position - right.position,
+    )[0];
+    if (!first) return;
+    yield* graphql(
+      "issueUpdate",
+      token,
+      "mutation($id: String!, $stateId: String!) { issueUpdate(id: $id, input: { stateId: $stateId }) { success } }",
+      { id: issueId, stateId: first.id },
+      () => Effect.void,
+    );
+  });
 
   const IssueBranchName = Schema.Struct({
     issue: Schema.Struct({ branchName: Schema.String }),

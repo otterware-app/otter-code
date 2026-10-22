@@ -71,9 +71,7 @@ export const make = Effect.gen(function* () {
         });
         const claims = yield* decodeDeletion(verified.payload);
         if (claims.exp - claims.iat > 60 || claims.exp <= claims.iat)
-          return yield* Effect.fail(
-            new AccountDeletionError({ stage: "verify", cause: "invalid_lifetime" }),
-          );
+          return yield* new AccountDeletionError({ stage: "verify", cause: "invalid_lifetime" });
         return claims;
       }).pipe(Effect.mapError((cause) => new AccountDeletionError({ stage: "verify", cause })));
       yield* Effect.gen(function* () {

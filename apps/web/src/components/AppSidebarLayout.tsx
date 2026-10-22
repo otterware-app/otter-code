@@ -3,7 +3,6 @@ import * as Schema from "effect/Schema";
 import {
   useEffect,
   useLayoutEffect,
-  useRef,
   useState,
   useSyncExternalStore,
   type CSSProperties,

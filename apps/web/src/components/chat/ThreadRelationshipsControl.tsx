@@ -41,7 +41,15 @@ import { groupBy } from "effect/Array";
 import * as DateTime from "effect/DateTime";
 import { useNavigate } from "@tanstack/react-router";
 import { CornerLeftUpIcon, SquareIcon, UnplugIcon } from "lucide-react";
-import { ArrowRightIcon, BotIcon, ChevronDownIcon, GitForkIcon, LoaderCircleIcon, MoreHorizontalIcon, PlusIcon } from "~/lib/icons";
+import {
+  ArrowRightIcon,
+  BotIcon,
+  ChevronDownIcon,
+  GitForkIcon,
+  LoaderCircleIcon,
+  MoreHorizontalIcon,
+  PlusIcon,
+} from "~/lib/icons";
 import { useState, type ReactNode } from "react";
 
 import { useArchivedThreadSnapshots } from "../../lib/archivedThreadsState";

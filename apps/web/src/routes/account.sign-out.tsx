@@ -7,6 +7,7 @@ import { Button } from "../components/ui/button";
 export const Route = createFileRoute("/account/sign-out")({ component: AccountSignOut });
 function AccountSignOut() {
   const form = useRef<HTMLFormElement>(null);
+  // oxlint-disable-next-line t3code/react-effect-budget -- Clears the session and submits the sign-out form on load.
   useEffect(() => {
     localStorage.removeItem("otter-account-session-v1");
     form.current?.requestSubmit();

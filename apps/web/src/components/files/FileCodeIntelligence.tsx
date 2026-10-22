@@ -77,6 +77,7 @@ type Suggestions = {
 export default function FileCodeIntelligence(props: Props) {
   const { editor, root, environmentId, cwd, relativePath } = props;
   const current = useRef(props);
+  // oxlint-disable-next-line t3code/react-effect-budget -- Keeps the language session's callbacks on the latest props.
   useEffect(() => {
     current.current = props;
   });
@@ -102,6 +103,7 @@ export default function FileCodeIntelligence(props: Props) {
     reveal: (position: CodePosition) => void;
   } | null>(null);
 
+  // oxlint-disable-next-line t3code/react-effect-budget -- Owns the language session bound to the editor surface.
   useEffect(() => {
     const surface = root.current;
     if (!surface) return;
@@ -517,20 +519,24 @@ export default function FileCodeIntelligence(props: Props) {
   }, [command, cwd, editor, environmentId, relativePath, root]);
 
   const previousContents = useRef(props.contents);
+  // oxlint-disable-next-line t3code/react-effect-budget -- Forwards external content changes to the language session.
   useEffect(() => {
     if (previousContents.current === props.contents) return;
     previousContents.current = props.contents;
     actions.current?.changed();
   }, [props.contents]);
   const previousMutation = useRef(props.workspaceMutationId);
+  // oxlint-disable-next-line t3code/react-effect-budget -- Refreshes diagnostics after a workspace mutation.
   useEffect(() => {
     if (previousMutation.current === props.workspaceMutationId) return;
     previousMutation.current = props.workspaceMutationId;
     actions.current?.diagnostics(true);
   }, [props.workspaceMutationId]);
+  // oxlint-disable-next-line t3code/react-effect-budget -- Reveals a requested location in the editor.
   useEffect(() => {
     if (props.reveal) actions.current?.reveal(props.reveal);
   }, [props.reveal]);
+  // oxlint-disable-next-line t3code/react-effect-budget -- Sets combobox ARIA on the editor's shadow-DOM input.
   useEffect(() => {
     if (!suggestions || !root.current) return;
     const input = fileShadow(root.current)?.querySelector("[data-content]");

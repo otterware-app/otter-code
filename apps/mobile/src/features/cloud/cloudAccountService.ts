@@ -61,9 +61,7 @@ const cleanUpCloudAccount = async (
     ...(wasActive
       ? [
           settleAsyncResult(() =>
-            runtime.runPromiseExit(
-              unregisterAgentAwarenessDeviceForCurrentUser(source.getToken),
-            ),
+            runtime.runPromiseExit(unregisterAgentAwarenessDeviceForCurrentUser(source.getToken)),
           ),
         ]
       : []),

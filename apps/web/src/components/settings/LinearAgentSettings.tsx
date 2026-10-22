@@ -147,6 +147,7 @@ function useLinearReturnParam(authLoaded: boolean, signedIn: boolean) {
       resetScroll: false,
     });
   });
+  // oxlint-disable-next-line t3code/react-effect-budget -- Handles the OAuth return once Otter Accounts has loaded.
   useEffect(() => {
     // Wait for Otter Accounts so a signed-in user isn't told to sign in.
     if (!authLoaded || typeof outcome !== "string" || handledRef.current) return;
@@ -195,6 +196,7 @@ function SignedInLinearSettings({
   };
   const load = async () => setState(await readStatus());
   const readStatusOnMount = useEffectEvent(readStatus);
+  // oxlint-disable-next-line t3code/react-effect-budget -- Reads Linear status from the relay on mount.
   useEffect(() => {
     let active = true;
     void readStatusOnMount().then((next) => {

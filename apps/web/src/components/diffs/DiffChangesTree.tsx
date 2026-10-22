@@ -183,6 +183,7 @@ export function DiffChangesTree(props: {
       );
     }
   }
+  // oxlint-disable-next-line t3code/react-effect-budget -- Scrolls the DOM row of the selected file into view.
   useEffect(() => {
     if (!props.selectedPath) return;
     containerRef.current

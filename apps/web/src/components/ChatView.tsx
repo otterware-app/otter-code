@@ -1816,7 +1816,6 @@ export default function ChatView(props: ChatViewProps) {
     runShellCommandStable,
     splitPanelTerminalStable,
     splitPanelTerminalVerticalStable,
-    toggleTerminalVisibilityStable,
     shortcuts: terminalShortcuts,
   } = useChatTerminalActions({
     environmentId,
@@ -3211,7 +3210,10 @@ export default function ChatView(props: ChatViewProps) {
           />
         </header>
 
-        <div className="relative flex min-h-0 min-w-0 flex-1">
+        <div
+          className="relative flex min-h-0 min-w-0 flex-1"
+          data-chat-surface={isDraftHeroState ? "draft" : "conversation"}
+        >
           {timelineMessages.length === 0 && !threadDetailLoading ? (
             <>
               <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center pb-36">

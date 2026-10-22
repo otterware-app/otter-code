@@ -50,8 +50,29 @@ import {
   resolveEnvironmentMachineKind,
 } from "@t3tools/contracts";
 import { useLocation, useNavigate } from "@tanstack/react-router";
-import { ChartNoAxesColumnIcon, CornerLeftUpIcon, FileSearchIcon, FolderGit2Icon, MessageSquareDashedIcon, MessageSquareIcon, PaletteIcon, TextSearchIcon, UserPlusIcon } from "lucide-react";
-import { ArrowLeftIcon, CheckIcon, ChevronRightIcon, FolderAddIcon as FolderPlusIcon, FolderIcon, LinkIcon, ListTodoIcon, MonitorIcon, MoonIcon, NewThreadIcon as SquarePenIcon, RotateCcwIcon, SettingsIcon, SunIcon } from "~/lib/icons";
+import {
+  ChartNoAxesColumnIcon,
+  CornerLeftUpIcon,
+  FileSearchIcon,
+  FolderGit2Icon,
+  MessageSquareDashedIcon,
+  MessageSquareIcon,
+  PaletteIcon,
+  TextSearchIcon,
+  UserPlusIcon,
+} from "lucide-react";
+import {
+  ArrowLeftIcon,
+  CheckIcon,
+  ChevronRightIcon,
+  FolderAddIcon as FolderPlusIcon,
+  FolderIcon,
+  LinkIcon,
+  ListTodoIcon,
+  NewThreadIcon as SquarePenIcon,
+  RotateCcwIcon,
+  SettingsIcon,
+} from "~/lib/icons";
 import { openThreadFind } from "./chat/threadFindStore";
 import {
   useDeferredValue,

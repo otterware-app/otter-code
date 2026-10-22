@@ -13,7 +13,6 @@ import {
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Option from "effect/Option";
 
 import * as ThreadManagement from "../orchestration-v2/ThreadManagementService.ts";
 import { deliverLinearAgentPrompt, handleLinearAgentPromptRequest } from "./LinearAgentPrompts.ts";
@@ -32,7 +31,7 @@ function makeContext() {
   const delivered: Array<RelayLinearAgentPromptProofPayload> = [];
   const context = {
     secrets: {
-      get: () => Effect.succeed(Option.none()),
+      get: () => Effect.succeedNone,
       set: () => Effect.void,
       create: () => Effect.void,
       getOrCreateRandom: (_name: string, bytes: number) => Effect.succeed(new Uint8Array(bytes)),

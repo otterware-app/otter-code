@@ -47,7 +47,6 @@ import { vi } from "vite-plus/test";
 import * as AssetSigner from "./assets/AssetSigner.ts";
 import * as PreviewAutomationBroker from "./mcp/PreviewAutomationBroker.ts";
 import * as LinearIssueSyncReactor from "./linear/LinearIssueSyncReactor.ts";
-import { WorkspaceLanguageService } from "./workspace/WorkspaceLanguageService.ts";
 import * as ServerBrowser from "./preview/ServerBrowser.ts";
 import * as AcpRegistryRuntimeCoordinator from "@t3tools/provider-acp-registry/server/AcpRegistryRuntimeCoordinator";
 import * as AcpRegistrySupport from "@t3tools/provider-acp-registry/server/AcpRegistrySupport";
@@ -1008,7 +1007,6 @@ it.effect.each([
             yield* ServerBrowser.ServerBrowser,
             () => Effect.void,
             { secretReferences: true },
-            new WorkspaceLanguageService(),
           ).pipe(Layer.provide(configRpcServices)),
         ),
       );
@@ -1255,7 +1253,6 @@ it.effect("on-demand clients get provider config without workspace snapshots", (
           yield* ServerBrowser.ServerBrowser,
           () => Effect.void,
           { secretReferences: true },
-          new WorkspaceLanguageService(),
         ).pipe(Layer.provide(configRpcServices)),
       ),
     );

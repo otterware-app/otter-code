@@ -37,7 +37,7 @@ from pathlib import Path
 import re
 
 def fork_block(action):
-    return f'''\n          if [[ "${{GITHUB_REPOSITORY}}" == "otterware-app/otter-code" ]]; then
+    return f'''\n          if [[ "${{GITHUB_REPOSITORY:-}}" == "otterware-app/otter-code" ]]; then
             node scripts/otter/web-hosting.mjs {action}
             exit 0
           fi
@@ -51,6 +51,9 @@ def adapt_job(text, name, action, entries):
     job = match[0]
     # Replace the previous Otter-only Vercel promotion guard during migration.
     job = re.sub(r'\n          if \[\[ "\$\{GITHUB_REPOSITORY\}" == "otterware-app/otter-code" \]\]; then\n            node scripts/otter/promote-web.mjs\n            exit 0\n          fi\n', '', job)
+    # Upstream's workflow tests run these steps without GITHUB_REPOSITORY under `set -u`.
+    job = job.replace('"${GITHUB_REPOSITORY}" == "otterware-app/otter-code"',
+                      '"${GITHUB_REPOSITORY:-}" == "otterware-app/otter-code"')
     if f"node scripts/otter/web-hosting.mjs {action}\n" not in job:
         anchor = "          set -euo pipefail\n"
         if anchor not in job:

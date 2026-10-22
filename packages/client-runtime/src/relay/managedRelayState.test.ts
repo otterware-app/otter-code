@@ -143,8 +143,8 @@ describe("createManagedRelayQueryManager", () => {
       for (const unsubscribe of readers) unsubscribe();
 
       expect(logs).toEqual([["[t3-cloud] Relay device listing failed"]]);
-      }),
-    );
+    }),
+  );
 
   it.effect("deregisters an environment through the current Otter account session", () =>
     Effect.gen(function* () {
@@ -216,39 +216,42 @@ describe("createManagedRelayQueryManager", () => {
       }),
   );
 
-  it.effect("replaces a Clerk token read that has not answered after 4 seconds", () =>
+  it.effect("replaces an account token read that has not answered after 4 seconds", () =>
     Effect.gen(function* () {
-      const token = clerkToken(4_102_444_800);
-      const readClerkToken = vi
+      const token = accountToken(4_102_444_800);
+      const readAccountToken = vi
         .fn<() => Promise<string | null>>()
         .mockReturnValueOnce(new Promise(() => {}))
         .mockResolvedValue(token);
-      const session = createManagedRelaySession({ accountId: "account-1", readClerkToken });
+      const session = createManagedRelaySession({ accountId: "account-1", readAccountToken });
 
-      const readsFiber = yield* Effect.all([session.readClerkToken(), session.readClerkToken()], {
-        concurrency: "unbounded",
-      }).pipe(Effect.forkChild);
+      const readsFiber = yield* Effect.all(
+        [session.readAccountToken(), session.readAccountToken()],
+        {
+          concurrency: "unbounded",
+        },
+      ).pipe(Effect.forkChild);
       yield* TestClock.adjust("3999 millis");
-      expect(readClerkToken).toHaveBeenCalledTimes(1);
+      expect(readAccountToken).toHaveBeenCalledTimes(1);
 
       yield* TestClock.adjust("1 millis");
       expect(yield* Fiber.join(readsFiber)).toEqual([token, token]);
-      expect(readClerkToken).toHaveBeenCalledTimes(2);
+      expect(readAccountToken).toHaveBeenCalledTimes(2);
     }),
   );
 
-  it.effect("fails a Clerk token read that never answers after three tries", () =>
+  it.effect("fails an account token read that never answers after three tries", () =>
     Effect.gen(function* () {
-      const readClerkToken = vi.fn(() => new Promise<string | null>(() => {}));
-      const session = createManagedRelaySession({ accountId: "account-1", readClerkToken });
+      const readAccountToken = vi.fn(() => new Promise<string | null>(() => {}));
+      const session = createManagedRelaySession({ accountId: "account-1", readAccountToken });
 
-      const readFiber = yield* session.readClerkToken().pipe(Effect.flip, Effect.forkChild);
+      const readFiber = yield* session.readAccountToken().pipe(Effect.flip, Effect.forkChild);
       yield* TestClock.adjust("12 seconds");
 
       expect((yield* Fiber.join(readFiber)).message).toBe(
-        "Timed out obtaining the T3 Connect session token.",
+        "Timed out obtaining the Otter Connect session token.",
       );
-      expect(readClerkToken).toHaveBeenCalledTimes(3);
+      expect(readAccountToken).toHaveBeenCalledTimes(3);
     }),
   );
 

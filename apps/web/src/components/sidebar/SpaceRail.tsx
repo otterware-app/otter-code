@@ -44,7 +44,7 @@ import {
   UsageGaugeIcon,
   type LucideIcon,
 } from "../../lib/icons";
-import { sortThreads } from "../../lib/threadSort";
+import { sortThreads } from "@t3tools/client-runtime/state/thread-sort";
 import { cn } from "../../lib/utils";
 import { selectProjectGroupingSettings } from "@t3tools/client-runtime/state/project-grouping";
 import { projectSpaceIcon } from "../../projectSpaces";
@@ -193,6 +193,7 @@ export const SpaceRail = memo(function SpaceRail({ className }: { className?: st
   const hiddenRailItems = useClientSettings((settings) => settings.hiddenRailItems);
   const threadSortOrder = useClientSettings((settings) => settings.sidebarThreadSortOrder);
   const groupingSettings = useClientSettings(selectProjectGroupingSettings);
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Prunes shortcuts to spaces that no longer exist from settings.
   useEffect(() => {
     const next = pruneRemovedRailShortcuts(railShortcuts);
     if (next.length !== railShortcuts.length) void updateClientSettings({ railShortcuts: next });
@@ -203,7 +204,10 @@ export const SpaceRail = memo(function SpaceRail({ className }: { className?: st
   const projects = useProjects();
   const environmentIdentities = useEnvironmentIdentities();
   const primaryEnvironmentId = usePrimaryEnvironmentId();
-  const projectScopeKey = useUiStateStore((state) => state.sidebarProjectScopeKey);
+  // The rail marks a project shortcut only when the scope is that one project.
+  const projectScopeKey = useUiStateStore((state) =>
+    state.sidebarProjectScopeKeys.length === 1 ? (state.sidebarProjectScopeKeys[0] ?? null) : null,
+  );
   const handleNewThread = useNewThreadHandler();
   const [customizing, setCustomizing] = useState(false);
   const [draggingShortcut, setDraggingShortcut] = useState(false);
@@ -283,7 +287,7 @@ export const SpaceRail = memo(function SpaceRail({ className }: { className?: st
       projectRailSpaceId({ projectKey: project.projectKey, spaces, activeSpaceId: space.id }),
     );
     const ui = useUiStateStore.getState();
-    ui.setSidebarProjectScopeKey(project.projectKey);
+    ui.setSidebarProjectScopeKeys([project.projectKey]);
     showSidebar();
     const members = new Set(project.memberProjectRefs.map(scopedProjectKey));
     const latestThread = sortThreads(

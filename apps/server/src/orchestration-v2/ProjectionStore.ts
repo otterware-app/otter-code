@@ -6310,9 +6310,10 @@ export const layer: Layer.Layer<ProjectionStoreV2, never, SqlClient.SqlClient> =
         ),
         Effect.mapError((cause) => new ProjectionStoreSetupError({ cause })),
       );
-    const getThreadsWithLinearIssues: ProjectionStoreV2Shape["getThreadsWithLinearIssues"] = () =>
-      Effect.gen(function* () {
-        const rows = yield* sql<PayloadRow>`
+    const getThreadsWithLinearIssues: ProjectionStoreV2Shape["getThreadsWithLinearIssues"] =
+      Effect.fn("ProjectionStore.getThreadsWithLinearIssues")(
+        function* () {
+          const rows = yield* sql<PayloadRow>`
           SELECT payload_json
           FROM orchestration_v2_projection_threads
           WHERE deleted_at IS NULL
@@ -6320,16 +6321,18 @@ export const layer: Layer.Layer<ProjectionStoreV2, never, SqlClient.SqlClient> =
             AND json_array_length(payload_json, '$.linearIssues') > 0
           ORDER BY updated_at ASC, thread_id ASC
         `;
-        return yield* Effect.forEach(rows, (row) =>
-          decodeThreadPayload(row.payload_json).pipe(
-            Effect.map((thread): ProjectionThreadLinearIssues => ({
-              id: thread.id,
-              projectId: thread.projectId,
-              linearIssues: thread.linearIssues ?? [],
-            })),
-          ),
-        );
-      }).pipe(Effect.mapError((cause) => new ProjectionStoreSetupError({ cause })));
+          return yield* Effect.forEach(rows, (row) =>
+            decodeThreadPayload(row.payload_json).pipe(
+              Effect.map((thread): ProjectionThreadLinearIssues => ({
+                id: thread.id,
+                projectId: thread.projectId,
+                linearIssues: thread.linearIssues ?? [],
+              })),
+            ),
+          );
+        },
+        Effect.mapError((cause) => new ProjectionStoreSetupError({ cause })),
+      );
 
     const shellThreadStateFromRow =
       /* Runs once per shell row; the enclosing snapshot or thread read owns the span. */

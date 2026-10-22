@@ -3,7 +3,6 @@ import * as Schema from "effect/Schema";
 import {
   useEffect,
   useLayoutEffect,
-  useRef,
   useState,
   useSyncExternalStore,
   type CSSProperties,
@@ -348,6 +347,7 @@ function SidebarControl({ onWidthChange }: { onWidthChange: (width: number) => v
     context: { usagePageOpen },
   });
 
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- observes the titlebar controls' DOM width for the header inset
   useLayoutEffect(() => {
     if (!controlsElement) return;
     const measure = () => onWidthChange(controlsElement.getBoundingClientRect().width);

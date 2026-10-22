@@ -321,7 +321,7 @@ export const layerClientAuth = Layer.effect(
       clientBearer: Effect.fn("relay.auth.client.bearer")(function* (httpEffect, { credential }) {
         const token = readHttpAuthorizationCredential(credential);
         const verified = yield* accounts.verify(token).pipe(
-          Effect.tapError((error) =>
+          Effect.tapError(() =>
             Effect.annotateCurrentSpan(
               "relay.auth.account_verification_failure",
               "invalid_account_token",

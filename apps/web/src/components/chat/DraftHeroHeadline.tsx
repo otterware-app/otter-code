@@ -6,7 +6,7 @@ import { scopedProjectKey, scopeProjectRef } from "@t3tools/client-runtime/envir
 import { isScratchProject } from "@t3tools/client-runtime/state/projects";
 import { FolderAddIcon as FolderPlusIcon } from "~/lib/icons";
 import { useAtomValue } from "@effect/atom-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import { openCommandPalette } from "~/commandPaletteBus";
 import { shortcutLabelForCommand } from "~/keybindings";
@@ -49,6 +49,7 @@ import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { InlineButton } from "../ui/button";
 import { DraftProjectName } from "./DraftProjectName";
 import { TriageDraftHero } from "./TriageDraftHero";
+import { DraftHeroProjectHeading } from "./DraftHeroProjectHeading";
 import { resolveProjectSettings } from "@t3tools/shared/projectSettings";
 import { resolveProjectDefaultProviderModelSelection } from "../../providerInstances";
 import { resolveNewThreadModelSelection } from "@t3tools/shared/usageLimits";
@@ -342,13 +343,6 @@ export function DraftHeroHeadline({
       <DraftProjectName value={activeProjectTitle ?? "Add a project"} singleLine />
     </button>
   );
-  const headingLabel = isScratchDraft
-    ? "What should we work on?"
-    : hasResolvedProject
-      ? `What should we do in ${activeProjectDisplayName}?`
-      : canChooseProject
-        ? `${activeProjectDisplayName ?? "Choose a project"} to start`
-        : "Add a project to start";
   const noProjectShortcut = shortcutLabelForCommand(keybindings, "chat.newWithoutProject");
   const orStartWithoutProject =
     scratchWorkspaceRoot !== null && !isScratchDraft && (hasResolvedProject || canChooseProject) ? (
@@ -389,20 +383,21 @@ export function DraftHeroHeadline({
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-5 px-5">
       <T3Wordmark className="size-10 text-foreground" />
-      <h1
-        aria-label={headingLabel}
-        className="pointer-events-auto w-full text-center font-normal text-2xl text-foreground tracking-tight sm:text-3xl"
-      >
-        {isScratchDraft ? (
-          <>What should we work on?</>
-        ) : hasResolvedProject ? (
-          <>What should we do in {projectSelector}?</>
-        ) : canChooseProject ? (
-          <>{projectSelector} to start</>
-        ) : (
-          <>Add a project to start</>
-        )}
-      </h1>
+      {hasResolvedProject && !isScratchDraft ? (
+        <DraftHeroProjectHeading projectName={activeProjectDisplayName ?? "Choose a project"}>
+          {projectSelector}
+        </DraftHeroProjectHeading>
+      ) : (
+        <h1 className="w-full text-center font-normal text-2xl text-foreground tracking-tight sm:text-3xl">
+          {isScratchDraft ? (
+            <>What should we work on?</>
+          ) : canChooseProject ? (
+            <>{projectSelector} to start</>
+          ) : (
+            <>Add a project to start</>
+          )}
+        </h1>
+      )}
       {scratchWorkspaceRoot === null ? null : (
         <p className="mt-2 flex h-6 w-full items-center justify-center text-sm">
           {isScratchDraft ? projectSelector : orStartWithoutProject}

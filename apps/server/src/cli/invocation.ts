@@ -156,8 +156,10 @@ export const resolveHostCliCommand = Effect.fn("invocation.resolveHostCliCommand
   const withArgs = (prefix: string) =>
     [prefix, ...args.map((arg) => hostShellWord(platform, arg))].join(" ");
   const command = yield* resolveCliCommand(subcommand);
-  if (command !== `otter-code ${subcommand}`) return { command: withArgs(command), launcher: false };
-  if (yield* isCommandAvailable("otter-code")) return { command: withArgs(command), launcher: false };
+  if (command !== `otter-code ${subcommand}`)
+    return { command: withArgs(command), launcher: false };
+  if (yield* isCommandAvailable("otter-code"))
+    return { command: withArgs(command), launcher: false };
   const launcher = yield* resolveInstallLauncher;
   if (Option.isNone(launcher)) return { command: withArgs(command), launcher: false };
   // PowerShell runs a quoted path only through the call operator.

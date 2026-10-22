@@ -341,10 +341,10 @@ export const SETTINGS_SEARCH_ITEMS = [
   },
   {
     id: "window-sidebar-only",
-    title: "Sidebar only",
+    title: "Rail only",
     to: "/settings/appearance",
     targetId: "window-material",
-    searchTerms: ["transparency translucent window glass"],
+    searchTerms: ["navigation rail sidebar transparency translucent window glass"],
     desktopOnly: true,
     macOnly: true,
   },

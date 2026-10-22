@@ -7,19 +7,17 @@ export const getAccountSession = DesktopIpc.makeIpcMethod({
   channel: "otter-account:get-session",
   payload: Schema.Void,
   result: Schema.NullOr(Schema.String),
-  handler: () =>
-    Effect.gen(function* () {
-      return yield* (yield* DesktopAccountSession.DesktopAccountSession).read;
-    }),
+  handler: Effect.fn("desktop.ipc.accountSession.get")(function* () {
+    return yield* (yield* DesktopAccountSession.DesktopAccountSession).read;
+  }),
 });
 export const setAccountSession = DesktopIpc.makeIpcMethod({
   channel: "otter-account:set-session",
   payload: Schema.NullOr(Schema.String),
   result: Schema.Void,
-  handler: (value) =>
-    Effect.gen(function* () {
-      yield* (yield* DesktopAccountSession.DesktopAccountSession).write(value);
-    }),
+  handler: Effect.fn("desktop.ipc.accountSession.set")(function* (value) {
+    yield* (yield* DesktopAccountSession.DesktopAccountSession).write(value);
+  }),
 });
 export const authorizeAccount = DesktopIpc.makeIpcMethod({
   channel: "otter-account:authorize",
@@ -36,8 +34,7 @@ export const authorizeAccount = DesktopIpc.makeIpcMethod({
     ),
   }),
   result: Schema.Struct({ code: Schema.String, redirectUri: Schema.String }),
-  handler: (request) =>
-    Effect.gen(function* () {
-      return yield* (yield* DesktopAccountSession.DesktopAccountSession).authorize(request);
-    }),
+  handler: Effect.fn("desktop.ipc.accountSession.authorize")(function* (request) {
+    return yield* (yield* DesktopAccountSession.DesktopAccountSession).authorize(request);
+  }),
 });

@@ -30,7 +30,7 @@ export function createOtterAccountSource(): OtterAccountSource {
       readToken = input.getToken;
       if (input.accountId === accountId) return;
       accountId = input.accountId;
-      for (const listener of [...listeners]) listener(resources());
+      for (const listener of listeners) listener(resources());
     },
   };
 }

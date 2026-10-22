@@ -2193,3 +2193,22 @@ export const WsRpcGroup = RpcGroup.make(
   WsOrchestrationV2SubscribeThreadRpc,
   WsOrchestrationV2SubscribeCommandOutputRpc,
 ).middleware(RpcScopeAuthorization);
+
+// Otter's own methods, also part of WsRpcGroup. The server builds their
+// handlers apart from upstream's handler object, which sits at TypeScript's
+// instantiation-depth limit.
+export const OtterWsRpcGroup = RpcGroup.make(
+  WsLinearIssueDetailRpc,
+  WsLinearSubscribeIssueChangesRpc,
+  WsProjectsLanguageRpc,
+  WsProjectsLanguageServersRpc,
+  WsReviewListCommitsRpc,
+).middleware(RpcScopeAuthorization);
+
+export const OTTER_WS_RPC_TAGS = [
+  WS_METHODS.linearIssueDetail,
+  WS_METHODS.linearSubscribeIssueChanges,
+  WS_METHODS.projectsLanguage,
+  WS_METHODS.projectsLanguageServers,
+  WS_METHODS.reviewListCommits,
+] as const;

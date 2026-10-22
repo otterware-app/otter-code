@@ -1,4 +1,4 @@
-import { LanguageServiceError, OrchestrationDispatchCommandError } from "@t3tools/contracts";
+import { OrchestrationDispatchCommandError } from "@t3tools/contracts";
 import * as Context from "effect/Context";
 import * as Crypto from "effect/Crypto";
 import * as Orchestrator from "./orchestration-v2/Orchestrator.ts";
@@ -97,6 +97,7 @@ import {
   type TerminalMetadataStreamEvent,
   type PullRequestRef,
   WS_METHODS,
+  OTTER_WS_RPC_TAGS,
   WsRpcGroup,
 } from "@t3tools/contracts";
 import {
@@ -202,7 +203,7 @@ import * as WorkspaceEntries from "./workspace/WorkspaceEntries.ts";
 import * as KnownWorkspaces from "./workspace/KnownWorkspaces.ts";
 import * as WorkspaceFileSystem from "./workspace/WorkspaceFileSystem.ts";
 import { WorkspaceLanguageService } from "./workspace/WorkspaceLanguageService.ts";
-import { languageServerStatuses } from "./workspace/languageServers.ts";
+import { layerOtterWsRpc } from "./otterWsRpc.ts";
 import { readWorkflowScript } from "./orchestration-v2/workflowScriptQuery.ts";
 import * as WorkspacePaths from "./workspace/WorkspacePaths.ts";
 import * as VcsStatusBroadcaster from "./vcs/VcsStatusBroadcaster.ts";
@@ -245,7 +246,6 @@ import * as PullRequestReviewGuideService from "./pullRequest/PullRequestReviewG
 import { listLinkedPullRequestThreads } from "./pullRequest/linkedThreads.ts";
 import { pullRequestSyncKey } from "./pullRequest/pullRequestSyncKey.ts";
 import * as SqlClient from "effect/sql/SqlClient";
-import * as LinearIssueSyncReactor from "./linear/LinearIssueSyncReactor.ts";
 import * as PullRequestSyncReactor from "./orchestration-v2/PullRequestSyncReactor.ts";
 import * as SourceControlDiscovery from "./sourceControl/SourceControlDiscovery.ts";
 import * as OtlpEndpointCheck from "./observability/OtlpEndpointCheck.ts";
@@ -559,7 +559,7 @@ function projectFileFailureContext(
 const PROVIDER_STATUS_DEBOUNCE_MS = 200;
 
 // Middleware added later wraps middleware added earlier, so instrumentation wraps authorization.
-const ServerWsRpcGroup = WsRpcGroup.middleware(RpcInstrumentation);
+const ServerWsRpcGroup = WsRpcGroup.omit(...OTTER_WS_RPC_TAGS).middleware(RpcInstrumentation);
 
 // RpcGroup.toLayer derives each handler's requirements by scanning every RPC in
 // the group, so its type cost grows with handlers × RPCs. Near 200 methods that
@@ -1221,13 +1221,10 @@ export const subscribeOrchestrationV2Shell = Effect.fn("ws.orchestrationV2.subsc
   },
 );
 
-const isLanguageServiceError = Schema.is(LanguageServiceError);
-
 export const layerWsRpc = (
   currentSession: EnvironmentAuth.AuthenticatedSession,
   clientAnalyticsProps: Readonly<Record<string, unknown>>,
   serverBrowser: ServerBrowser.ServerBrowser["Service"],
-  workspaceLanguage: WorkspaceLanguageService,
 ) =>
   Layer.effectContext(
     Effect.gen(function* () {
@@ -1280,7 +1277,6 @@ export const layerWsRpc = (
       const pullRequests = yield* PullRequestService.PullRequestService;
       const reviewGuides = yield* PullRequestReviewGuideService.PullRequestReviewGuideService;
       const pullRequestSync = yield* PullRequestSyncReactor.PullRequestSyncReactor;
-      const linearIssues = yield* LinearIssueSyncReactor.LinearIssueSyncReactor;
       const deviceService = yield* DeviceService.DeviceService;
       const deviceHostContext =
         yield* Effect.context<Effect.Services<ReturnType<typeof remoteSshDeviceHosts>>>();
@@ -2598,8 +2594,6 @@ export const layerWsRpc = (
                   ),
             ),
           ),
-        [WS_METHODS.linearIssueDetail]: (input) => linearIssues.readIssueDetail(input.reference),
-        [WS_METHODS.linearSubscribeIssueChanges]: () => linearIssues.issueChanges,
         [WS_METHODS.pullRequestsDetail]: (input) =>
           withPullRequestViewer(input, pullRequests.detail(input)),
         [WS_METHODS.pullRequestsPreview]: (input) =>
@@ -2794,33 +2788,6 @@ export const layerWsRpc = (
                   cause,
                 }),
             ),
-          ),
-        [WS_METHODS.projectsLanguage]: (input) =>
-          serverSettings.getSettings.pipe(
-            Effect.map((settings) => settings.codeIntelligence),
-            // Unreadable settings must not take code intelligence down with them.
-            Effect.orElseSucceed(() => ({})),
-            Effect.flatMap((codeIntelligence) =>
-              Effect.tryPromise({
-                try: () => workspaceLanguage.request(input, codeIntelligence),
-                catch: (error) =>
-                  isLanguageServiceError(error)
-                    ? error
-                    : new LanguageServiceError({
-                        message: error instanceof Error ? error.message : String(error),
-                        resync: false,
-                      }),
-              }),
-            ),
-          ),
-        [WS_METHODS.projectsLanguageServers]: () =>
-          serverSettings.getSettings.pipe(
-            Effect.map((settings) => settings.codeIntelligence),
-            Effect.orElseSucceed(() => ({})),
-            Effect.flatMap((codeIntelligence) =>
-              Effect.promise(() => languageServerStatuses(codeIntelligence)),
-            ),
-            Effect.map((servers) => ({ servers })),
           ),
         [WS_METHODS.projectsReadFile]: (input) =>
           workspaceFileSystem.readFile(input).pipe(
@@ -3034,7 +3001,6 @@ export const layerWsRpc = (
           vcsProvisioning.initRepository(input).pipe(Effect.tap(() => refreshGitStatus(input.cwd))),
         [WS_METHODS.reviewGetDiffPreview]: (input) => review.getDiffPreview(input),
         [WS_METHODS.reviewGetDiffFileContents]: (input) => review.getDiffFileContents(input),
-        [WS_METHODS.reviewListCommits]: (input) => review.listCommits(input),
         [WS_METHODS.terminalOpen]: (input) => terminalManager.open(input),
         [WS_METHODS.terminalAttach]: (input, metadata) =>
           terminalManager.attachOutputStream(input, terminalViewerId(metadata)),
@@ -3343,7 +3309,10 @@ export const layer = Layer.unwrap(
         );
         const rpcWebSocketHttpEffect = yield* Effect.gen(function* () {
           const { protocol, httpEffect } = yield* RpcServer.makeProtocolWithHttpEffectWebsocket;
-          yield* RpcServer.make(ServerWsRpcGroup, WS_RPC_SERVER_OPTIONS).pipe(
+          yield* RpcServer.make(
+            WsRpcGroup.middleware(RpcInstrumentation),
+            WS_RPC_SERVER_OPTIONS,
+          ).pipe(
             Effect.provideService(RpcServer.Protocol, withTerminalOutputWindow(protocol)),
             Effect.provide(
               Layer.merge(
@@ -3370,7 +3339,8 @@ export const layer = Layer.unwrap(
           return httpEffect;
         }).pipe(
           Effect.provide(
-            layerWsRpc(session, clientAnalyticsProps, serverBrowser, workspaceLanguage).pipe(
+            layerWsRpc(session, clientAnalyticsProps, serverBrowser).pipe(
+              Layer.merge(layerOtterWsRpc(workspaceLanguage)),
               Layer.provideMerge(RpcSerialization.layerJson),
               // Handler-context reporters see only request defects, not server-wide defects.
               Layer.provide(DefectReporter.layer),

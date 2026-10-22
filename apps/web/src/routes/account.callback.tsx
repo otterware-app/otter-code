@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { AuthSurfaceShell } from "../components/auth/AuthSurfaceShell";
+import { StandalonePage } from "../components/ui/standalone-page";
 import { Button } from "../components/ui/button";
 import { resolveCloudPublicConfig } from "../cloud/publicConfig";
 import { parseAccountCallback } from "../accounts/callback";
@@ -28,6 +28,7 @@ function AccountCallback() {
   const [message, setMessage] = useState("Finishing sign-in…");
   const [pending, setPending] = useState<Callback | null>(null);
   const started = useRef(false);
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Completes the OAuth callback once the session manager loads.
   useEffect(() => {
     if (!isLoaded || started.current) return;
     started.current = true;
@@ -58,7 +59,7 @@ function AccountCallback() {
     );
   }, [isLoaded, completeSignIn]);
   return (
-    <AuthSurfaceShell>
+    <StandalonePage>
       <h1 className="text-xl font-semibold">Otter account</h1>
       <p className="mt-3 text-sm text-muted-foreground">{message}</p>
       {pending ? (
@@ -82,6 +83,6 @@ function AccountCallback() {
           </Button>
         </div>
       )}
-    </AuthSurfaceShell>
+    </StandalonePage>
   );
 }

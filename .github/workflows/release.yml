@@ -1063,7 +1063,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [[ "${GITHUB_REPOSITORY}" == "otterware-app/otter-code" ]]; then
+          if [[ "${GITHUB_REPOSITORY:-}" == "otterware-app/otter-code" ]]; then
             node scripts/otter/web-hosting.mjs stage
             exit 0
           fi
@@ -1148,7 +1148,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [[ "${GITHUB_REPOSITORY}" == "otterware-app/otter-code" ]]; then
+          if [[ "${GITHUB_REPOSITORY:-}" == "otterware-app/otter-code" ]]; then
             node scripts/otter/web-hosting.mjs promote
             exit 0
           fi

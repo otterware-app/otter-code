@@ -1,6 +1,7 @@
 // @effect-diagnostics nodeBuiltinImport:off - signs relay JWTs with a real ed25519 key pair.
 import * as NodeCrypto from "node:crypto";
 
+import * as EffectNodeCrypto from "@effect/platform-node/NodeCrypto";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import { assert, describe, it } from "@effect/vitest";
 import { EnvironmentId, ProjectId } from "@t3tools/contracts";
@@ -13,11 +14,11 @@ import {
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Option from "effect/Option";
 
 import * as ThreadManagement from "../orchestration-v2/ThreadManagementService.ts";
 import { deliverLinearAgentPrompt, handleLinearAgentPromptRequest } from "./LinearAgentPrompts.ts";
 
+const testLayer = Layer.merge(NodeServices.layer, EffectNodeCrypto.layerSignature);
 const RELAY_ISSUER = "https://relay.example.test";
 const ENVIRONMENT_ID = EnvironmentId.make("env-linear");
 const LINKED_USER = "user_linked";
@@ -32,7 +33,7 @@ function makeContext() {
   const delivered: Array<RelayLinearAgentPromptProofPayload> = [];
   const context = {
     secrets: {
-      get: () => Effect.succeed(Option.none()),
+      get: () => Effect.succeedNone,
       set: () => Effect.void,
       create: () => Effect.void,
       getOrCreateRandom: (_name: string, bytes: number) => Effect.succeed(new Uint8Array(bytes)),
@@ -95,7 +96,7 @@ describe("handleLinearAgentPromptRequest", () => {
       const replay = yield* handleLinearAgentPromptRequest(context, { proof }).pipe(Effect.flip);
       assert.equal(replay._tag, "EnvironmentHttpConflictError");
       assert.equal(delivered.length, 1);
-    }).pipe(Effect.provide(NodeServices.layer)),
+    }).pipe(Effect.provide(testLayer)),
   );
 
   it.live("rejects a proof signed for another request kind", () =>
@@ -105,7 +106,7 @@ describe("handleLinearAgentPromptRequest", () => {
       const error = yield* handleLinearAgentPromptRequest(context, { proof }).pipe(Effect.flip);
       assert.equal(error._tag, "EnvironmentHttpUnauthorizedError");
       assert.equal(delivered.length, 0);
-    }).pipe(Effect.provide(NodeServices.layer)),
+    }).pipe(Effect.provide(testLayer)),
   );
 });
 

@@ -336,11 +336,16 @@ function GitOverviewSheetContent(props: GitOverviewSheetProps) {
             <ListRow
               key={issue.issueId ?? issue.identifier}
               icon="ticket"
-              label={issue.snapshot === null ? issue.identifier : `${issue.identifier} ${issue.snapshot.title}`}
+              label={
+                issue.snapshot === null
+                  ? issue.identifier
+                  : `${issue.identifier} ${issue.snapshot.title}`
+              }
               description={linearIssueDetail(issue)}
               onPress={() => {
                 void tryOpenExternalUrl(issue.url, "linear-issue").then((opened) => {
-                  if (!opened) Dialog.alert("Unable to open issue", "The Linear issue could not be opened.");
+                  if (!opened)
+                    Dialog.alert("Unable to open issue", "The Linear issue could not be opened.");
                 });
               }}
             />

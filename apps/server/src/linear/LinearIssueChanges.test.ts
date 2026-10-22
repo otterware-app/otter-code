@@ -1,6 +1,7 @@
 // @effect-diagnostics nodeBuiltinImport:off - signs relay JWTs with a real ed25519 key pair.
 import * as NodeCrypto from "node:crypto";
 
+import * as EffectNodeCrypto from "@effect/platform-node/NodeCrypto";
 import { assert, describe, it } from "@effect/vitest";
 import { EnvironmentId, type LinearIssueChange } from "@t3tools/contracts";
 import type { RelayLinearIssueChangesProofPayload } from "@t3tools/contracts/relay";
@@ -11,7 +12,6 @@ import {
 } from "@t3tools/shared/relayJwt";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
-import * as Option from "effect/Option";
 
 import { handleLinearIssueChangesRequest } from "./LinearIssueChanges.ts";
 
@@ -28,7 +28,7 @@ function makeContext() {
   const delivered: Array<ReadonlyArray<LinearIssueChange>> = [];
   const context = {
     secrets: {
-      get: () => Effect.succeed(Option.none()),
+      get: () => Effect.succeedNone,
       set: () => Effect.void,
       create: () => Effect.void,
       getOrCreateRandom: (_name: string, bytes: number) => Effect.succeed(new Uint8Array(bytes)),
@@ -79,7 +79,7 @@ describe("handleLinearIssueChangesRequest", () => {
       const proof = yield* signChanges();
       assert.deepEqual(yield* handleLinearIssueChangesRequest(context, { proof }), { ok: true });
       assert.deepEqual(delivered, [[{ issueId: "issue-1", identifier: "ENG-1" }]]);
-    }),
+    }).pipe(Effect.provide(EffectNodeCrypto.layerSignature)),
   );
 
   it.live("rejects another user's, another kind's, or another scope's request", () =>
@@ -94,6 +94,6 @@ describe("handleLinearIssueChangesRequest", () => {
         assert.equal(error._tag, "EnvironmentHttpUnauthorizedError");
       }
       assert.equal(delivered.length, 0);
-    }),
+    }).pipe(Effect.provide(EffectNodeCrypto.layerSignature)),
   );
 });

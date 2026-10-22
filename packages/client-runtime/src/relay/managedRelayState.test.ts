@@ -139,8 +139,8 @@ describe("createManagedRelayQueryManager", () => {
       for (const unsubscribe of readers) unsubscribe();
 
       expect(logs).toEqual([["[t3-cloud] Relay device listing failed"]]);
-      }),
-    );
+    }),
+  );
 
   it.effect("deregisters an environment through the current Otter account session", () =>
     Effect.gen(function* () {

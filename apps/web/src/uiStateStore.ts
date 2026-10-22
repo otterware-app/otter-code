@@ -314,7 +314,7 @@ function setSidebarProjectScopeKeys(state: UiState, projectKeys: readonly string
 }
 
 /** Choosing a space clears the project scope: it may name a project outside it. */
-export function setSidebarProjectSpaceId(state: UiState, spaceId: string | null): UiState {
+function setSidebarProjectSpaceId(state: UiState, spaceId: string | null): UiState {
   const nextId = normalizeProjectSpaceId(sanitizeOptionalKey(spaceId));
   if (state.sidebarProjectSpaceId === nextId && state.sidebarProjectScopeKeys.length === 0) {
     return state;

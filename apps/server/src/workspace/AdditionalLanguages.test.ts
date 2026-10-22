@@ -169,7 +169,6 @@ describe("additional workspace languages", () => {
       ).toBe(true);
       expect(await NodeFSP.readFile(NodePath.join(cwd, "lib.rs"), "utf8")).toBe(contents);
     },
-    60_000,
   );
 
   it.runIf(!!process.env.T3CODE_BUF_PATH)(
@@ -196,7 +195,6 @@ describe("additional workspace languages", () => {
           refreshed.items.some((item) => /Person/.test(item.message)),
       ).toBe(true);
     },
-    60_000,
   );
 
   // Pyright ships with the server, so this runs everywhere unless a path overrides it.
@@ -252,39 +250,32 @@ describe("additional workspace languages", () => {
       items: [expect.objectContaining({ severity: "error", source: expect.anything() })],
     });
     expect(await NodeFSP.readFile(NodePath.join(cwd, "main.py"), "utf8")).toBe(contents);
-  }, 60_000);
+  });
 
-  it.runIf(!!process.env.T3CODE_BUF_PATH)(
-    "moves one Buf session between files",
-    async () => {
-      await NodeFSP.writeFile(
-        NodePath.join(cwd, "buf.yaml"),
-        "version: v2\nmodules:\n  - path: .\n",
-      );
-      const types = 'syntax = "proto3";\npackage demo;\nmessage Person {}\n';
-      const demo =
-        'syntax = "proto3";\npackage demo;\nimport "types.proto";\nmessage Greeting { Person person = 1; }\n';
-      await NodeFSP.writeFile(NodePath.join(cwd, "types.proto"), types);
-      await NodeFSP.writeFile(NodePath.join(cwd, "demo.proto"), demo);
-      const ask = (relativePath: string, contents: string, version: number) =>
-        service.request({
-          sessionId: "diff",
-          cwd,
-          relativePath,
-          operation: "definition",
-          version,
-          update: { _tag: "open", contents },
-          position: positionAt(contents, "Person", true),
-        });
-      expect(await ask("demo.proto", demo, 1)).toMatchObject({
-        items: [expect.objectContaining({ path: "types.proto" })],
+  it.runIf(!!process.env.T3CODE_BUF_PATH)("moves one Buf session between files", async () => {
+    await NodeFSP.writeFile(NodePath.join(cwd, "buf.yaml"), "version: v2\nmodules:\n  - path: .\n");
+    const types = 'syntax = "proto3";\npackage demo;\nmessage Person {}\n';
+    const demo =
+      'syntax = "proto3";\npackage demo;\nimport "types.proto";\nmessage Greeting { Person person = 1; }\n';
+    await NodeFSP.writeFile(NodePath.join(cwd, "types.proto"), types);
+    await NodeFSP.writeFile(NodePath.join(cwd, "demo.proto"), demo);
+    const ask = (relativePath: string, contents: string, version: number) =>
+      service.request({
+        sessionId: "diff",
+        cwd,
+        relativePath,
+        operation: "definition",
+        version,
+        update: { _tag: "open", contents },
+        position: positionAt(contents, "Person", true),
       });
-      expect(await ask("types.proto", types, 2)).toMatchObject({
-        items: [expect.objectContaining({ path: "types.proto" })],
-      });
-    },
-    60_000,
-  );
+    expect(await ask("demo.proto", demo, 1)).toMatchObject({
+      items: [expect.objectContaining({ path: "types.proto" })],
+    });
+    expect(await ask("types.proto", types, 2)).toMatchObject({
+      items: [expect.objectContaining({ path: "types.proto" })],
+    });
+  });
 
   it.runIf(!!process.env.T3CODE_BUF_PATH)(
     "analyzes Protobuf through a real Buf language server",
@@ -326,7 +317,6 @@ describe("additional workspace languages", () => {
       ).toBe(true);
       expect(await NodeFSP.readFile(NodePath.join(cwd, "demo.proto"), "utf8")).toBe(contents);
     },
-    60_000,
   );
 });
 

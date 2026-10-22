@@ -47,6 +47,7 @@ export function SidebarThreadHeader({
   activeSearchResultIndex,
   onClearSearch,
 }: SidebarThreadHeaderProps) {
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Focuses the search field when it opens.
   useEffect(() => {
     if (searchOpen) searchInputRef.current?.focus();
   }, [searchOpen, searchInputRef]);

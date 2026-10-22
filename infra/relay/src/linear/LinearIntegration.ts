@@ -1053,8 +1053,10 @@ const make = Effect.gen(function* () {
     );
   });
 
-  const processEvent: LinearIntegration["Service"]["processEvent"] = (body) =>
-    Effect.gen(function* () {
+  const processEvent: LinearIntegration["Service"]["processEvent"] = Effect.fn(
+    "relay.linear.process_event",
+  )(
+    function* (body) {
       const linear = yield* requireConfig;
       const message = yield* decodeQueueMessage(body);
       if ("kind" in message) return yield* handleIssueChange(message);
@@ -1087,10 +1089,9 @@ const make = Effect.gen(function* () {
         return;
       }
       if (event.action === "prompted") yield* handlePrompted(event, token, linear);
-    }).pipe(
-      Effect.catchCause((cause) => Effect.logError("linear event processing failed", { cause })),
-      Effect.withSpan("relay.linear.process_event"),
-    );
+    },
+    Effect.catchCause((cause) => Effect.logError("linear event processing failed", { cause })),
+  );
 
   return LinearIntegration.of({
     status,

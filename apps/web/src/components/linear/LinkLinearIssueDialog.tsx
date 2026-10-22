@@ -52,6 +52,7 @@ function LinkLinearIssueDialog({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const linking = useLinearIssueLinking(threadRef.environmentId);
   const resolved = resolveLinkLinearIssueInput(reference);
+  // oxlint-disable-next-line t3code/react-effect-budget -- Focuses the input after the dialog opens.
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => inputRef.current?.focus());
     return () => window.cancelAnimationFrame(frame);

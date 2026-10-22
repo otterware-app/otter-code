@@ -12,6 +12,7 @@ export function WindowMaterialSync() {
   const sidebarOnly = useClientSettings((settings) => settings.windowSidebarOnly);
   const opacity = useClientSettings((settings) => settings.windowOpacity);
 
+  // oxlint-disable-next-line t3code/react-effect-budget -- Mirrors window material settings onto the document root.
   useEffect(() => {
     const root = document.documentElement;
     const translucent =

@@ -573,6 +573,7 @@ export default function DiffPanel({
   const singleFileIndex = singleFileEntry ? renderableFileEntries.indexOf(singleFileEntry) : -1;
   const singleFileReady =
     !lazySource || (singleFilePath !== null && readyFilePaths.has(singleFilePath));
+  // oxlint-disable-next-line t3code/react-effect-budget -- Loads the lazily fetched file shown in single-file mode.
   useEffect(() => {
     if (lazySource && singleFileIndex >= 0 && !singleFileReady) requestFile(singleFileIndex);
   }, [lazySource, requestFile, singleFileIndex, singleFileReady]);
@@ -629,6 +630,7 @@ export default function DiffPanel({
   const selectedDiffFileKey = selectedFilePath
     ? (codeViewFiles.find((candidate) => candidate.filePath === selectedFilePath)?.fileKey ?? null)
     : null;
+  // oxlint-disable-next-line t3code/react-effect-budget -- Scrolls the code view to the selected file.
   useEffect(() => {
     if (!selectedDiffFileKey || !codeView?.getInstance()) return;
     codeView.scrollTo({ type: "item", id: selectedDiffFileKey, align: "start" });
@@ -663,6 +665,7 @@ export default function DiffPanel({
   };
 
   const externalRevealRef = useRef<string | null>(null);
+  // oxlint-disable-next-line t3code/react-effect-budget -- Reveals an externally selected file in the tree.
   useEffect(() => {
     if (!selectedFilePath) {
       externalRevealRef.current = null;

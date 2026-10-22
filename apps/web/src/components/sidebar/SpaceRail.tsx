@@ -193,6 +193,7 @@ export const SpaceRail = memo(function SpaceRail({ className }: { className?: st
   const hiddenRailItems = useClientSettings((settings) => settings.hiddenRailItems);
   const threadSortOrder = useClientSettings((settings) => settings.sidebarThreadSortOrder);
   const groupingSettings = useClientSettings(selectProjectGroupingSettings);
+  // oxlint-disable-next-line t3code/react-effect-budget -- Prunes shortcuts to spaces that no longer exist from settings.
   useEffect(() => {
     const next = pruneRemovedRailShortcuts(railShortcuts);
     if (next.length !== railShortcuts.length) void updateClientSettings({ railShortcuts: next });

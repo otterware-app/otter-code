@@ -79,6 +79,7 @@ export function AccountProvider({ children }: { readonly children: ReactNode }) 
       }
     },
   }));
+  // oxlint-disable-next-line t3code/react-effect-budget -- Restores the stored Otter account session on mount.
   useEffect(() => {
     let active = true;
     const report = (cause: unknown) => {

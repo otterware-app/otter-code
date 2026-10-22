@@ -54,6 +54,7 @@ export function useProjectSpaceActions() {
 
 export function useActiveProjectSpace() {
   const storedSpaceId = useUiStateStore((store) => store.sidebarProjectSpaceId);
+  // oxlint-disable-next-line t3code/react-effect-budget -- Migrates a stored legacy space ID once.
   useEffect(() => {
     if (
       storedSpaceId === LEGACY_VOID_SPACE_ID &&

@@ -67,6 +67,7 @@ export function CodeIntelligenceSettingsPanel() {
     generation: number;
     result: Awaited<ReturnType<typeof loadStatus>>;
   } | null>(null);
+  // oxlint-disable-next-line t3code/react-effect-budget -- Scans language-server status from the server.
   useEffect(() => {
     if (environmentId === null) return;
     let active = true;

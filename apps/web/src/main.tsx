@@ -5,7 +5,6 @@ import "@fontsource-variable/inter";
 import "./index.css";
 
 import { hasCloudPublicConfig } from "./cloud/publicConfig";
-import { isElectron } from "./env";
 import { startAppServices } from "./appInit";
 import { AppRoot } from "./AppRoot";
 import { clearChunkReloadGuard, reloadOnceForChunkLoadError } from "./lib/chunkReloadGuard";

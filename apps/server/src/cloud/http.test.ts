@@ -38,6 +38,7 @@ import { OrchestratorV2 } from "../orchestration-v2/Orchestrator.ts";
 import { ThreadLaunchService } from "../orchestration-v2/ThreadLaunchService.ts";
 import { ThreadManagementService } from "../orchestration-v2/ThreadManagementService.ts";
 import { ProjectService } from "../project/ProjectService.ts";
+import { DocumentText } from "../provider/DocumentText.ts";
 import { ServerSettingsService } from "../serverSettings.ts";
 import * as CloudLink from "./CloudLink.ts";
 import * as ConnectHttp from "./http.ts";
@@ -94,6 +95,7 @@ const layerLinkProofRoutes = HttpApiBuilder.layer(LinkProofTestApi).pipe(
     Layer.mock(ThreadManagementService)({}),
     Layer.mock(ProjectService)({}),
     Layer.mock(GitWorkflowService)({}),
+    Layer.mock(DocumentText)({}),
     Layer.mock(ServerSettingsService)({}),
     SqlitePersistence.layerMemory,
     ServerEnvironment.layerIdentity,

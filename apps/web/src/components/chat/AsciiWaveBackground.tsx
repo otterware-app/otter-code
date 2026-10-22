@@ -261,6 +261,7 @@ export function AsciiWaveBackground() {
   const ink = palette.text;
   const accent = palette.update;
 
+  // oxlint-disable-next-line t3code/react-effect-budget -- Drives the canvas animation and its resize observer.
   useEffect(() => {
     const container = containerRef.current;
     const canvas = canvasRef.current;

@@ -28,6 +28,7 @@ function AccountCallback() {
   const [message, setMessage] = useState("Finishing sign-in…");
   const [pending, setPending] = useState<Callback | null>(null);
   const started = useRef(false);
+  // oxlint-disable-next-line t3code/react-effect-budget -- Completes the OAuth callback once the session manager loads.
   useEffect(() => {
     if (!isLoaded || started.current) return;
     started.current = true;

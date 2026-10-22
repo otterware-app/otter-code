@@ -80,6 +80,7 @@ export function LinearIssueDetailPanel({
   );
   const syncedUpdatedAt = link?.snapshot?.updatedAt ?? null;
   const { refresh } = query;
+  // oxlint-disable-next-line t3code/react-effect-budget -- Re-reads the issue when its synced snapshot changes.
   useEffect(() => {
     if (syncedUpdatedAt !== null) refresh();
   }, [refresh, syncedUpdatedAt]);
@@ -90,6 +91,7 @@ export function LinearIssueDetailPanel({
     ),
   );
   const issueId = query.data?.id ?? link?.issueId ?? null;
+  // oxlint-disable-next-line t3code/react-effect-budget -- Re-reads the issue when Linear's live feed reports a change.
   useEffect(() => {
     if (change && (change.identifier === identifier || change.issueId === issueId)) refresh();
   }, [change, identifier, issueId, refresh]);

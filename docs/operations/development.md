@@ -68,10 +68,10 @@ Add `--browser` to open a browser automatically.
 ### State and ports
 
 Linked worktrees default to their own `.t3/userdata`, even when `T3CODE_HOME` is set.
-The main checkout defaults to `~/.t3/dev`. An explicit `--home-dir` wins in both cases.
+The main checkout defaults to `~/.otter-code/dev`. An explicit `--home-dir` wins in both cases.
 The first start in a worktree seeds its empty database from a read-only copy of
-`~/.t3/userdata`; `--no-seed` or `T3CODE_DEV_SEED=0` skips that.
-Never run a development server against the live `~/.t3/userdata`.
+`~/.otter-code/userdata`; `--no-seed` or `T3CODE_DEV_SEED=0` skips that.
+Never run a development server against the live `~/.otter-code/userdata`.
 See [test data](../../AGENTS.md#test-data) for copying a consistent database snapshot.
 
 Read ports from the `[dev-runner]` output. Worktrees derive stable preferences from their paths,

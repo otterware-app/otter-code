@@ -21,6 +21,19 @@ find .github -name '*.yml.bak' -delete
 # takes ~10 minutes there).
 perl -pi -e 's/^(    timeout-minutes: )10$/${1}20/' .github/workflows/release.yml
 
+# The production relay deploy must run for this repository after an upstream sync.
+python3 - <<'PY_RELAY'
+from pathlib import Path
+
+path = Path('.github/workflows/deploy-relay.yml')
+text = path.read_text()
+upstream = "github.repository == 'pingdotgg/t3code' && github.ref == 'refs/heads/main'"
+fork = "github.repository == 'otterware-app/otter-code' && github.ref == 'refs/heads/main'"
+if upstream not in text and fork not in text:
+    raise SystemExit('Missing production relay repository guard')
+path.write_text(text.replace(upstream, fork))
+PY_RELAY
+
 # Otter Code ships macOS and Linux only: skip the Windows desktop jobs, let the
 # release proceed without them, and stop expecting .exe assets.
 perl -0pi -e '

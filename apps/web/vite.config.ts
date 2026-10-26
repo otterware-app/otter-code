@@ -103,6 +103,7 @@ const browserTestProject = {
     include: [
       "vite-plus/test/browser",
       "@base-ui/react/autocomplete",
+      "@tabler/icons-react",
       "saxes",
       "@betteroffice/docx/editor",
       "@betteroffice/docx/layout",
@@ -385,6 +386,11 @@ export default defineConfig(() => {
     },
     worker: { format: "es" },
     test: {
+      // Otter CI runs this job on 4-vCPU runners (upstream uses 8): one file at a time keeps
+      // the worker-heavy document previews inside their timeouts.
+      ...(process.env.CI && process.env.GITHUB_REPOSITORY === "otterware-app/otter-code"
+        ? { maxWorkers: 1 }
+        : {}),
       projects: [
         defineProject(unitTestProject),
         defineProject(browserTestProject),

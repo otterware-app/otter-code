@@ -18,6 +18,8 @@ it("stays byte-identical to .github/triage/PLAYBOOK.md", () => {
     "../../../../.github/triage/PLAYBOOK.md",
   );
   assert.equal(TRIAGE_PLAYBOOK, NodeFS.readFileSync(canonicalPath, "utf8"));
+  assert.include(TRIAGE_PLAYBOOK, "https://github.com/otterware-app/otter-code/issues/new");
+  assert.notInclude(TRIAGE_PLAYBOOK, "pingdotgg/t3code");
 });
 
 it("launch prompt stays a single argv-safe line naming the prompt file", () => {
@@ -37,8 +39,9 @@ it("context file labels the CLI version as the CLI's, not the user's build", () 
   assert.notInclude(context, "Installed version");
   assert.notInclude(context, "Release tag");
   assert.include(context, "- Triage CLI version: 0.0.42 (");
+  assert.include(context, "- Repo: https://github.com/otterware-app/otter-code");
   assert.include(context, "version 0.0.43-nightly.20260923.2173");
-  assert.notInclude(context, "runs inside T3 Code");
+  assert.notInclude(context, "runs inside Otter Code");
 });
 
 it("in-app context warns the agent off its own server and points at the clone in progress", () => {
@@ -56,7 +59,7 @@ it("in-app context warns the agent off its own server and points at the clone in
   });
   assert.notInclude(context, "Triage CLI version");
   assert.include(context, "- Started from: T3 Code Desktop version 0.1.1 on macos (");
-  assert.include(context, "## This session runs inside T3 Code");
+  assert.include(context, "## This session runs inside Otter Code");
   assert.include(context, "/home/u/.t3/source/abc123  (v0.1.1, commit abc123)");
   assert.include(context, "Wait for it instead of\ncloning again.");
 });

@@ -4,7 +4,8 @@ import { afterAll, afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { npmReleasePublishedAtom } from "./npmRelease";
 
-const version = "0.0.46-nightly.20261012.3021";
+const version = "0.1.3-nightly.20261024.463";
+const releaseUrl = `https://registry.npmjs.org/otter-code/${version}`;
 
 // FetchHttpClient reads globalThis.fetch once and keeps it, so every test shares this mock.
 const fetchMock = vi.fn<typeof fetch>();
@@ -35,17 +36,33 @@ describe("npmReleasePublishedAtom", () => {
     vi.unstubAllGlobals();
   });
 
-  it("checks npm without tracing headers, so the browser skips the preflight npm rejects", async () => {
-    fetchMock.mockImplementation(async () => Response.json({ version }));
+  it("recognizes an Otter release without tracing headers that trigger an npm preflight", async () => {
+    fetchMock.mockImplementation(async (input, init) =>
+      new Request(input, init).url === releaseUrl
+        ? Response.json({ version })
+        : new Response(null, { status: 404 }),
+    );
 
     const result = await settledCheck();
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const request = new Request(fetchMock.mock.calls[0]?.[0] ?? "", fetchMock.mock.calls[0]?.[1]);
-    expect(request.url).toBe(`https://registry.npmjs.org/t3/${version}`);
+    expect(request.url).toBe(releaseUrl);
     expect(request.headers.get("traceparent")).toBeNull();
     expect(request.headers.get("b3")).toBeNull();
     expect(AsyncResult.getOrElse(result, () => false)).toBe(true);
+  });
+
+  it("does not offer an upstream release when the Otter version is unpublished", async () => {
+    fetchMock.mockImplementation(async (input, init) =>
+      new Request(input, init).url === releaseUrl
+        ? new Response(null, { status: 404 })
+        : Response.json({ version }),
+    );
+
+    const result = await settledCheck();
+
+    expect(AsyncResult.getOrElse(result, () => true)).toBe(false);
   });
 
   // regression: #18709 update-everything skipped npm-installed servers

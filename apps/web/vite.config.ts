@@ -384,6 +384,11 @@ export default defineConfig(() => {
     },
     worker: { format: "es" },
     test: {
+      // Otter CI runs this job on 4-vCPU runners (upstream uses 8): fewer concurrent files keep
+      // the worker-heavy document previews inside their timeouts.
+      ...(process.env.CI && process.env.GITHUB_REPOSITORY === "otterware-app/otter-code"
+        ? { maxWorkers: 2 }
+        : {}),
       projects: [
         defineProject(unitTestProject),
         defineProject(browserTestProject),

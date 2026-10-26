@@ -21,6 +21,10 @@ find .github -name '*.yml.bak' -delete
 # takes ~10 minutes there).
 perl -pi -e 's/^(    timeout-minutes: )10$/${1}20/' .github/workflows/release.yml
 
+# Browser tests run with fewer workers on these runners (apps/web/vite.config.ts), so the
+# web test job needs more time than upstream's 8-vCPU runners do.
+perl -0pi -e 's/(\n  test_web:\n(?:    .*\n)*?    timeout-minutes: )10\n/${1}20\n/' .github/workflows/ci.yml
+
 # The production relay deploy must run for this repository after an upstream sync.
 python3 - <<'PY_RELAY'
 from pathlib import Path

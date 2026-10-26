@@ -26,6 +26,24 @@ const createFixtureDatabase = Effect.fn("createSqliteStateFixtureDatabase")(func
 });
 
 it.layer(NodeServices.layer)("t3-sqlite-state", (it) => {
+  it.effect.each([".otter-code", ".t3"])("refuses writes to the live %s home", (name) =>
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      const home = yield* fs.makeTempDirectoryScoped({ prefix: "sqlite-state-live-home-" });
+      const baseDir = path.join(home, name);
+      yield* createFixtureDatabase(baseDir);
+
+      const error = yield* runSqliteState({
+        operation: "exec",
+        baseDir,
+        sql: "DELETE FROM fixtures",
+      }).pipe(Effect.provideService(HostProcess.HomeDirectory, home), Effect.flip);
+
+      assert.equal(error._tag, "SqliteStateSharedHomeMutationError");
+    }),
+  );
+
   it.effect("enables checkpoint_fullfsync on its direct connection", () =>
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;

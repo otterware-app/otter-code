@@ -7,6 +7,7 @@ import * as SqlClient from "effect/sql/SqlClient";
 
 import { runMigrations } from "../src/persistence/Migrations.ts";
 import * as NodeSqliteClient from "@t3tools/shared/nodeSqliteClient";
+import * as HostProcess from "@t3tools/shared/HostProcess";
 import { runMigrateDevDb } from "./migrate-dev-db.ts";
 
 const withDatabase = <A, E>(
@@ -105,6 +106,25 @@ const createFixtureSource = Effect.fn("createMigrateDevDbFixtureSource")(functio
 });
 
 it.layer(NodeServices.layer)("migrate-dev-db", (it) => {
+  it.effect.each([".otter-code", ".t3"])("refuses to rebuild the live %s home", (name) =>
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      const home = yield* fs.makeTempDirectoryScoped({ prefix: "migrate-dev-db-live-home-" });
+      const baseDir = path.join(home, name);
+      const source = yield* createFixtureSource(baseDir);
+
+      const error = yield* runMigrateDevDb({
+        baseDir,
+        source,
+        projects: 5,
+        threadsPerProject: 2,
+      }).pipe(Effect.provideService(HostProcess.HomeDirectory, home), Effect.flip);
+
+      assert.equal(error._tag, "MigrateDevDbSharedHomeError");
+    }),
+  );
+
   it.effect("keeps stopped and settled thread families and clears pending work", () =>
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;

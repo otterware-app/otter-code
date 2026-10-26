@@ -178,7 +178,7 @@ function TimelineListFooter({
   );
 }
 
-const EMPTY_TIMELINE_SKILLS: ReadonlyArray<Pick<ServerProviderSkill, "name" | "displayName">> = [];
+const EMPTY_TIMELINE_SKILLS: ReadonlyArray<ServerProviderSkill> = [];
 const TIMELINE_MAINTAIN_SCROLL_AT_END = {
   animated: false,
   on: {

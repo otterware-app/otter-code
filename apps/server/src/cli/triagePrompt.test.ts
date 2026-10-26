@@ -13,6 +13,8 @@ it("stays byte-identical to .github/triage/PLAYBOOK.md", () => {
     "../../../../.github/triage/PLAYBOOK.md",
   );
   assert.equal(TRIAGE_PLAYBOOK, NodeFS.readFileSync(canonicalPath, "utf8"));
+  assert.include(TRIAGE_PLAYBOOK, "https://github.com/otterware-app/otter-code/issues/new");
+  assert.notInclude(TRIAGE_PLAYBOOK, "pingdotgg/t3code");
 });
 
 it("launch prompt stays a single argv-safe line naming the prompt file", () => {
@@ -50,4 +52,5 @@ it("context file labels the CLI version as the CLI's, not the user's build", () 
   assert.notInclude(context, "Release tag");
   assert.include(context, "- Triage CLI version: 0.0.42 (");
   assert.include(context, "version 0.0.43-nightly.20260923.2173");
+  assert.include(context, "- Repo: https://github.com/otterware-app/otter-code");
 });

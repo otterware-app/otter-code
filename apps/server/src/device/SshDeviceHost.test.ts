@@ -1,8 +1,10 @@
 import { expect, it } from "@effect/vitest";
 import * as NodeServices from "@effect/platform-node/NodeServices";
 import * as Net from "@t3tools/shared/Net";
+import * as HostProcess from "@t3tools/shared/HostProcess";
 import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
+import * as Path from "effect/Path";
 import * as Layer from "effect/Layer";
 import * as PlatformError from "effect/PlatformError";
 import * as Sink from "effect/Sink";
@@ -10,14 +12,17 @@ import * as Stream from "effect/Stream";
 import * as HttpClient from "effect/http/HttpClient";
 import * as HttpClientResponse from "effect/http/HttpClientResponse";
 import * as ChildProcessSpawner from "effect/process/ChildProcessSpawner";
+import * as ChildProcess from "effect/process/ChildProcess";
 import * as ServerConfig from "../config.ts";
 import * as DeviceHost from "./DeviceHost.ts";
 import * as SshDeviceHost from "./SshDeviceHost.ts";
 
-it.effect("preserves installed status after probes and cleans failed agent activation", () =>
+it.live("runs in the provisioned Otter directory and cleans failed agent activation", () =>
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
     const home = yield* fs.makeTempDirectoryScoped();
+    const realSpawner = yield* ChildProcessSpawner.ChildProcessSpawner;
     const modes: string[] = [];
     const owners: string[] = [];
     const tunnelArgs: string[][] = [];
@@ -66,6 +71,15 @@ it.effect("preserves installed status after probes and cleans failed agent activ
               (a, b) => a + b,
             ),
           );
+          if (script === "" && command.args.at(-1)?.includes("pwd")) {
+            return yield* realSpawner.spawn(
+              ChildProcess.make(
+                "sh",
+                ["-c", command.args.slice(command.args.indexOf("--") + 2).join(" ")],
+                { env: { HOME: home } },
+              ),
+            );
+          }
           const mode = /const mode = "([^"]+)"/.exec(script)?.[1] ?? "";
           modes.push(mode);
           owners.push(/const owner = "([^"]+)"/.exec(script)?.[1] ?? "");
@@ -139,6 +153,14 @@ it.effect("preserves installed status after probes and cleans failed agent activ
     const ready = yield* host.current;
     expect(ready).not.toBeNull();
     if (ready) {
+      if ((yield* HostProcess.Platform) !== "win32") {
+        const hostDirectory = path.join(home, ".otter-code", "device", "hosts", owners[0]!);
+        yield* fs.makeDirectory(hostDirectory, { recursive: true });
+        const directory = yield* ready.run("pwd", []);
+        expect(directory.code).toBe(0);
+        expect(yield* fs.realPath(directory.stdout.trim())).toBe(yield* fs.realPath(hostDirectory));
+      }
+
       const failed = yield* ready.run("emulator", ["-list-avds"]);
       expect(failed.code).toBe(1);
       expect(failed.stdout).toMatch(/^\[truncated\]/);

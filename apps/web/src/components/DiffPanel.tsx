@@ -303,11 +303,11 @@ export default function DiffPanel({
         : "All changes";
   // All changes include uncommitted work; a commit is read on its own. Uncommitted changes keep
   // the default preview, which older servers also answer.
-  const previewSourceRequest = selectedCommitSha
+  const previewSourceRequest: ReviewDiffPreviewSourceRequest | undefined = selectedCommitSha
     ? { commit: selectedCommitSha }
     : diffSelection.kind === "branch"
       ? "all"
-      : (undefined satisfies ReviewDiffPreviewSourceRequest | undefined);
+      : undefined;
   const selectedCheckpointRange =
     typeof selectedCheckpointTurnCount === "number"
       ? {

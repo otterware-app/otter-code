@@ -392,24 +392,24 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
                             window.desktopBridge?.previewExtensions,
                         )
                         .map((to) => {
-                        const Icon = SETTINGS_SECTION_ICONS[to];
-                        const isActive = activePath === to || activePath.startsWith(`${to}/`);
-                        return (
-                          <SidebarMenuItem key={to}>
-                            <SidebarMenuButton
-                              isActive={isActive}
-                              onClick={() => handleSectionClick(to)}
-                            >
-                              <Icon />
-                              <span
-                                className={cn("truncate", !compactSearchOpen && "max-md:sr-only")}
+                          const Icon = SETTINGS_SECTION_ICONS[to];
+                          const isActive = activePath === to || activePath.startsWith(`${to}/`);
+                          return (
+                            <SidebarMenuItem key={to}>
+                              <SidebarMenuButton
+                                isActive={isActive}
+                                onClick={() => handleSectionClick(to)}
                               >
-                                {SETTINGS_SECTION_LABELS[to]}
-                              </span>
-                            </SidebarMenuButton>
-                          </SidebarMenuItem>
-                        );
-                      })}
+                                <Icon />
+                                <span
+                                  className={cn("truncate", !compactSearchOpen && "max-md:sr-only")}
+                                >
+                                  {SETTINGS_SECTION_LABELS[to]}
+                                </span>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          );
+                        })}
                     </SidebarMenu>
                   </div>
                 ))}

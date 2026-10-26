@@ -497,12 +497,16 @@ describe("t3 pair", () => {
           if (Exit.isFailure(exit)) {
             assert.include(
               String(Cause.squash(exit.cause)),
-              `t3@0.0.45 pair --base-dir ${baseDir}`,
+              `npx otter-code@0.1.3-nightly.20261024.463 pair --base-dir ${baseDir}`,
             );
           }
         }),
       "127.0.0.1",
-      { ...testDescriptor, serverVersion: "0.0.45", orchestrationProtocolVersion: 1 },
+      {
+        ...testDescriptor,
+        serverVersion: "0.1.3-nightly.20261024.463",
+        orchestrationProtocolVersion: 1,
+      },
     ).pipe(Effect.provide(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer))),
   );
 

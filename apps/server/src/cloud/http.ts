@@ -187,6 +187,7 @@ type LinearHttpError =
 const toLinearHttpError =
   (message: string) =>
   <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, LinearHttpError, R> =>
+    // @effect-diagnostics-next-line catchConditionalRefailToCatchIf:off -- catchIf cannot narrow a generic error to LinearHttpError.
     Effect.catch(effect, (error): Effect.Effect<never, LinearHttpError> =>
       isLinearRequestError(error) ? Effect.fail(error) : internalServerError({ message }, error),
     );

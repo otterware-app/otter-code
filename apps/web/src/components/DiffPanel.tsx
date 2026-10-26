@@ -654,6 +654,7 @@ export default function DiffPanel({
   };
   const selectedFileReveal = { path: selectedFilePath, requestId: selectedFileRevealRequestId };
   // A file opened from the chat, including a repeat request for the same file, opens here.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- opens the file a chat diff link requested; each request id reopens it
   useEffect(() => {
     if (selectedFileReveal.path) setOpenFile(selectedFileReveal.path);
   }, [selectedFileReveal, setOpenFile]);
@@ -676,7 +677,7 @@ export default function DiffPanel({
   const singleFileIndex = singleFileEntry ? renderableFileEntries.indexOf(singleFileEntry) : -1;
   const singleFileReady =
     !lazySource || (singleFilePath !== null && readyFilePaths.has(singleFilePath));
-  // oxlint-disable-next-line t3code/react-effect-budget -- Loads the lazily fetched file shown in single-file mode.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Loads the lazily fetched file shown in single-file mode.
   useEffect(() => {
     if (lazySource && singleFileIndex >= 0 && !singleFileReady) requestFile(singleFileIndex);
   }, [lazySource, requestFile, singleFileIndex, singleFileReady]);
@@ -728,7 +729,7 @@ export default function DiffPanel({
     : null;
 
   const codeViewReveal = useCodeViewFileReveal();
-  // oxlint-disable-next-line t3code/react-effect-budget -- Scrolls the code view to the selected file.
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- Scrolls the code view to the selected file.
   useEffect(() => {
     if (selectedDiffFileKey) codeViewReveal.request(selectedDiffFileKey);
     // oxlint-disable-next-line react/exhaustive-effect-dependencies -- A remounted viewer or a repeated reveal request scrolls to the same file again.

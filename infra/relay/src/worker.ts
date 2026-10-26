@@ -393,10 +393,12 @@ export const layer = Api.make(
     const layerLinearRuntime = LinearIntegration.layer.pipe(
       Layer.provide(
         Layer.succeed(LinearIntegration.LinearEventQueueSender, {
-          send: (body) =>
-            linearEventQueueSender
-              .send(body)
-              .pipe(Effect.provideService(Alchemy.RuntimeContext, alchemyRuntimeContext)),
+          send: Effect.fn("LinearIntegration.LinearEventQueueSender.send")(
+            function* (body) {
+              return yield* linearEventQueueSender.send(body);
+            },
+            Effect.provideService(Alchemy.RuntimeContext, alchemyRuntimeContext),
+          ),
         }),
       ),
       Layer.provideMerge(layerRuntime),

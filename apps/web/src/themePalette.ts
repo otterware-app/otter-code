@@ -33,7 +33,6 @@ import { appAtomRegistry, subscribeAtomChanges } from "./rpc/atomRegistry";
 import { primaryServerEnvironmentThemesAtom } from "./state/server";
 
 export {
-  CHATGPT_THEME,
   EMBER_THEME,
   GROVE_THEME,
   IRIS_THEME,

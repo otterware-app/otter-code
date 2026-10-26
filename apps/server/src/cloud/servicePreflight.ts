@@ -23,13 +23,13 @@ export function runServicePreflight(input: {
     return {
       status: "blocked",
       version,
-      // A stale `t3` earlier on PATH (an old npm/nvm global) makes `t3 service install`
+      // A stale CLI earlier on PATH (an old npm/nvm global) makes service install
       // reinstall itself and report success, so name the exact install and the path check.
       reason: [
-        `The installed service launcher speaks protocol ${input.launcherProtocol}, but t3@${version} requires protocol ${SERVICE_LAUNCHER_PROTOCOL}.`,
-        `On the server machine, install this exact CLI: \`curl -fsSL https://t3.codes/install.sh | T3CODE_VERSION=${version} sh\`.`,
-        `Check that \`t3 --version\` prints ${version} and that \`which -a t3\` lists no older t3 (such as an npm or nvm install) first, then run \`~/.local/bin/t3 service install\` (the installer's default path).`,
-        "Updating the desktop app does not update this CLI, and `t3 service update` only repairs the service with whichever CLI runs it.",
+        `The installed service launcher speaks protocol ${input.launcherProtocol}, but otter-code@${version} requires protocol ${SERVICE_LAUNCHER_PROTOCOL}.`,
+        `On the server machine, install this exact CLI: \`curl -fsSL https://raw.githubusercontent.com/otterware-app/otter-code/main/scripts/install.sh | T3CODE_VERSION=${version} sh\`.`,
+        `Check that \`otter-code --version\` prints ${version} and that \`which -a otter-code\` lists no older Otter CLI (such as an npm or nvm install) first, then run \`~/.local/bin/otter-code service install\` (the installer's default path).`,
+        "Updating the desktop app does not update this CLI, and `otter-code service update` only repairs the service with whichever CLI runs it.",
       ].join(" "),
     };
   }

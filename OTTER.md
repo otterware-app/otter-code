@@ -80,7 +80,8 @@ replay the sync commits on top of it:
 ```sh
 sync_commits=$(git rev-list --reverse --grep='^chore(otter): changes before the .* sync' "$new_base"..HEAD)
 git switch --detach "$(git rev-parse "$(echo "$sync_commits" | head -1)^")"
-.github/scripts/otter-adapt-upstream.sh
+# Run main's script: the copy in the stack lacks what later sync commits added to it.
+bash <(git show "$old_main":.github/scripts/otter-adapt-upstream.sh)
 git add -u
 git diff --cached --quiet || git commit -m "chore(otter): adapt upstream files (generated)"
 git cherry-pick $sync_commits

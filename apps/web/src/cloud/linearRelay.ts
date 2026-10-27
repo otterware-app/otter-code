@@ -13,6 +13,9 @@ import { resolveCloudPublicConfig } from "./publicConfig";
  * bearer), not environment-level, so they sit beside T3 Connect rather than
  * going through an environment connection.
  */
+const decodeLinearStatus = Schema.decodeUnknownSync(RelayLinearStatusResponse);
+const decodeLinearAuthorize = Schema.decodeUnknownSync(RelayLinearAuthorizeResponse);
+
 async function relayFetch(
   accountToken: string,
   path: string,
@@ -35,9 +38,7 @@ async function relayFetch(
 }
 
 export async function fetchLinearStatus(accountToken: string) {
-  return Schema.decodeUnknownSync(RelayLinearStatusResponse)(
-    await relayFetch(accountToken, "/v1/client/linear", { method: "GET" }),
-  );
+  return decodeLinearStatus(await relayFetch(accountToken, "/v1/client/linear", { method: "GET" }));
 }
 
 /** Returns the Linear consent URL to open; the relay's callback returns to Connections settings. */
@@ -46,7 +47,7 @@ export async function startLinearAuthorization(
   kind: RelayLinearAuthorizeKind,
   environmentId?: EnvironmentId,
 ) {
-  const response = Schema.decodeUnknownSync(RelayLinearAuthorizeResponse)(
+  const response = decodeLinearAuthorize(
     await relayFetch(accountToken, "/v1/client/linear/authorize", {
       method: "POST",
       body: { kind, ...(environmentId ? { environmentId } : {}) },

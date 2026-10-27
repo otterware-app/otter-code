@@ -102,6 +102,7 @@ const LinearQueuedEvent = Schema.Struct({
   }),
 });
 export type LinearQueuedEvent = typeof LinearQueuedEvent.Type;
+const decodeLinearQueuedEvent = Schema.decodeUnknownEffect(LinearQueuedEvent);
 
 /** An `Issue` or `Comment` webhook, reduced to the issue it is about. */
 const LinearIssueChangeMessage = Schema.Struct({
@@ -708,7 +709,7 @@ const make = Effect.gen(function* () {
       return queued ? 200 : 503;
     }
     if (body.type !== "AgentSessionEvent") return 200;
-    const event = yield* Schema.decodeUnknownEffect(LinearQueuedEvent)(body).pipe(Effect.option);
+    const event = yield* decodeLinearQueuedEvent(body).pipe(Effect.option);
     if (event._tag === "None") return 200;
     const promptContext = event.value.promptContext ?? null;
     const enqueued = yield* queue

@@ -7,7 +7,7 @@ import { EnvironmentId } from "@t3tools/contracts";
 import { DEFAULT_HOSTED_APP_URL } from "@t3tools/shared/connectAuth";
 import { normalizeRelayIssuer } from "@t3tools/shared/relayJwt";
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
-import type * as Cloudflare from "alchemy/Cloudflare";
+import type * as Cloudflare from "@alchemy.run/cloudflare";
 import * as Context from "effect/Context";
 import * as Crypto from "effect/Crypto";
 import * as DateTime from "effect/DateTime";
@@ -102,6 +102,7 @@ const LinearQueuedEvent = Schema.Struct({
   }),
 });
 export type LinearQueuedEvent = typeof LinearQueuedEvent.Type;
+const decodeLinearQueuedEvent = Schema.decodeUnknownEffect(LinearQueuedEvent);
 
 /** An `Issue` or `Comment` webhook, reduced to the issue it is about. */
 const LinearIssueChangeMessage = Schema.Struct({
@@ -708,7 +709,7 @@ const make = Effect.gen(function* () {
       return queued ? 200 : 503;
     }
     if (body.type !== "AgentSessionEvent") return 200;
-    const event = yield* Schema.decodeUnknownEffect(LinearQueuedEvent)(body).pipe(Effect.option);
+    const event = yield* decodeLinearQueuedEvent(body).pipe(Effect.option);
     if (event._tag === "None") return 200;
     const promptContext = event.value.promptContext ?? null;
     const enqueued = yield* queue

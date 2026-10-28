@@ -660,3 +660,6 @@ export const layer = Api.make(
     ),
   ),
 );
+
+// Alchemy bundles the worker from `main` and imports this default as its entrypoint.
+export default layer;

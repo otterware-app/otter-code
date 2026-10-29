@@ -146,6 +146,9 @@ text = text[:start] + '''              key_path="$RUNNER_TEMP/AuthKey_${APPLE_AP
 path.write_text(text)
 PY
 
+# The Linux AppImage's executable is the Otter product name, not upstream's `t3code`.
+perl -pi -e 's{squashfs-root/t3code"}{squashfs-root/otter-code"}' .github/workflows/release-desktop.yml
+
 # Point agents at the fork guide from AGENTS.md, which every agent reads first.
 perl -0pi -e '
   s/\A(# [^\n]*\n)/$1\n> **This is the Otter Code fork.** Read [OTTER.md](OTTER.md) first: it covers how the fork\n> stays in sync with upstream, its identities and infrastructure, releases, and moving machines.\n/
@@ -165,14 +168,17 @@ if not match:
     raise SystemExit('Missing upstream npm publish job')
 job = match[0]
 if 'Configure npm token (Otter Code)' not in job:
-    anchor = '      - name: Build the npm launcher\n'
+    anchor = '      - name: Publish the npm launcher\n'
     if anchor not in job:
-        raise SystemExit('Missing upstream npm launcher build step')
+        raise SystemExit('Missing upstream npm launcher publish step')
     job = job.replace(anchor, '      - name: Configure npm token (Otter Code)\n        env:\n          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}\n        run: |\n          if [ -n "$NPM_TOKEN" ]; then\n            printf "//registry.npmjs.org/:_authToken=%s\\n" "$NPM_TOKEN" >> ~/.npmrc\n          fi\n\n' + anchor, 1)
 if 'Tag nightly as latest (Otter Code)' not in job:
     job = job.rstrip() + '\n\n      - name: Tag nightly as latest (Otter Code)\n        if: needs.preflight.outputs.release_channel == \'nightly\'\n        run: npm dist-tag add "otter-code@${{ needs.preflight.outputs.version }}" latest\n\n'
 job = job.replace('Make sure package t3 has a trusted publisher registered for .github/workflows/release.yml (see docs/operations/release.md).',
                   'Check the Otter Code NPM_TOKEN and npm publish access.')
+job = job.replace('t3@$', 'otter-code@$')
 text = text[:match.start()] + job + text[match.end():]
+# scripts/build-npm-launcher.ts names the tarball after the Otter package.
+text = text.replace('npm-packages/t3.tgz', 'npm-packages/otter-code.tgz')
 path.write_text(text)
 PY_NPM

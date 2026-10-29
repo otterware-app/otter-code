@@ -26,7 +26,6 @@ import {
   KeyboardIcon,
   KeyRoundIcon,
   MicIcon,
-  LayersIcon,
   PaletteIcon,
   PuzzleIcon,
   SearchIcon,

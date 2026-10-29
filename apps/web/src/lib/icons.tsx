@@ -34,7 +34,6 @@ import {
   IconLayoutDistributeHorizontal,
   IconListCheck,
   IconListDetails,
-  IconLoader2,
   IconMinus,
   IconDeviceDesktop,
   IconMessageCircle,
@@ -166,8 +165,6 @@ export const InfoIcon = adaptIcon(IconInfoCircle);
 
 export const ListChecksIcon = adaptIcon(IconListCheck);
 export const ListTodoIcon = adaptIcon(IconListDetails);
-
-export const LoaderCircleIcon = adaptIcon(IconLoader2);
 
 export const MessageCircleIcon = adaptIcon(IconMessageCircle);
 export const MinusIcon = adaptIcon(IconMinus);

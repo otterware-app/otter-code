@@ -1528,6 +1528,7 @@ export default function ChatView(props: ChatViewProps) {
     entry.kind === "message" ? [entry.message] : [],
   );
   const timelineEmpty = timelineEntries.length === 0 && !hasStreamedTimelineRows;
+  const showEmptyThreadHero = timelineEmpty && !threadDetailLoading;
   const displayedTimelineKey = activeThreadKey ?? routeThreadKey;
   const displayedThreadRef = parseScopedThreadKey(displayedTimelineKey);
   const {
@@ -3261,7 +3262,7 @@ export default function ChatView(props: ChatViewProps) {
           className="relative flex min-h-0 min-w-0 flex-1"
           data-chat-surface={isDraftHeroState ? "draft" : "conversation"}
         >
-          {timelineMessages.length === 0 && !threadDetailLoading ? (
+          {showEmptyThreadHero ? (
             <>
               <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center pb-36">
                 <DraftHeroHeadline
@@ -3314,9 +3315,7 @@ export default function ChatView(props: ChatViewProps) {
               className="app-content-surface relative flex min-h-0 flex-1 flex-col bg-background"
               data-chat-canvas
             >
-              {timelineMessages.length === 0 && !threadDetailLoading && showAsciiBackground ? (
-                <AsciiWaveBackground />
-              ) : null}
+              {showEmptyThreadHero && showAsciiBackground ? <AsciiWaveBackground /> : null}
               <ThreadTimeline
                 pendingApprovals={pendingApprovals}
                 heldApprovalRequestIds={heldApprovalRequestIds}

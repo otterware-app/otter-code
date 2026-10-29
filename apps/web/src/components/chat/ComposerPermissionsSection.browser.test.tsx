@@ -145,7 +145,9 @@ it("returns focus to the editor when picking the default hides the chip", async 
   const { handle, ui } = withComposer(<PermissionsChip />);
   await using screen = await render(ui, { router: false }); // no routes involved
   await userEvent.click(screen.getByRole("button", { name: "Permissions: Supervised" }));
-  await userEvent.click(page.getByRole("menuitemradio", { name: "Full access" }));
+  // Otter's masked icons size from the app stylesheet, which browser tests don't load, so this
+  // icon-only item has no box for a pointer click.
+  (page.getByRole("menuitemradio", { name: "Full access" }).element() as HTMLElement).click();
   await vi.waitFor(() => expect(handle.focusAtEnd).toHaveBeenCalled());
   await expect.element(screen.getByRole("button", { name: "Effort" })).not.toHaveFocus();
 });

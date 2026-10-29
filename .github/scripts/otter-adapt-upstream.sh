@@ -146,6 +146,9 @@ text = text[:start] + '''              key_path="$RUNNER_TEMP/AuthKey_${APPLE_AP
 path.write_text(text)
 PY
 
+# The Linux AppImage's executable is the Otter product name, not upstream's `t3code`.
+perl -pi -e 's{squashfs-root/t3code"}{squashfs-root/otter-code"}' .github/workflows/release-desktop.yml
+
 # Point agents at the fork guide from AGENTS.md, which every agent reads first.
 perl -0pi -e '
   s/\A(# [^\n]*\n)/$1\n> **This is the Otter Code fork.** Read [OTTER.md](OTTER.md) first: it covers how the fork\n> stays in sync with upstream, its identities and infrastructure, releases, and moving machines.\n/

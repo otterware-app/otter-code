@@ -238,7 +238,8 @@ describe("DesktopClientSettings", () => {
           assert.equal(persisted.value.timestampFormat, "12-hour");
           assert.equal(persisted.value.fontSizeCode, 14);
           assert.isFalse(Object.hasOwn(persisted.value, "sidebarViewMode"));
-          assert.isFalse(Object.hasOwn(persisted.value, "legacySidebarEnabled"));
+          // Still read: upstream moves legacy sidebar opt-ins into the boring sidebar.
+          assert.equal(persisted.value.legacySidebarEnabled, true);
           assert.isFalse(Object.hasOwn(persisted.value, "sidebarThreadPreviewCount"));
         }
       }),

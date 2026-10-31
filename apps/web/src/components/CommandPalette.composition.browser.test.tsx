@@ -21,6 +21,8 @@ vi.mock("../hooks/useEnvironmentTheme", () => ({ useEnvironmentThemeDefinitions:
 vi.mock("../hooks/useSettings", async (original) => ({
   ...(await original<typeof import("../hooks/useSettings")>()),
   useClientSettings: () => DEFAULT_CLIENT_SETTINGS,
+  // Otter's project space saves rail groups through it; the atom stub has no session states.
+  useUpdateEnvironmentSettings: () => () => undefined,
 }));
 vi.mock("../hooks/useScratchProject", () => ({
   useScratchProject: () => ({ scratchEnvironmentId: () => null }),

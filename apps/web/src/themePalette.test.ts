@@ -81,7 +81,7 @@ describe("theme files", () => {
     expect(getThemeDefinition("synara")).toBe(SYNARA_THEME);
     expect(getThemeModes(SYNARA_THEME)).toEqual(["light", "dark"]);
     expect(asHex(getStandardThemeColors("light").canvas)).toBe("#fcfcfc");
-    expect(asHex(getStandardThemeColors("dark").canvas)).toBe("#0a0a0a");
+    expect(asHex(getStandardThemeColors("dark").canvas)).toBe("#000000");
     expect(asHex(getThemeColorsForMode(SYNARA_THEME, "light")!.canvas)).toBe("#ffffff");
     expect(asHex(getThemeColorsForMode(SYNARA_THEME, "dark")!.canvas)).toBe("#111111");
     expect(resolveThemeAppearance("synara", true, true)).toBe("dark");

@@ -1,6 +1,9 @@
 import { EnvironmentId, type ThreadPullRequestLink } from "@t3tools/contracts";
 import { expect, it, vi } from "vite-plus/test";
 
+// Otter's CSS-mask icons take their size from Tailwind classes, not SVG attributes.
+import "~/index.css";
+
 import { render } from "../../test/render";
 import { AppAtomRegistryProvider } from "../rpc/atomRegistry";
 import { makeThreadFixture } from "../test-fixtures";

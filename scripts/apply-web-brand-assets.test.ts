@@ -13,6 +13,7 @@ const WEB_ICON_FILENAMES = [
   "favicon.ico",
   "icon-192x192.png",
   "icon-512x512.png",
+  "favicon.svg",
 ];
 
 it.layer(NodeServices.layer)("apply-web-brand-assets", (it) => {

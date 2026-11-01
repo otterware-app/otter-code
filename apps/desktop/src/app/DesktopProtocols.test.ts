@@ -1,8 +1,5 @@
 // @effect-diagnostics nodeBuiltinImport:off globalFetchInEffect:off - Hosted handoff test uses a real localhost listener without an OpenAI account.
-import * as NodeFS from "node:fs";
 import * as NodeHttp from "node:http";
-import * as NodeOS from "node:os";
-import * as NodePath from "node:path";
 import * as NodePathLayer from "@effect/platform-node/NodePath";
 import { codexAuthHandoffUrl, readCodexAuthDelivery } from "@t3tools/shared/codexAuthHandoff";
 import { EnvironmentId, ProviderInstanceId } from "@t3tools/contracts";

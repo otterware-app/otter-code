@@ -1,6 +1,5 @@
-import { MonitorIcon, MoonIcon, SunIcon } from "~/lib/icons";
 import { BUILT_IN_THEMES } from "@t3tools/shared/themePalettes";
-import { PaletteIcon } from "lucide-react";
+import { MonitorIcon, MoonIcon, PaletteIcon, SunIcon } from "lucide-react";
 
 import { useCustomThemes } from "../hooks/useCustomThemes";
 import { useEnvironmentThemeDefinitions } from "../hooks/useEnvironmentTheme";

@@ -1,6 +1,6 @@
 import type { DesktopPreviewExtension } from "@t3tools/contracts";
 import { Puzzle } from "lucide-react";
-import { ArrowUpRightIcon as ArrowUpRight, SearchIcon as Search } from "~/lib/icons";
+import { ArrowUpRightIcon as ArrowUpRight, SearchIcon as Search } from "lucide-react";
 import { useState } from "react";
 
 import { resolveBrowserDefaults } from "~/browser/browserDefaults";

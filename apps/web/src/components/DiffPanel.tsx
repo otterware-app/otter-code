@@ -9,10 +9,10 @@ import { safeErrorLogAttributes } from "@t3tools/client-runtime/errors";
 import { scopedThreadKey } from "@t3tools/client-runtime/environment";
 import type { ReviewDiffPreviewSourceRequest, ScopedThreadRef } from "@t3tools/contracts";
 import {
+  ChevronDownIcon,
+  Columns2Icon,
   FlaskConicalOffIcon,
-  FileTextIcon,
   FolderTreeIcon,
-  GitCompareArrowsIcon,
   PilcrowIcon,
   Rows3Icon,
   TextWrapIcon,
@@ -20,6 +20,7 @@ import {
   ChevronsDownUpIcon,
   ChevronsUpDownIcon,
 } from "lucide-react";
+import { ChevronUpIcon, FileTextIcon, GitCompareArrowsIcon } from "lucide-react";
 import * as Schema from "effect/Schema";
 import { useEffect, useRef, useState } from "react";
 import { useCodeViewFileReveal } from "./diffs/useCodeViewFileReveal";

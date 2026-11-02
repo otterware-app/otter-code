@@ -272,7 +272,6 @@ import {
   PullRequestThreadDialogHost,
   RevertConfirmHost,
 } from "./chat/ChatOverlayHosts";
-import { AsciiWaveBackground } from "./chat/AsciiWaveBackground";
 import type { AssistantCitationRequest } from "./chat/AssistantCitationSource";
 import { useCitedHistory } from "./chat/citationProcedure";
 import type { MessagesTimelineHistoryControls } from "./chat/MessagesTimeline";
@@ -1263,7 +1262,6 @@ export default function ChatView(props: ChatViewProps) {
   const canChangeEnvironment =
     hasMultipleEnvironments && !envLocked && draftId !== null && !draftThread?.promotedTo;
 
-  const showAsciiBackground = useClientSettings((settings) => settings.showAsciiBackground);
   const loadBalancingSettings = useClientSettings((settings) => ({
     loadBalancingEnabled: settings.loadBalancingEnabled,
     loadBalancingWeights: settings.loadBalancingWeights,
@@ -1545,7 +1543,6 @@ export default function ChatView(props: ChatViewProps) {
     entry.kind === "message" ? [entry.message] : [],
   );
   const timelineEmpty = timelineEntries.length === 0 && !hasStreamedTimelineRows;
-  const showEmptyThreadHero = timelineEmpty && !threadDetailLoading;
   const displayedTimelineKey = activeThreadKey ?? routeThreadKey;
   const displayedThreadRef = parseScopedThreadKey(displayedTimelineKey);
   const {
@@ -1885,6 +1882,7 @@ export default function ChatView(props: ChatViewProps) {
     runShellCommandStable,
     splitPanelTerminalStable,
     splitPanelTerminalVerticalStable,
+    toggleTerminalVisibilityStable,
     shortcuts: terminalShortcuts,
   } = useChatTerminalActions({
     environmentId,
@@ -3241,6 +3239,9 @@ export default function ChatView(props: ChatViewProps) {
     />
   ) : null;
   const panelToggleControlProps = {
+    terminalAvailable: activeProject !== null,
+    terminalOpen: terminalUiState.terminalOpen,
+    terminalShortcutLabel: shortcutLabelForCommand(keybindings, "terminal.toggle"),
     threadPanelOpen,
     threadPanelPresentation,
     threadPanelPopoverHandle,
@@ -3248,6 +3249,7 @@ export default function ChatView(props: ChatViewProps) {
     rightPanelAvailable: activeProject !== null,
     rightPanelOpen,
     rightPanelShortcutLabel: shortcutLabelForCommand(keybindings, "rightPanel.toggle"),
+    onToggleTerminal: toggleTerminalVisibilityStable,
     onToggleThreadPanel: toggleThreadPanelStable,
     onToggleRightPanel: toggleRightPanelStable,
   } satisfies PanelLayoutControlsProps;
@@ -3278,7 +3280,7 @@ export default function ChatView(props: ChatViewProps) {
   const content = (
     <div
       ref={setWorkspaceLayoutElement}
-      className="app-content-surface relative flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background"
+      className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background"
     >
       {embedded ? null : (
         <DeviceSetupDialogHost
@@ -3341,21 +3343,7 @@ export default function ChatView(props: ChatViewProps) {
           </header>
         )}
 
-        <div
-          className="relative flex min-h-0 min-w-0 flex-1"
-          data-chat-surface={isDraftHeroState ? "draft" : "conversation"}
-        >
-          {showEmptyThreadHero ? (
-            <>
-              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center pb-36">
-                <DraftHeroHeadline
-                  draftId={draftId}
-                  activeProjectRef={activeProjectRef}
-                  activeProjectTitle={activeProject?.title ?? null}
-                />
-              </div>
-            </>
-          ) : null}
+        <div className="relative flex min-h-0 min-w-0 flex-1">
           <ThreadFindCanvas
             findOptions={{
               skills: timelineSkills,
@@ -3396,10 +3384,8 @@ export default function ChatView(props: ChatViewProps) {
             />
             <div
               {...conversationArea}
-              className="app-content-surface relative flex min-h-0 flex-1 flex-col bg-background"
-              data-chat-canvas
+              className="relative flex min-h-0 flex-1 flex-col bg-background"
             >
-              {showEmptyThreadHero && showAsciiBackground ? <AsciiWaveBackground /> : null}
               <WorkspaceMutationIdContext value={workspaceMutationId}>
                 <ThreadTimeline
                   pendingApprovals={pendingApprovals}
@@ -3518,13 +3504,35 @@ export default function ChatView(props: ChatViewProps) {
               }}
               inert={isRevertingCheckpoint}
               data-chat-composer-overlay="true"
-              className="pointer-events-none absolute inset-x-0 bottom-0 z-20 pt-1.5 sm:pt-2"
+              className={
+                isDraftHeroState
+                  ? "pointer-events-none absolute inset-0 z-20 flex items-center [@media(max-height:34rem)]:items-end"
+                  : "pointer-events-none absolute inset-x-0 bottom-0 z-20 pt-1.5 sm:pt-2"
+              }
             >
               <div ref={draftHeroTransitionGroupRef} className="chat-composer-lane w-full">
                 <div
                   data-chat-composer-stack="true"
                   className="group/composer-stack pointer-events-auto relative z-10 mx-auto w-full max-w-(--chat-content-max-width)"
                 >
+                  {isDraftHeroState ? (
+                    <div className="absolute inset-x-0 bottom-full">
+                      <div
+                        className="pb-4 group-has-data-[composer-shoulder-tab]/composer-stack:pb-0"
+                        style={
+                          forceExpandedMobileComposer
+                            ? { viewTransitionName: MOBILE_DRAFT_HEADLINE_VIEW_TRANSITION_NAME }
+                            : undefined
+                        }
+                      >
+                        <DraftHeroHeadline
+                          draftId={draftId}
+                          activeProjectRef={activeProjectRef}
+                          activeProjectTitle={activeProject?.title ?? null}
+                        />
+                      </div>
+                    </div>
+                  ) : null}
                   <div
                     ref={draftHeroComposerAnchorRef}
                     className="relative z-10"
@@ -3727,12 +3735,7 @@ export default function ChatView(props: ChatViewProps) {
                             )}
                           </div>
                         </ComposerSurface.Host>
-                        <div
-                          className={cn(
-                            "min-h-0",
-                            isDraftHeroState ? "order-first mb-1" : "order-last",
-                          )}
-                        >
+                        <div className="min-h-0">
                           <div
                             data-terminal-open={terminalUiState.terminalOpen ? "true" : undefined}
                             className="relative z-0"

@@ -14,7 +14,6 @@ import {
   createLucideIcon,
   CalendarClockIcon,
   BracesIcon,
-  FoldersIcon,
   FileDiffIcon,
   FolderTreeIcon,
   GitBranchIcon,
@@ -98,7 +97,6 @@ const SETTINGS_SECTION_ICONS: Readonly<
   "/settings/chat": MessageSquareTextIcon,
   "/settings/diffs": FileDiffIcon,
   "/settings/projects": PanelsTopLeftIcon,
-  "/settings/project-groups": FoldersIcon,
   "/settings/keybindings": KeyboardIcon,
   "/settings/snap-shot": SnapShotIcon,
   "/settings/providers": BotIcon,
@@ -409,29 +407,29 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
                                 window.desktopBridge?.previewExtensions,
                             )
                             .map((to) => {
-                            const Icon = SETTINGS_SECTION_ICONS[to];
-                            const isActive = activePath === to || activePath.startsWith(`${to}/`);
-                            return (
-                              <SidebarMenuItem key={to}>
-                                <SidebarMenuButton
-                                  data-settings-section={to}
-                                  aria-current={isActive ? "page" : undefined}
-                                  isActive={isActive}
-                                  onClick={() => handleSectionClick(to)}
-                                >
-                                  <Icon />
-                                  <span
-                                    className={cn(
-                                      "truncate",
-                                      !compactSearchOpen && "max-md:sr-only",
-                                    )}
+                              const Icon = SETTINGS_SECTION_ICONS[to];
+                              const isActive = activePath === to || activePath.startsWith(`${to}/`);
+                              return (
+                                <SidebarMenuItem key={to}>
+                                  <SidebarMenuButton
+                                    data-settings-section={to}
+                                    aria-current={isActive ? "page" : undefined}
+                                    isActive={isActive}
+                                    onClick={() => handleSectionClick(to)}
                                   >
-                                    {m(SETTINGS_SECTION_LABELS[to])}
-                                  </span>
-                                </SidebarMenuButton>
-                              </SidebarMenuItem>
-                            );
-                          })}
+                                    <Icon />
+                                    <span
+                                      className={cn(
+                                        "truncate",
+                                        !compactSearchOpen && "max-md:sr-only",
+                                      )}
+                                    >
+                                      {m(SETTINGS_SECTION_LABELS[to])}
+                                    </span>
+                                  </SidebarMenuButton>
+                                </SidebarMenuItem>
+                              );
+                            })}
                         </SidebarMenu>
                       </div>
                     </div>

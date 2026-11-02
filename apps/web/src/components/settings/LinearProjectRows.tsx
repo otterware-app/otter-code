@@ -5,7 +5,7 @@ import {
   type LinearTeamProject,
   type ProjectId,
 } from "@t3tools/contracts";
-import { PlusIcon, XIcon } from "~/lib/icons";
+import { PlusIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { useEnvironmentSettings, useUpdateEnvironmentSettings } from "~/hooks/useSettings";
 import { useProjects } from "~/state/entities";

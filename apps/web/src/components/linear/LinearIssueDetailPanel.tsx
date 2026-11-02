@@ -20,7 +20,7 @@ import {
   PaperclipIcon,
   RefreshCwIcon,
   SettingsIcon,
-} from "~/lib/icons";
+} from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useCopyToClipboard } from "~/hooks/useCopyToClipboard";
 import { cn } from "~/lib/utils";
@@ -36,7 +36,6 @@ import { AssistantSelectionToolbar } from "../chat/AssistantSelectionToolbar";
 import {
   ANCHORED_COPY_TOAST_TIMEOUT_MS,
   showAnchoredCopyErrorToast,
-  showAnchoredCopySuccessToast,
 } from "../ui/anchoredCopyToast";
 import { Button } from "../ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "../ui/empty";
@@ -305,11 +304,10 @@ function IssueProperties({ detail }: { readonly detail: LinearIssueDetail }) {
     </dl>
   );
 }
-/** Copies the branch name, like the app's other copy icons: a check and an anchored toast. */
+/** Copies the branch name, like the app's other copy icons: a check, and an anchored toast on failure. */
 function BranchCopyButton({ branchName }: { readonly branchName: string }) {
   const ref = useRef<HTMLButtonElement>(null);
   const { copyToClipboard, isCopied } = useCopyToClipboard<void>({
-    onCopy: () => showAnchoredCopySuccessToast(ref),
     onError: (error) => showAnchoredCopyErrorToast(ref, error),
     timeout: ANCHORED_COPY_TOAST_TIMEOUT_MS,
     target: "branch name",

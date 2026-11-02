@@ -1,8 +1,4 @@
-import {
-  AuthPreviewOperateScope,
-  type EnvironmentId,
-  type ScopedProjectRef,
-} from "@t3tools/contracts";
+import { AuthPreviewOperateScope, type EnvironmentId } from "@t3tools/contracts";
 import type { AnyRouter } from "@tanstack/react-router";
 
 import { stackedThreadToast, toastManager } from "~/components/ui/toast";
@@ -17,7 +13,6 @@ import {
   readLastUsedProjectKey,
   resolveDefaultProjectRef,
 } from "../hooks/useHandleNewThread";
-import { readActiveProjectSpace } from "../hooks/useProjectSpace";
 import { createScratchProjectActions } from "../hooks/useScratchProject";
 import { getClientSettings } from "../hooks/useSettings";
 import { startNewThreadFromContext } from "../lib/chatThreadActions";
@@ -68,23 +63,9 @@ export function installChatRouteCommands(router: AnyRouter): () => void {
       ? selectActiveRightPanel(useRightPanelStore.getState().byThreadKey, threadRef) === "preview"
       : false;
   };
-  // New threads default to a project in the rail's space, and do not follow
-  // the open thread out of it. A space with no projects (an empty group, or
-  // Chats on a machine without a no-project home) leaves every project open.
-  const readSpaceProjects = () => {
-    const allProjects = readProjects();
-    const { projectFilter } = readActiveProjectSpace();
-    const spaceProjects = projectFilter === null ? allProjects : allProjects.filter(projectFilter);
-    return {
-      projects: spaceProjects.length > 0 ? spaceProjects : allProjects,
-      scoped: projectFilter !== null && spaceProjects.length > 0,
-    };
-  };
   const readThreadContext = () => {
     const lastUsedProjectKey = readLastUsedProjectKey();
     const target = readRouteTarget();
-    const { projects, scoped } = readSpaceProjects();
-    const spaceKeys = new Set(projects.map((project) => `${project.environmentId}:${project.id}`));
     const drafts = useComposerDraftStore.getState();
     const activeThread = target?.kind === "server" ? readThreadShell(target.threadRef) : null;
     const activeDraftThread = target
@@ -96,62 +77,32 @@ export function installChatRouteCommands(router: AnyRouter): () => void {
       activeDraftThread,
       activeThread: activeThread ?? undefined,
       defaultProjectRef: resolveDefaultProjectRef(
-        projects,
+        readProjects(),
         useUiStateStore.getState().projectOrder,
         lastUsedProjectKey,
         appAtomRegistry.get(defaultProjectFallbackReadyAtom(lastUsedProjectKey)),
       ),
       handleNewThread,
-      isProjectInSpace: scoped
-        ? (projectRef: ScopedProjectRef) =>
-            spaceKeys.has(`${projectRef.environmentId}:${projectRef.projectId}`)
-        : undefined,
     };
   };
-  // Grouped like the sidebar and counted within the rail's space, so the shortcut and the
-  // New thread button agree: a group of one project has no choice to make.
-  const readProjectGroups = () => {
-    const { projectFilter } = readActiveProjectSpace();
-    const projects = readProjects();
-    return buildSidebarProjectSnapshots({
-      projects: projectFilter === null ? projects : projects.filter(projectFilter),
+  // Grouped like the sidebar, so the shortcut and the New thread button agree.
+  const readProjectGroups = () =>
+    buildSidebarProjectSnapshots({
+      projects: readProjects(),
       groupScratchProjects: true,
       settings: selectProjectGroupingSettings(getClientSettings()),
       primaryEnvironmentId: appAtomRegistry.get(primaryEnvironmentIdAtom),
       resolveEnvironmentLabel: () => null,
     });
-  };
   const canOperatePreview = (environmentId: EnvironmentId) =>
     readEnvironmentScope(environmentId, AuthPreviewOperateScope);
-
-  const readScratchEnvironmentId = () => {
-    const { activeThread, activeDraftThread } = readThreadContext();
-    return scratch.scratchEnvironmentId(
-      activeThread?.environmentId ??
-        activeDraftThread?.environmentId ??
-        appAtomRegistry.get(primaryEnvironmentIdAtom),
-    );
-  };
 
   const claim = (event: KeyboardEvent) => {
     event.preventDefault();
     event.stopPropagation();
   };
 
-  // A space without projects has no project to start in: All starts a chat
-  // without one where the machine offers it; otherwise the user adds a project.
-  const startInEmptySpace = (event: KeyboardEvent) => {
-    const { space } = readActiveProjectSpace();
-    if (space.kind === "chats" || readProjectGroups().length > 0) return false;
-    claim(event);
-    const environmentId = space.kind === "all" ? readScratchEnvironmentId() : null;
-    if (environmentId !== null) void scratch.startScratchThread(environmentId);
-    else openCommandPalette({ open: "add-project" });
-    return true;
-  };
-
   const startNewLocal: CommandHandler = (event) => {
-    if (startInEmptySpace(event)) return;
     claim(event);
     // With no current or open project, such as when every project is archived, pick one.
     void startNewThreadFromContext(readThreadContext()).then((started) => {
@@ -171,23 +122,15 @@ export function installChatRouteCommands(router: AnyRouter): () => void {
     {
       "chat.newLocal": startNewLocal,
       "chat.newWithoutProject": (event) => {
-        const environmentId = readScratchEnvironmentId();
+        const { activeThread, activeDraftThread } = readThreadContext();
+        const environmentId = scratch.scratchEnvironmentId(
+          activeThread?.environmentId ?? activeDraftThread?.environmentId ?? null,
+        );
         if (environmentId === null) return;
         claim(event);
         void scratch.startScratchThread(environmentId);
       },
       "chat.new": (event) => {
-        if (startInEmptySpace(event)) return;
-        // In Chats, chat.new starts without a project too, unless the machine
-        // offers no such home; then it falls through to the ordinary new thread.
-        if (readActiveProjectSpace().space.kind === "chats") {
-          const environmentId = readScratchEnvironmentId();
-          if (environmentId !== null) {
-            claim(event);
-            void scratch.startScratchThread(environmentId);
-            return;
-          }
-        }
         const groups = readProjectGroups();
         if (
           !shouldCreateNewThreadInCurrentProject(

@@ -18,7 +18,6 @@ import type { ResolvedSettingsScope } from "./settingsScope";
 
 export type SettingsPath =
   | "/settings/projects"
-  | "/settings/project-groups"
   | "/settings/general"
   | "/settings/diagnostics"
   | "/settings/voice"
@@ -99,7 +98,6 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   "/settings/diagnostics": msg("Diagnostics"),
   "/settings/projects": msg("Projects"),
   "/settings/general": msg("General"),
-  "/settings/project-groups": msg("Project groups"),
   "/settings/appearance": msg("Appearance"),
   "/settings/chat": msg("Chat"),
   "/settings/diffs": msg("Diffs & pull requests"),
@@ -108,7 +106,7 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   "/settings/providers": msg("Providers"),
   "/settings/threads": msg("Threads"),
   "/settings/browser": msg("Browser"),
-  "/settings/extensions": msg("Browser extensions"),
+  "/settings/extensions": msg("Extensions"),
   "/settings/devices": msg("Devices"),
   "/settings/scheduled-tasks": msg("Scheduled tasks"),
   "/settings/source-control": msg("Source control"),
@@ -158,7 +156,6 @@ export const SETTINGS_NAV_GROUPS: ReadonlyArray<{
     heading: msg("Code"),
     paths: [
       "/settings/projects",
-      "/settings/project-groups",
       "/settings/source-control",
       "/settings/code-intelligence",
       "/settings/worktrees",
@@ -353,47 +350,6 @@ export const SETTINGS_SEARCH_ITEMS = [
     title: "Diff colors",
     to: "/settings/diffs",
     searchTerms: ["red green blue orange additions deletions changes counts palette colorblind"],
-  },
-  {
-    id: "window-material",
-    title: "Window material",
-    to: "/settings/appearance",
-    searchTerms: ["transparency translucent glass solid desktop"],
-    desktopOnly: true,
-    macOnly: true,
-  },
-  {
-    id: "window-sidebar-only",
-    title: "Rail only",
-    to: "/settings/appearance",
-    targetId: "window-material",
-    searchTerms: ["navigation rail sidebar transparency translucent window glass"],
-    desktopOnly: true,
-    macOnly: true,
-  },
-  {
-    id: "setting-window-opacity",
-    title: "Opacity",
-    to: "/settings/appearance",
-    targetId: "window-material",
-    searchTerms: ["window transparency translucent glass desktop"],
-    desktopOnly: true,
-    macOnly: true,
-  },
-  {
-    id: "setting-window-blur",
-    title: "Blur",
-    to: "/settings/appearance",
-    targetId: "window-material",
-    searchTerms: ["window transparency translucent glass desktop"],
-    desktopOnly: true,
-    macOnly: true,
-  },
-  {
-    id: "ascii-background",
-    title: "Animated background",
-    to: "/settings/appearance",
-    searchTerms: ["new chats wave ascii animation"],
   },
   {
     id: "chat-width",
@@ -1191,12 +1147,6 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["pull request merge squash rebase last selected"],
   },
   {
-    id: "project-groups",
-    title: "Spaces",
-    to: "/settings/project-groups",
-    searchTerms: ["rail spaces workspaces organize group projects repositories"],
-  },
-  {
     id: "browser-extensions",
     title: "Browser extensions",
     to: "/settings/extensions",
@@ -1484,7 +1434,6 @@ const SEARCH_ITEMS_BY_ID = new Map(SETTINGS_SEARCH_ITEMS.map((item) => [item.id,
 const SETTINGS_CATEGORY_SCOPES: Readonly<Record<SettingsPath, SettingsSearchScope | null>> = {
   "/settings/diagnostics": "environment",
   "/settings/projects": "project",
-  "/settings/project-groups": null,
   "/settings/general": null,
   "/settings/voice": null,
   "/settings/appearance": null,

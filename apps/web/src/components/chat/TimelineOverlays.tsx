@@ -1,4 +1,5 @@
-import { ChevronDownIcon, PaperclipIcon } from "~/lib/icons";
+import { ChevronDownIcon, PaperclipIcon } from "lucide-react";
+
 import { Button } from "../ui/button";
 
 export function WorkspaceFileDropOverlay() {

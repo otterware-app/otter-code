@@ -162,7 +162,7 @@ export const PanelAnimationDurationMs = Schema.Int.check(
   }),
 );
 export type PanelAnimationDurationMs = typeof PanelAnimationDurationMs.Type;
-const DEFAULT_PANEL_ANIMATION_DURATION_MS: PanelAnimationDurationMs = 125;
+const DEFAULT_PANEL_ANIMATION_DURATION_MS: PanelAnimationDurationMs = 0;
 
 export const MIN_INTERFACE_FONT_SIZE = 12;
 export const MAX_INTERFACE_FONT_SIZE = 20;
@@ -206,7 +206,7 @@ export const EnvironmentIdentificationMode = Schema.Literals([
   "none",
 ]);
 export type EnvironmentIdentificationMode = typeof EnvironmentIdentificationMode.Type;
-export const DEFAULT_ENVIRONMENT_IDENTIFICATION_MODE: EnvironmentIdentificationMode = "pill";
+export const DEFAULT_ENVIRONMENT_IDENTIFICATION_MODE: EnvironmentIdentificationMode = "artwork";
 
 export const SnapShotKeyChord = KeybindingShortcut.check(
   Schema.makeFilter(
@@ -398,26 +398,6 @@ export const VoiceTranscriptionDestination = Schema.Union([
 export type VoiceTranscriptionDestination = typeof VoiceTranscriptionDestination.Type;
 
 export const ClientSettingsSchema = Schema.Struct({
-  railShortcuts: Schema.Array(TrimmedNonEmptyString).pipe(
-    Schema.withDecodingDefault(Effect.succeed([])),
-  ),
-  railItemOrder: Schema.Array(TrimmedNonEmptyString).pipe(
-    Schema.withDecodingDefault(Effect.succeed([])),
-  ),
-  hiddenRailItems: Schema.Array(TrimmedNonEmptyString).pipe(
-    Schema.withDecodingDefault(Effect.succeed([])),
-  ),
-  showAsciiBackground: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
-  windowMaterial: Schema.Literals(["solid", "translucent"]).pipe(
-    Schema.withDecodingDefault(Effect.succeed("translucent" as const)),
-  ),
-  windowSidebarOnly: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(false))),
-  windowOpacity: Schema.Int.check(Schema.isBetween({ minimum: 15, maximum: 100 })).pipe(
-    Schema.withDecodingDefault(Effect.succeed(90)),
-  ),
-  windowBlur: Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 64 })).pipe(
-    Schema.withDecodingDefault(Effect.succeed(64)),
-  ),
   notificationMode: NotificationMode.pipe(
     Schema.withDecodingDefault(Effect.succeed("off" as const)),
   ),
@@ -432,6 +412,7 @@ export const ClientSettingsSchema = Schema.Struct({
   appearanceContrast: AppearanceContrast.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_APPEARANCE_CONTRAST)),
   ),
+  // Zero avoids per-frame layout work from width/height transitions.
   panelAnimationDurationMs: PanelAnimationDurationMs.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_PANEL_ANIMATION_DURATION_MS)),
   ),
@@ -558,9 +539,7 @@ export const ClientSettingsSchema = Schema.Struct({
   threadDetailsItems: Schema.Record(Schema.String, Schema.Boolean).pipe(
     Schema.withDecodingDefault(Effect.succeed({})),
   ),
-  sidebarWorkingShelfEnabled: Schema.Boolean.pipe(
-    Schema.withDecodingDefault(Effect.succeed(false)),
-  ),
+  sidebarWorkingShelfEnabled: Schema.Boolean.pipe(Schema.withDecodingDefault(Effect.succeed(true))),
   sidebarProjectGroupingMode: SidebarProjectGroupingMode.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_SIDEBAR_PROJECT_GROUPING_MODE)),
   ),
@@ -1394,17 +1373,6 @@ export const CloudSpeechCredentials = Schema.Struct({
   xai: CloudSpeechCredential,
   openrouter: CloudSpeechCredential,
 });
-/**
- * A named set of projects the rail offers as one space. Members are logical
- * project keys, so one repository on several machines is one member.
- */
-export const ProjectGroupSetting = Schema.Struct({
-  id: TrimmedNonEmptyString,
-  name: TrimmedNonEmptyString,
-  icon: Schema.optionalKey(TrimmedNonEmptyString),
-  projectKeys: Schema.Array(TrimmedNonEmptyString),
-});
-export type ProjectGroupSetting = typeof ProjectGroupSetting.Type;
 
 export const ServerSettings = Schema.Struct({
   // Null means unmigrated; empty is authoritative and must not resurrect cleared preferences.
@@ -1631,14 +1599,6 @@ export const ServerSettings = Schema.Struct({
     Schema.withDecodingDefault(Effect.succeed({})),
   ),
   linear: LinearSettings.pipe(Schema.withDecodingDefault(Effect.succeed({}))),
-  /**
-   * The rail's project groups, in rail order. A user preference that clients
-   * write to every environment (see `sharedSettings.ts`), so each machine and
-   * the hosted app show the same groups.
-   */
-  railProjectGroups: Schema.Array(ProjectGroupSetting).pipe(
-    Schema.withDecodingDefault(Effect.succeed([])),
-  ),
 
   /** Sent by the Usage tab with each summary request to this environment; edit in settings.json. Invalid values are ignored. */
   usageModelFilter: ForwardCompatibleOptional(UsageModelFilter),
@@ -2032,8 +1992,6 @@ export const ServerSettingsPatch = Schema.Struct({
       promptTemplate: Schema.optionalKey(Schema.String),
     }),
   ),
-  /** Replaces the whole list. */
-  railProjectGroups: Schema.optionalKey(Schema.Array(ProjectGroupSetting)),
 });
 export type ServerSettingsPatch = typeof ServerSettingsPatch.Type;
 
@@ -2080,16 +2038,6 @@ export function requiredScopesForProjectMutation(
 }
 
 export const ClientSettingsPatch = Schema.Struct({
-  railShortcuts: Schema.optionalKey(Schema.Array(TrimmedNonEmptyString)),
-  railItemOrder: Schema.optionalKey(Schema.Array(TrimmedNonEmptyString)),
-  hiddenRailItems: Schema.optionalKey(Schema.Array(TrimmedNonEmptyString)),
-  showAsciiBackground: Schema.optionalKey(Schema.Boolean),
-  windowMaterial: Schema.optionalKey(Schema.Literals(["solid", "translucent"])),
-  windowSidebarOnly: Schema.optionalKey(Schema.Boolean),
-  windowOpacity: Schema.optionalKey(
-    Schema.Int.check(Schema.isBetween({ minimum: 15, maximum: 100 })),
-  ),
-  windowBlur: Schema.optionalKey(Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 64 }))),
   notificationMode: Schema.optionalKey(NotificationMode),
   inAppNotificationsEnabled: Schema.optionalKey(Schema.Boolean),
   diffColorScheme: Schema.optionalKey(DiffColorScheme),

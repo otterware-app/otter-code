@@ -1,14 +1,4 @@
 import { useAtomMount } from "@effect/atom-react";
-import {
-  CheckIcon,
-  CircleAlertIcon,
-  CircleCheckIcon,
-  GitBranchIcon,
-  NewThreadIcon as SquarePenIcon,
-  TerminalIcon,
-  Undo2Icon,
-  XIcon,
-} from "~/lib/icons";
 import { ThreadHoverCard, ThreadHoverCardPopup } from "../ThreadHoverCard";
 import { ThreadTerminalStatusButton } from "../ThreadStatusIndicators";
 import { discardComposerDraft } from "../../lib/discardComposerDraft";
@@ -47,14 +37,22 @@ import {
   AlarmClockIcon,
   AlarmClockOffIcon,
   ArrowRightLeftIcon,
+  CheckIcon,
+  CircleAlertIcon,
+  CircleCheckIcon,
   CircleDashedIcon,
   CircleDotDashedIcon,
   ClockIcon,
+  GitBranchIcon,
   MessageCircleQuestionIcon,
   PinIcon,
   PinOffIcon,
   ShieldQuestionIcon,
+  SquarePenIcon,
+  TerminalIcon,
+  Undo2Icon,
   UserRoundIcon,
+  XIcon,
 } from "lucide-react";
 import {
   memo,

@@ -20,7 +20,7 @@ import {
   PaperclipIcon,
   RefreshCwIcon,
   SettingsIcon,
-} from "~/lib/icons";
+} from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useCopyToClipboard } from "~/hooks/useCopyToClipboard";
 import { cn } from "~/lib/utils";

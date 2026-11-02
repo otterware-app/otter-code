@@ -12,7 +12,7 @@ import {
   type LanguageResult,
 } from "@t3tools/contracts";
 import { squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";
-import { XIcon as X } from "~/lib/icons";
+import { XIcon as X } from "lucide-react";
 import { useEffect, useRef, useState, type RefObject } from "react";
 
 import { Button } from "~/components/ui/button";

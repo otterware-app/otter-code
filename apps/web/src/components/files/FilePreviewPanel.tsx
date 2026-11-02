@@ -45,12 +45,8 @@ import {
   squashAtomCommandFailure,
 } from "@t3tools/client-runtime/state/runtime";
 import { mediaFileReference } from "@t3tools/client-runtime/media-reference";
-import { FolderTree, WrapTextIcon } from "lucide-react";
-import {
-  ArrowLeftIcon as ArrowLeft,
-  ArrowRightIcon as ArrowRight,
-  GlobeIcon as Globe2,
-} from "~/lib/icons";
+import { FolderTree, Globe2, WrapTextIcon } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Code2, Eye, Table2 } from "lucide";
 import * as Schema from "effect/Schema";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";

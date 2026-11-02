@@ -1,6 +1,10 @@
-import { ChevronRightIcon, EllipsisIcon } from "~/lib/icons";
 import { SessionPermissions } from "./SessionPermissions";
-import { ChevronsLeftRightEllipsisIcon, RouteIcon } from "lucide-react";
+import {
+  ChevronRightIcon,
+  ChevronsLeftRightEllipsisIcon,
+  EllipsisIcon,
+  RouteIcon,
+} from "lucide-react";
 import { useAtomValue } from "@effect/atom-react";
 import { useEffect, useEffectEvent, useState } from "react";
 import {

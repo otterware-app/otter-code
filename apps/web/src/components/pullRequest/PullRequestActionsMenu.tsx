@@ -1,12 +1,3 @@
-import {
-  ArrowUpRightIcon,
-  BookOpenIcon,
-  CopyIcon,
-  HammerIcon,
-  LinkIcon,
-  MoreHorizontalIcon,
-  RotateCcwIcon,
-} from "~/lib/icons";
 import { useAtomValue } from "@effect/atom-react";
 import {
   canEditPullRequestMaintainerEdits,
@@ -23,7 +14,18 @@ import type {
   PullRequestRef,
   ScopedThreadRef,
 } from "@t3tools/contracts";
-import { MessageCircleQuestionIcon, SparklesIcon, Trash2Icon } from "lucide-react";
+import {
+  ArrowUpRightIcon,
+  BookOpenIcon,
+  CopyIcon,
+  HammerIcon,
+  LinkIcon,
+  MessageCircleQuestionIcon,
+  MoreHorizontalIcon,
+  RotateCcwIcon,
+  SparklesIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { useId, useState } from "react";
 
 import { shortcutLabelForCommand } from "~/keybindings";

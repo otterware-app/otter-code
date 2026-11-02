@@ -1,6 +1,6 @@
 import { SessionPermissions } from "./SessionPermissions";
 import { useSearch } from "@tanstack/react-router";
-import { ChevronRightIcon, EllipsisIcon } from "~/lib/icons";
+import { ChevronRightIcon, EllipsisIcon } from "lucide-react";
 import { useAtomValue } from "@effect/atom-react";
 import { type ReactNode, useState } from "react";
 import {

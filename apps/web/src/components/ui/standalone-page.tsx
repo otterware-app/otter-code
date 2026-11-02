@@ -1,7 +1,5 @@
 import type { ReactNode } from "react";
 
-import { T3Wordmark } from "../T3Wordmark";
-
 export function StandalonePage({ children }: { readonly children: ReactNode }) {
   return (
     // The page owns scrolling because root cannot scroll; safe centering keeps oversized cards top-aligned.
@@ -22,14 +20,8 @@ export function StandalonePageHeader({
 }) {
   return (
     <>
-      <div className="flex items-baseline justify-between gap-3 text-muted-foreground">
-        <span className="flex items-baseline gap-1.5" role="img" aria-label="Otter Code">
-          <T3Wordmark className="h-3 w-auto shrink-0 text-foreground" aria-hidden />
-          <span className="text-lg font-medium tracking-tight">Code</span>
-        </span>
-        {context ? <span className="text-sm">{context}</span> : null}
-      </div>
-      <h1 className="mt-6 text-xl leading-tight font-semibold">{title}</h1>
+      {context ? <div className="mb-6 text-sm text-muted-foreground">{context}</div> : null}
+      <h1 className="text-xl leading-tight font-semibold">{title}</h1>
       <p className="mt-2 text-sm text-muted-foreground">{description}</p>
     </>
   );

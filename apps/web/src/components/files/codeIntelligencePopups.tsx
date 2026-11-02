@@ -21,7 +21,7 @@ import {
   InfoIcon as Info,
   TriangleAlertIcon as TriangleAlert,
   type LucideIcon,
-} from "~/lib/icons";
+} from "lucide-react";
 import { memo, Suspense, use, type CSSProperties, type ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import { useTheme } from "~/hooks/useTheme";

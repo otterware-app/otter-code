@@ -1,4 +1,3 @@
-import { GitBranchIcon, MessageCircleIcon, TriangleAlertIcon } from "~/lib/icons";
 import type {
   EnvironmentId,
   OrchestrationV2PendingBackgroundTask,
@@ -18,9 +17,12 @@ import * as DateTime from "effect/DateTime";
 import {
   CircleDashedIcon,
   CircleStopIcon,
+  GitBranchIcon,
+  MessageCircleIcon,
   ShieldQuestionIcon,
   TargetIcon,
   TerminalIcon,
+  TriangleAlertIcon,
 } from "lucide-react";
 import { Fragment } from "react";
 import { tickTextContent } from "~/lib/tickTextContent";

@@ -6,7 +6,7 @@ import {
   ListTodoIcon,
   MoreHorizontalIcon,
   PlusIcon,
-} from "~/lib/icons";
+} from "lucide-react";
 import { writeTextToClipboard } from "~/hooks/useCopyToClipboard";
 import { useLinearIssueLinking } from "~/hooks/useLinearIssueLinking";
 import { cn } from "~/lib/utils";

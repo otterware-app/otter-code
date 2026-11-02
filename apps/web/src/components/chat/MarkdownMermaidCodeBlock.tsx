@@ -1,4 +1,4 @@
-import { CodeIcon, WorkflowIcon } from "~/lib/icons";
+import { CodeIcon, WorkflowIcon } from "lucide-react";
 import { Suspense, use, useState, type ReactNode } from "react";
 
 import { RenderErrorBoundary } from "../RenderErrorBoundary";

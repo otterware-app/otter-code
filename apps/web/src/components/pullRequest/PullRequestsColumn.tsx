@@ -1,6 +1,5 @@
-import { SearchIcon } from "~/lib/icons";
 import type { PullRequestInvolvement, PullRequestListState } from "@t3tools/contracts";
-import { Plug2Icon } from "lucide-react";
+import { Plug2Icon, SearchIcon } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 
 import { isElectron } from "~/env";
@@ -164,14 +163,14 @@ export function PullRequestsColumn({
       {...contentArea}
       inert={maximizedAway}
       className={cn(
-        "app-content-surface @container/pr-list flex min-h-0 min-w-0 flex-col overflow-x-hidden bg-background",
+        "@container/pr-list flex min-h-0 min-w-0 flex-col overflow-x-hidden bg-background",
         maximizedAway ? "w-0 flex-none" : "flex-1",
       )}
     >
       <WorkspacePageHeader
         electron={isElectron}
         reserveNativeControls={!rightPanelOpen}
-        className="relative"
+        className="relative bg-background"
       >
         {titlebarControls}
         {condensed ? (

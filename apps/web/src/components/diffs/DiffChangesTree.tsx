@@ -6,7 +6,7 @@ import {
   ChevronRightIcon,
   FolderIcon,
   FolderOpenIcon,
-} from "~/lib/icons";
+} from "lucide-react";
 import { memo, useEffect, useRef, useState, type CSSProperties } from "react";
 import { cn } from "~/lib/utils";
 import { DiffStatLabel } from "../chat/DiffStatLabel";

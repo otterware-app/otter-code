@@ -52,6 +52,20 @@
         // Keep this small boot-time copy in sync with the built-in palettes so
         // the selected theme is visible before the app has mounted.
         const BUILT_IN_THEME_PALETTES = {
+          "one-dark-pro": {
+            dark: {
+              background: "#16191d",
+              foreground: "#abb2bf",
+              accent: "#4d78cc",
+              chrome: "#16191d",
+            },
+            light: {
+              background: "#fafafa",
+              foreground: "#383a42",
+              accent: "#4078f2",
+              chrome: "#fafafa",
+            },
+          },
           "t3-chat": {
             light: {
               background: "oklch(0.982446 0.010114 325.653)",
@@ -133,6 +147,7 @@
           "system",
           "light",
           "dark",
+          "one-dark-pro",
           "t3-chat",
           "grove",
           "ocean",
@@ -214,7 +229,8 @@
         };
 
         try {
-          const storedTheme = window.localStorage.getItem("t3code:theme");
+          const DEFAULT_THEME_ID = "one-dark-pro";
+          const rawStoredTheme = window.localStorage.getItem("t3code:theme");
           const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
           const LEGACY_THEME_IDS = {
             "t3-chat-dark": "t3-chat",
@@ -223,27 +239,38 @@
             "t3-ember": "ember",
             "t3-iris": "iris",
           };
-          const isLegacyT3ChatDark = storedTheme === "t3-chat-dark";
-          const themeId =
-            storedTheme === null ? "" : (LEGACY_THEME_IDS[storedTheme] ?? storedTheme);
-          const legacyMode = isLegacyT3ChatDark ? "dark" : null;
-          const builtInModes = BUILT_IN_THEME_MODES[themeId] ?? null;
-          const customTheme = builtInModes ? null : findCustomTheme(themeId);
-          const themeModes =
-            builtInModes ??
-            (customTheme
-              ? ["light", "dark"].filter(
-                  (mode) => mode === customTheme.appearance || customTheme.variants?.[mode],
-                )
-              : null);
+          const resolveStoredTheme = (value) => {
+            const id = LEGACY_THEME_IDS[value] ?? value;
+            const builtIn = BUILT_IN_THEME_MODES[id] ?? null;
+            const custom = builtIn ? null : findCustomTheme(id);
+            const modes =
+              builtIn ??
+              (custom
+                ? ["light", "dark"].filter(
+                    (mode) => mode === custom.appearance || custom.variants?.[mode],
+                  )
+                : null);
+            const known =
+              value === "light" || value === "dark" || value === "system" || modes !== null;
+            return known ? { theme: value, id, builtIn, custom, modes } : null;
+          };
+          // Mirrors the runtime: missing or unknown preferences use the default theme.
+          const resolvedStoredTheme =
+            (rawStoredTheme === null ? null : resolveStoredTheme(rawStoredTheme)) ??
+            resolveStoredTheme(DEFAULT_THEME_ID);
           const isKnownTheme =
-            storedTheme === "light" ||
-            storedTheme === "dark" ||
-            storedTheme === "system" ||
-            themeModes !== null;
-          const theme = isKnownTheme && storedTheme ? storedTheme : "system";
-          const isThemed = isKnownTheme && themeModes !== null;
-          const baseAppearance = customTheme ? customTheme.appearance : "light";
+            rawStoredTheme !== null && resolvedStoredTheme.theme === rawStoredTheme;
+          const theme = resolvedStoredTheme.theme;
+          const themeId = resolvedStoredTheme.id;
+          const builtInModes = resolvedStoredTheme.builtIn;
+          const customTheme = resolvedStoredTheme.custom;
+          const themeModes = resolvedStoredTheme.modes;
+          const legacyMode = theme === "t3-chat-dark" ? "dark" : null;
+          const isThemed = themeModes !== null;
+          // Built-in palettes list their base appearance first.
+          const baseAppearance = customTheme
+            ? customTheme.appearance
+            : (builtInModes?.[0] ?? "light");
           const systemMode = prefersDark ? "dark" : "light";
           const storedAppearanceMode = window.localStorage.getItem(
             THEME_APPEARANCE_MODE_STORAGE_KEY,
@@ -349,7 +376,7 @@
           }
           // A resolved half is a selection even when the base theme is gone
           // (deleting the base leaves the mix pointing at a real theme).
-          const hasSelection = halfThemeId !== null || (isKnownTheme && storedTheme !== null);
+          const hasSelection = halfThemeId !== null || isKnownTheme;
           if (hasSelection) {
             document.documentElement.dataset.themeSelected = "true";
           } else {

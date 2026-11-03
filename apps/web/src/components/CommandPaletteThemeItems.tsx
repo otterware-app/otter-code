@@ -41,9 +41,11 @@ function useThemeCards() {
   const customThemes = useCustomThemes();
   const environmentThemes = useEnvironmentThemeDefinitions();
   const seen = new Set<string>();
+  const [leadingTheme, ...builtInThemes] = BUILT_IN_THEMES;
   return [
+    ...(leadingTheme ? [getThemeCardDefinition(leadingTheme)] : []),
     ...STANDARD_THEME_CARDS.map((card) => ({ ...card, id: null })),
-    ...[...BUILT_IN_THEMES, ...customThemes, ...environmentThemes]
+    ...[...builtInThemes, ...customThemes, ...environmentThemes]
       .filter((definition) => {
         if (seen.has(definition.id)) return false;
         seen.add(definition.id);

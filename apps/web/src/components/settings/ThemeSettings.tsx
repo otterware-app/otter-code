@@ -27,6 +27,7 @@ import {
   GROVE_THEME,
   IRIS_THEME,
   OCEAN_THEME,
+  ONE_DARK_PRO_THEME,
 } from "../../themePalette";
 import {
   AlertDialog,
@@ -53,6 +54,9 @@ import {
   type ThemeMode,
 } from "./ThemePreviewCircles";
 import { ThemeWireframe } from "./ThemeWireframe";
+
+// Listed before the standard T3 Code card.
+const LEADING_MAINTAINER_THEMES: ReadonlyArray<ThemeDefinition> = [ONE_DARK_PRO_THEME];
 
 const MAINTAINER_THEMES: ReadonlyArray<ThemeDefinition> = [
   T3_CHAT_THEME,
@@ -716,12 +720,35 @@ export function ThemeLibrary({
       .entries(),
   ];
 
+  const renderMaintainerCard = (maintainerTheme: ThemeDefinition) => {
+    const card = getThemeCardDefinition(maintainerTheme);
+    return (
+      <ThemeLibraryCard
+        activeModes={pickedModesFor(maintainerTheme.id)}
+        isActive={false}
+        key={maintainerTheme.id}
+        onDuplicate={() =>
+          openThemeEditor({
+            editingThemeId: null,
+            seedThemeId: maintainerTheme.id,
+            seedName: `${maintainerTheme.label} copy`,
+            initialAppearance,
+          })
+        }
+        onUse={() => persistTheme(maintainerTheme.id)}
+        onUseMode={handlePairPick(maintainerTheme.id)}
+        theme={card}
+      />
+    );
+  };
+
   const renderPairGrid = () => (
     <TooltipProvider>
       <div
         className="grid w-full gap-2"
         style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 16rem), 1fr))" }}
       >
+        {LEADING_MAINTAINER_THEMES.map(renderMaintainerCard)}
         {STANDARD_THEME_CARDS.map((standardTheme) => (
           <ThemeLibraryCard
             activeModes={pickedModesFor(null)}
@@ -740,27 +767,7 @@ export function ThemeLibrary({
             theme={standardTheme}
           />
         ))}
-        {MAINTAINER_THEMES.map((maintainerTheme) => {
-          const card = getThemeCardDefinition(maintainerTheme);
-          return (
-            <ThemeLibraryCard
-              activeModes={pickedModesFor(maintainerTheme.id)}
-              isActive={false}
-              key={maintainerTheme.id}
-              onDuplicate={() =>
-                openThemeEditor({
-                  editingThemeId: null,
-                  seedThemeId: maintainerTheme.id,
-                  seedName: `${maintainerTheme.label} copy`,
-                  initialAppearance,
-                })
-              }
-              onUse={() => persistTheme(maintainerTheme.id)}
-              onUseMode={handlePairPick(maintainerTheme.id)}
-              theme={card}
-            />
-          );
-        })}
+        {MAINTAINER_THEMES.map(renderMaintainerCard)}
         {environmentThemes
           .filter(
             // Saved themes win id resolution; show only their card to avoid duplicate keys.

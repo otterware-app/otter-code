@@ -1063,9 +1063,6 @@ importers:
       '@t3tools/shared':
         specifier: workspace:*
         version: link:../../packages/shared
-      '@tabler/icons-react':
-        specifier: 3.44.0
-        version: 3.44.0(react@19.3.0)
       '@tanstack/react-pacer':
         specifier: ^0.19.4
         version: 0.19.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -6274,11 +6271,6 @@ packages:
     peerDependencies:
       react: '>= 16.5.1'
       react-native-svg: 15.16.1
-
-  '@tabler/icons-react@3.44.0':
-    resolution: {integrity: sha512-8+rvzBbVm/1Z3sG3x7GUNAaxIKxwgz8xaMhRs23nrCnMTKRFAhEC+82zAIFeAA0seXdrAGX5HFCkaLpGK2rVHg==}
-    peerDependencies:
-      react: '>= 16'
 
   '@tabler/icons@3.44.0':
     resolution: {integrity: sha512-Wn0AOZG9sg0L+bjfMqq4eNhC6pQjIrk94LvvWYNYkY8KH8wC3YILRzQlrnVJc4FUeMxH/AK97QsYCX35H3LndA==}
@@ -15533,11 +15525,6 @@ snapshots:
       '@tabler/icons': 3.44.0
       react: 19.3.0
       react-native-svg: 15.16.1(patch_hash=110f9243ffad03654ce40dd1cdb09f01af16b8fa2ccb2b2cd3d62e682c180399)(react-native@0.88.1(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.7(supports-color@8.1.1))(bufferutil@4.1.0)(supports-color@8.1.1)(utf-8-validate@6.0.6))(@types/react@19.3.0)(bufferutil@4.1.0)(react@19.3.0)(supports-color@8.1.1)(utf-8-validate@6.0.6))(react@19.3.0)
-
-  '@tabler/icons-react@3.44.0(react@19.3.0)':
-    dependencies:
-      '@tabler/icons': 3.44.0
-      react: 19.3.0
 
   '@tabler/icons@3.44.0': {}
 

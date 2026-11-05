@@ -340,12 +340,12 @@ const SETTINGS_SCREENS = {
   SettingsAuth: createNativeStackScreen({
     screen: SettingsAuthRouteScreen,
     linking: "settings/auth",
-    options: { ...SETTINGS_PAGE_OPTIONS, title: "Otter account" },
+    options: settingsPage("Otter account"),
   }),
   SettingsWaitlist: createNativeStackScreen({
     screen: SettingsAuthRouteScreen,
     linking: "settings/waitlist",
-    options: { ...SETTINGS_PAGE_OPTIONS, title: "Otter account" },
+    options: settingsPage("Otter account"),
   }),
 };
 

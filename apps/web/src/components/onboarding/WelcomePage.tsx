@@ -39,7 +39,6 @@ import {
 import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
 
 import { TYPOGRAPHY_ADVANCED_STORAGE_KEY } from "../../appearanceFonts";
-import { MOBILE_APP_URL } from "../../branding";
 import { isElectron } from "../../env";
 import { useLocalStorage } from "../../hooks/useLocalStorage";
 import { usePersistEnvironmentProviderInstanceMutation } from "../../hooks/useSettings";
@@ -104,7 +103,6 @@ import { ACPRegistryIcon } from "../Icons";
 import { Button } from "../ui/button";
 import { Checkbox } from "../ui/checkbox";
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "../ui/collapsible";
-import { QRCodeSvg } from "../ui/qr-code";
 import { Tooltip, TooltipTrigger, TooltipPopup } from "../ui/tooltip";
 import { ScrollArea } from "../ui/scroll-area";
 import { SidebarInset } from "../ui/sidebar";
@@ -906,22 +904,12 @@ function PhoneSection({ environmentId }: { readonly environmentId: EnvironmentId
           <div className="flex items-center gap-8 pt-2 pb-3 pl-8">
             <ol className="min-w-0 flex-1 space-y-5">
               <PhoneStep step={1}>
-                <p className="text-sm text-foreground">Scan with your phone to get the app.</p>
+                <p className="text-sm text-foreground">Store downloads are not available yet.</p>
               </PhoneStep>
               <PhoneStep step={2}>
                 <PhoneConnectLink environmentId={environmentId} />
               </PhoneStep>
             </ol>
-            {/* One code for both stores: the link opens the store that matches the phone. */}
-            <div className="shrink-0 rounded-lg bg-white p-1.5">
-              <QRCodeSvg
-                value={MOBILE_APP_URL}
-                size={124}
-                level="M"
-                marginSize={2}
-                title="Otter Code app for iPhone and Android"
-              />
-            </div>
           </div>
         </CollapsiblePanel>
       </Collapsible>

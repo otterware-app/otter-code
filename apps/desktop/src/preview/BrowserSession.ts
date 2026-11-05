@@ -62,8 +62,13 @@ const externalProtocolPromptUrl = (rawUrl: string | undefined): string | null =>
   }
 };
 
-// Teams sends Electron User-Agents to an error page before sign-in. Electron allows one listener per session.
-const TEAMS_URL_PATTERNS = ["https://teams.cloud.microsoft/*", "https://teams.microsoft.com/*"];
+// Teams sends Electron User-Agents to an error page before sign-in, and Google sign-in serves them a
+// lite page without passkeys. Electron allows one listener per session.
+const NO_ELECTRON_TOKEN_URL_PATTERNS = [
+  "https://accounts.google.com/*",
+  "https://teams.cloud.microsoft/*",
+  "https://teams.microsoft.com/*",
+];
 
 const MAX_PROMPT_URL_LENGTH = 300;
 
@@ -614,16 +619,6 @@ export const make = Effect.gen(function* BrowserSessionMake() {
               },
             );
           };
-          // Rewriting Electron's native User-Agent makes Turnstile fail integrity checks with error 600010.
-          // Only Google sign-in drops the Electron token: otherwise it serves a lite page without passkeys.
-          const googleUserAgent = browserSession.getUserAgent().replace(/ Electron\/\S+/, "");
-          browserSession.webRequest.onBeforeSendHeaders(
-            { urls: ["https://accounts.google.com/*"] },
-            (details, callback) =>
-              callback({
-                requestHeaders: { ...details.requestHeaders, "User-Agent": googleUserAgent },
-              }),
-          );
           browserSession.setPermissionRequestHandler(
             (webContents, permission, callback, details) => {
               if (permission === "openExternal") {
@@ -650,8 +645,9 @@ export const make = Effect.gen(function* BrowserSessionMake() {
               ? clipboardReadDecisions.get(permissionOrigin(requestingOrigin) ?? "") === true
               : ALLOWED_PREVIEW_PERMISSIONS.has(permission),
           );
+          // Rewriting Electron's native User-Agent makes Turnstile fail integrity checks with error 600010.
           browserSession.webRequest.onBeforeSendHeaders(
-            { urls: TEAMS_URL_PATTERNS },
+            { urls: NO_ELECTRON_TOKEN_URL_PATTERNS },
             ({ requestHeaders }, callback) => {
               const userAgent = Object.entries(requestHeaders).find(
                 ([name]) => name.toLowerCase() === "user-agent",

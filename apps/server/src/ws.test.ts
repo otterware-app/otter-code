@@ -20,6 +20,7 @@ import {
   RunId,
   SourceControlRepositoryError,
   WS_METHODS,
+  OTTER_WS_RPC_TAGS,
   WsRpcGroup,
   WsServerRefreshProvidersRpc,
   WsSubscribeServerConfigRpc,
@@ -1163,7 +1164,7 @@ it.effect("access changes made while the snapshot loads reach the client after i
       );
     const revokedElsewhere = AuthSessionId.make("revoked-elsewhere");
     const responses = yield* Queue.unbounded<AuthAccessStreamEvent>();
-    const server = yield* RpcServer.makeNoSerialization(WsRpcGroup, {
+    const server = yield* RpcServer.makeNoSerialization(WsRpcGroup.omit(...OTTER_WS_RPC_TAGS), {
       ...WS_RPC_SERVER_OPTIONS,
       onFromServer: (response) =>
         response._tag === "Chunk"
@@ -1827,7 +1828,7 @@ it.effect("a git action that fails partway still refreshes the repository status
       Layer.mock(ServerEnvironment.ServerEnvironment)({}),
       Layer.mock(EnvironmentAuth.EnvironmentAuth)({}),
     );
-    const server = yield* RpcServer.makeNoSerialization(WsRpcGroup, {
+    const server = yield* RpcServer.makeNoSerialization(WsRpcGroup.omit(...OTTER_WS_RPC_TAGS), {
       ...WS_RPC_SERVER_OPTIONS,
       onFromServer: (response) =>
         response._tag === "Exit" ? Queue.offer(exits, response.exit) : Effect.void,
@@ -1907,7 +1908,7 @@ it.effect("a publish whose push fails still refreshes the new remote", () =>
       Layer.mock(ServerEnvironment.ServerEnvironment)({}),
       Layer.mock(EnvironmentAuth.EnvironmentAuth)({}),
     );
-    const server = yield* RpcServer.makeNoSerialization(WsRpcGroup, {
+    const server = yield* RpcServer.makeNoSerialization(WsRpcGroup.omit(...OTTER_WS_RPC_TAGS), {
       ...WS_RPC_SERVER_OPTIONS,
       onFromServer: (response) =>
         response._tag === "Exit" ? Queue.offer(exits, response.exit._tag) : Effect.void,

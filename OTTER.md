@@ -153,10 +153,11 @@ list text that must keep matching what the server or agents emit.
 Secrets live in the repository's Actions secrets and its `production` environment.
 
 The icons come from the Otterware brand kit (October 2026): the Otter Code symbol, a charcoal
-(`#2c2f31`) "‹›" swoosh, on an ivory (`#f8f5ec`) tile. Each Icon Composer project has two layers,
-`background.svg` and `symbol.svg`, both full 1024pt canvases. Production is the kit's light icon,
-with a dark appearance (ivory symbol on charcoal) set through `fill-specializations`; iOS derives
-the tinted one. Dev is the blueprint variant (blue gradient, grid and crop marks, white symbol) and
+(`#2c2f31`) "‹›" swoosh, on an ivory (`#f8f5ec`) tile. Production's Icon Composer project is the
+kit's native `OtterCode.icon`, copied as is: one `symbol.svg` layer on the document's fill, ivory in
+light and charcoal in dark, with an ivory symbol in dark; iOS derives the tinted one. A full-bleed
+background layer would hide the dark fill. Dev and nightly have two layers, `background.svg` and
+`symbol.svg`, both full 1024pt canvases. Dev is the blueprint variant (blue gradient, grid and crop marks, white symbol) and
 nightly the night sky (indigo to violet, stars and clouds, ivory symbol). Each folder also holds
 `<name>-web-favicon.svg`, drawn by hand and copied as is: production's switches with
 `prefers-color-scheme`. `vp run icons:export` regenerates the iOS, Linux, Windows and web exports

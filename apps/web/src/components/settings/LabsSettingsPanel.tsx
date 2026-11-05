@@ -115,7 +115,7 @@ function GuestLinksRow() {
       description={
         <>
           Share a thread with a guest who watches it live in a browser and sends messages you
-          approve. Needs Otter Connect: sign in and link this machine in{" "}
+          approve. Needs Otter Connect: link this machine in{" "}
           <Link to="/settings/access" className="underline underline-offset-2">
             Sharing & access
           </Link>

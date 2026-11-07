@@ -3092,7 +3092,16 @@ describe("OrchestratorMcpService provider resolution", () => {
     () =>
       Effect.gen(function* () {
         const peerId = ProviderInstanceId.make("codex-subscription-2");
+        const claudeId = ProviderInstanceId.make("claudeAgent");
         const driver = ProviderDriverKind.make("codex");
+        const claudeParent = {
+          instanceId: claudeId,
+          model: "claude-model",
+          options: [
+            { id: "effort", value: "high" },
+            { id: "fastMode", value: false },
+          ],
+        } as const;
         const inherited = {
           instanceId: codexInstanceId,
           model: "gpt-5.4",
@@ -3140,8 +3149,69 @@ describe("OrchestratorMcpService provider resolution", () => {
               ],
             },
           },
+          {
+            name: "Claude parent's effort on a Codex child",
+            parent: claudeParent,
+            target: { providerInstanceId: codexInstanceId, model: "effort-model" },
+            expected: {
+              instanceId: codexInstanceId,
+              model: "effort-model",
+              options: [{ id: "reasoningEffort", value: "high" }],
+            },
+          },
+          {
+            name: "Codex parent's effort on a Claude child",
+            target: { providerInstanceId: claudeId, model: claudeParent.model },
+            expected: {
+              instanceId: claudeId,
+              model: claudeParent.model,
+              options: [{ id: "effort", value: "high" }],
+            },
+          },
+          {
+            name: "inherited effort beside another given option",
+            target: { model: "effort-model", options: { serviceTier: "fast" } },
+            expected: {
+              instanceId: codexInstanceId,
+              model: "effort-model",
+              options: [
+                { id: "reasoningEffort", value: "high" },
+                { id: "serviceTier", value: "fast" },
+              ],
+            },
+          },
+          {
+            name: "explicit effort beats the inherited one",
+            target: {
+              providerInstanceId: claudeId,
+              model: claudeParent.model,
+              options: { effort: "low" },
+            },
+            expected: {
+              instanceId: claudeId,
+              model: claudeParent.model,
+              options: [{ id: "effort", value: "low" }],
+            },
+          },
+          {
+            name: "clearing drops the inherited effort",
+            target: { model: "effort-model", options: [] },
+            expected: { instanceId: codexInstanceId, model: "effort-model", options: [] },
+          },
+          {
+            name: "effort the child's model lacks",
+            target: { model: "low-effort-model" },
+            expected: { instanceId: codexInstanceId, model: "low-effort-model" },
+          },
+          {
+            name: "parent without effort",
+            parent: { instanceId: claudeId, model: claudeParent.model },
+            target: { providerInstanceId: codexInstanceId, model: "effort-model" },
+            expected: { instanceId: codexInstanceId, model: "effort-model" },
+          },
         ] as const;
         for (const testCase of cases) {
+          const parent = "parent" in testCase ? testCase.parent : inherited;
           const commands: Array<unknown> = [];
           const task = {
             id: taskId,
@@ -3162,7 +3232,7 @@ describe("OrchestratorMcpService provider resolution", () => {
               getThreadRecords: (threadId) =>
                 Effect.succeed(
                   threadId === parentThreadId
-                    ? parentProjection(commands.length > 0 ? [task] : [], inherited)
+                    ? parentProjection(commands.length > 0 ? [task] : [], parent)
                     : childProjection,
                 ),
               dispatch: (command) =>
@@ -3189,6 +3259,32 @@ describe("OrchestratorMcpService provider resolution", () => {
                     isCustom: false,
                     capabilities: null,
                   })),
+                  ...(
+                    [
+                      ["effort-model", ["low", "high"]],
+                      ["low-effort-model", ["low"]],
+                    ] as const
+                  ).map(([model, efforts]) => ({
+                    slug: model,
+                    name: model,
+                    isCustom: false,
+                    capabilities: {
+                      optionDescriptors: [
+                        {
+                          id: "reasoningEffort",
+                          label: "Reasoning",
+                          type: "select" as const,
+                          options: efforts.map((id) => ({ id, label: id })),
+                        },
+                        {
+                          id: "serviceTier",
+                          label: "Service Tier",
+                          type: "select" as const,
+                          options: [{ id: "fast", label: "Fast" }],
+                        },
+                      ],
+                    },
+                  })),
                   {
                     slug: "ultracode-model",
                     name: "ultracode-model",
@@ -3211,8 +3307,35 @@ describe("OrchestratorMcpService provider resolution", () => {
                 ],
               },
               providerSnapshot({ instanceId: peerId, driver, model: inherited.model }),
+              {
+                ...providerSnapshot({
+                  instanceId: claudeId,
+                  driver: ProviderDriverKind.make("claudeAgent"),
+                }),
+                models: [
+                  {
+                    slug: claudeParent.model,
+                    name: claudeParent.model,
+                    isCustom: false,
+                    capabilities: {
+                      optionDescriptors: [
+                        {
+                          id: "effort",
+                          label: "Reasoning",
+                          type: "select",
+                          options: [
+                            { id: "low", label: "Low" },
+                            { id: "high", label: "High" },
+                          ],
+                        },
+                        { id: "fastMode", label: "Fast", type: "boolean" },
+                      ],
+                    },
+                  },
+                ],
+              },
             ]),
-            adapterRegistryLayer([codexInstanceId, peerId]),
+            adapterRegistryLayer([codexInstanceId, peerId, claudeId]),
             Layer.mock(ProjectService.ProjectService)({}),
             Layer.mock(SecretRequests.SecretRequests)({}),
             Layer.mock(RemoteDelegation.RemoteDelegation)({}),
@@ -3221,7 +3344,10 @@ describe("OrchestratorMcpService provider resolution", () => {
           yield* Effect.gen(function* () {
             const service = yield* OrchestratorMcpService.OrchestratorMcpService;
             const capabilities = yield* service.capabilities(scope);
-            assert.deepEqual(capabilities.inheritedOptions, inherited.options);
+            assert.deepEqual(
+              capabilities.inheritedOptions,
+              "options" in parent ? parent.options : [],
+            );
             yield* service.delegateTask(scope, {
               task: "Review the change.",
               target: yield* decodeTarget(testCase.target),

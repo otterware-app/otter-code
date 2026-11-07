@@ -385,6 +385,24 @@ function knownOptions(
   return options.filter((option) => descriptors.some((descriptor) => descriptor.id === option.id));
 }
 
+const EFFORT_OPTION_IDS = new Set(["effort", "reasoningEffort"]);
+
+/** Drivers name effort differently. Codex runs an unset effort at the model's default, not config.toml's. */
+function inheritedEffortOption(
+  options: ReadonlyArray<ProviderOptionSelection> | undefined,
+  descriptors: ReadonlyArray<ProviderOptionDescriptor> | undefined,
+): ReadonlyArray<ProviderOptionSelection> | undefined {
+  const value = options?.find((option) => EFFORT_OPTION_IDS.has(option.id))?.value;
+  if (value === undefined) return undefined;
+  const descriptor = descriptors?.find(
+    (candidate) =>
+      EFFORT_OPTION_IDS.has(candidate.id) &&
+      candidate.type === "select" &&
+      candidate.options.some((choice) => choice.id === value),
+  );
+  return descriptor === undefined ? undefined : [{ id: descriptor.id, value }];
+}
+
 /** Skip checks without descriptors; reject duplicate IDs because consumers disagree on precedence. */
 function invalidOptionSelections(
   selections: ReadonlyArray<ProviderOptionSelection>,
@@ -1454,7 +1472,7 @@ const make = Effect.gen(function* () {
           withLegacyUltracodeEffort(descriptors, inheritedSelection.options),
           descriptors,
         )
-      : undefined;
+      : inheritedEffortOption(inheritedSelection.options, descriptors);
     if (requestedOptions !== undefined) {
       const selections = new Map(
         (requestedOptions.length === 0 ? [] : (options ?? [])).map((selection) => [

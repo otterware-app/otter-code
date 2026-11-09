@@ -141,9 +141,12 @@ export function createAccountSession(input: {
     publish();
     await locked(() => input.storage.write(null));
   };
-  const readToken = async (): Promise<string | null> => {
+  const usable = (saved: OtterAccountSession, rejected: string | undefined) =>
+    saved.accessToken !== rejected && saved.expiresAt > now() + 60_000;
+  /** `rejected` forces a refresh past an access token the server refused before its expiry. */
+  const token = async (rejected?: string): Promise<string | null> => {
     if (!session) return null;
-    if (session.expiresAt > now() + 60_000) return session.accessToken;
+    if (usable(session, rejected)) return session.accessToken;
     if (refreshing) return refreshing;
     const expectedGeneration = generation;
     const operation = locked(async () => {
@@ -156,7 +159,7 @@ export function createAccountSession(input: {
         publish();
         return null;
       }
-      if (previous.expiresAt > now() + 60_000) {
+      if (usable(previous, rejected)) {
         session = previous;
         publish();
         return previous.accessToken;
@@ -198,6 +201,7 @@ export function createAccountSession(input: {
       if (refreshing === operation) refreshing = null;
     }
   };
+  const readToken = () => token();
   return {
     getSnapshot: () => current,
     subscribe: (listener: () => void) => {
@@ -257,15 +261,24 @@ export function createAccountSession(input: {
     },
     readToken,
     validate: async () => {
-      const token = await readToken();
-      if (!token) return;
+      const current = await readToken();
+      if (!current) return;
+      try {
+        await readUser(current);
+        return;
+      } catch (error) {
+        if (!isAccountRequestError(error) || error.status !== 401) throw error;
+      }
+      // An access token ends with the browser session that approved it; the grant outlives it.
+      const fresh = await token(current);
+      if (!fresh) return;
       const expectedGeneration = generation;
       try {
-        await readUser(token);
+        await readUser(fresh);
       } catch (error) {
         if (
           generation === expectedGeneration &&
-          session?.accessToken === token &&
+          session?.accessToken === fresh &&
           isAccountRequestError(error) &&
           error.status === 401
         )

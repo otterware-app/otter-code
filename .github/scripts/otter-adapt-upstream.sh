@@ -76,6 +76,10 @@ def adapt_job(text, name, action, entries):
         if anchor not in job:
             raise SystemExit(f"Missing upstream hosting step: {name}")
         job = job.replace(anchor, anchor + fork_block(action), 1)
+    # A sparse checkout must still include the fork's hosting script.
+    if "            /pnpm-workspace.yaml\n" in job and "            /scripts/otter/\n" not in job:
+        job = job.replace("            /pnpm-workspace.yaml\n",
+                          "            /pnpm-workspace.yaml\n            /scripts/otter/\n", 1)
     for section, key, value in entries:
         if f"      {key}:" not in job:
             job = job.replace(f"    {section}:\n", f"    {section}:\n      {key}: {value}\n", 1)

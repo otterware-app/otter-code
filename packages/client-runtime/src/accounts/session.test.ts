@@ -82,6 +82,18 @@ it("clears a revoked grant and reports that sign-in is needed", async () => {
   expect(f.manager.getSnapshot().user).toBeNull();
   expect(f.saved()).toBeNull();
 });
+it("refreshes an access token that ended with its browser session instead of signing out", async () => {
+  const f = fixture(savedSession(900_000), async (request) => {
+    if (!request.url.endsWith("/code/session")) return Response.json(tokens);
+    return request.headers.get("authorization") === "Bearer new-access"
+      ? Response.json(user)
+      : new Response(null, { status: 401 });
+  });
+  await f.manager.load();
+  await f.manager.validate();
+  expect(f.manager.getSnapshot().user).toEqual(user);
+  expect(JSON.parse(f.saved()!)).toMatchObject({ accessToken: "new-access" });
+});
 it("preserves a session during a temporary account service outage", async () => {
   const f = fixture(savedSession(), async () => new Response(null, { status: 503 }));
   await f.manager.load();

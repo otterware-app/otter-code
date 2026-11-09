@@ -1261,6 +1261,7 @@ jobs:
             /.github/actions/setup-ci-deps/
             /package.json
             /pnpm-workspace.yaml
+            /scripts/otter/
           sparse-checkout-cone-mode: false
 
       - name: Setup Vite+

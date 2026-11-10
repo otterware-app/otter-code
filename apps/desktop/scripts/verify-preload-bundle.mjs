@@ -114,8 +114,6 @@ const executeBundle = (source, sandboxModules) => {
     {
       document,
       process: sandboxProcess,
-      window: { addEventListener: () => {} },
-      document: { readyState: "loading" },
       require: requireSandboxModule,
       window,
     },

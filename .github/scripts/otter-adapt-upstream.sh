@@ -27,8 +27,8 @@ perl -0pi -e 's/(\n  test_web:\n(?:    .*\n)*?    timeout-minutes: )10\n/${1}20\
 
 # A single browser session over every web browser test runs Chromium out of memory on
 # the 16 GB GitHub-hosted runners, closing the page at a different file each run. Separate
-# processes and two browser shards give each a fresh Chromium.
-perl -pi -e 's|^(\s+)run: vp run --filter \@t3tools/web test$|$1run: \|\n$1  cd apps/web\n$1  vp test run --passWithNoTests --project unit\n$1  vp test run --passWithNoTests --project browser --shard 1/2\n$1  vp test run --passWithNoTests --project browser --shard 2/2|' \
+# processes and four browser shards give each a fresh Chromium.
+perl -pi -e 's|^(\s+)run: vp run --filter \@t3tools/web test$|$1run: \|\n$1  cd apps/web\n$1  vp test run --passWithNoTests --project unit\n$1  for shard in 1 2 3 4; do vp test run --passWithNoTests --project browser --shard \$shard/4; done|' \
   .github/workflows/ci.yml .github/workflows/release.yml
 
 # The production relay deploy must run for this repository after an upstream sync.

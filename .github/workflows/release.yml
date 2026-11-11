@@ -347,8 +347,7 @@ jobs:
         run: |
           cd apps/web
           vp test run --passWithNoTests --project unit
-          vp test run --passWithNoTests --project browser --shard 1/2
-          vp test run --passWithNoTests --project browser --shard 2/2
+          for shard in 1 2 3 4; do vp test run --passWithNoTests --project browser --shard $shard/4; done
 
       # Browser tests run source modules; this boots the production chunk graph.
       - name: Boot the built web client

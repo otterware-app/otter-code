@@ -351,8 +351,9 @@ jobs:
         run: |
           cd apps/web
           vp test run --passWithNoTests --project unit --shard ${{ matrix.shard }}/${{ strategy.job-total }}
-          vp test run --passWithNoTests --project browser --shard $((${{ matrix.shard }} * 2 - 1))/$((${{ strategy.job-total }} * 2))
-          vp test run --passWithNoTests --project browser --shard $((${{ matrix.shard }} * 2))/$((${{ strategy.job-total }} * 2))
+          for part in 1 2 3 4; do
+            vp test run --passWithNoTests --project browser --shard $(((${{ matrix.shard }} - 1) * 4 + part))/$((${{ strategy.job-total }} * 4))
+          done
 
       # Browser tests run source modules; this boots the production chunk graph.
       - name: Boot the built web client

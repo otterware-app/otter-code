@@ -27,8 +27,8 @@ perl -0pi -e 's/(\n  test_web:\n(?:    .*\n)*?    timeout-minutes: )10\n/${1}20\
 
 # One Chromium session over a runner's share of the web browser tests still runs out of memory
 # on the 16 GB GitHub-hosted runners, closing the page partway. Unit tests run in their own
-# process, and each runner splits its browser share in two so each half gets a fresh Chromium.
-perl -pi -e 's|^(\s+)run: vp run --filter \@t3tools/web test --shard \$\{\{ matrix\.shard \}\}/\$\{\{ strategy\.job-total \}\}$|$1run: \|\n$1  cd apps/web\n$1  vp test run --passWithNoTests --project unit --shard \${{ matrix.shard }}/\${{ strategy.job-total }}\n$1  vp test run --passWithNoTests --project browser --shard \$((\${{ matrix.shard }} * 2 - 1))/\$((\${{ strategy.job-total }} * 2))\n$1  vp test run --passWithNoTests --project browser --shard \$((\${{ matrix.shard }} * 2))/\$((\${{ strategy.job-total }} * 2))|' \
+# process, and each runner splits its browser share in four so each part gets a fresh Chromium.
+perl -pi -e 's|^(\s+)run: vp run --filter \@t3tools/web test --shard \$\{\{ matrix\.shard \}\}/\$\{\{ strategy\.job-total \}\}$|$1run: \|\n$1  cd apps/web\n$1  vp test run --passWithNoTests --project unit --shard \${{ matrix.shard }}/\${{ strategy.job-total }}\n$1  for part in 1 2 3 4; do\n$1    vp test run --passWithNoTests --project browser --shard \$(((\${{ matrix.shard }} - 1) * 4 + part))/\$((\${{ strategy.job-total }} * 4))\n$1  done|' \
   .github/workflows/ci.yml .github/workflows/release.yml
 
 # The production relay deploy must run for this repository after an upstream sync.

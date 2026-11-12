@@ -107,6 +107,8 @@ describe("CommandPalette open intents", () => {
     await expect
       .element(page.getByPlaceholder("Search commands, projects, and threads..."))
       .toHaveFocus();
+    // Slow runners can still be filling the list; ArrowDown must start from the full root list.
+    await expect.element(page.getByRole("option", { name: /^New thread in\.\.\./ })).toBeVisible();
     await userEvent.keyboard("{ArrowDown}");
     await expect
       .element(page.getByRole("option", { name: /^New thread in\.\.\./ }))

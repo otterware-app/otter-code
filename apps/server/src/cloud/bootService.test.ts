@@ -196,7 +196,8 @@ const makeHarness = Effect.fn("test.make_boot_service_harness")(function* (
         control.linger = "yes";
         control.managerReachable ||= control.lingerStartsManager;
       }
-      if (!failed && command === "systemctl --user enable otter-code.service") control.enabled = true;
+      if (!failed && command === "systemctl --user enable otter-code.service")
+        control.enabled = true;
       const taskMissing =
         input.command === "schtasks" && input.args[0] !== "/Create" && control.task === undefined;
       if (input.command === "schtasks" && !failed) {
@@ -210,7 +211,8 @@ const makeHarness = Effect.fn("test.make_boot_service_harness")(function* (
         if (input.args[0] === "/Delete") delete control.task;
         if (input.args[0] === "/End") control.launcher?.close();
       }
-      if (!failed && command === "systemctl --user restart otter-code.service") control.active = true;
+      if (!failed && command === "systemctl --user restart otter-code.service")
+        control.active = true;
       // The manager loads units only from its own unit directory.
       const unitOutsideManager =
         command === "systemctl --user enable otter-code.service" &&

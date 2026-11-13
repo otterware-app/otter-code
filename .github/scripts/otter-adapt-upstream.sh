@@ -25,6 +25,12 @@ perl -pi -e 's/^(    timeout-minutes: )10$/${1}20/' .github/workflows/release.ym
 # web test job needs more time than upstream's 8-vCPU runners do.
 perl -0pi -e 's/(\n  test_web:\n(?:    .*\n)*?    timeout-minutes: )10\n/${1}20\n/' .github/workflows/ci.yml
 
+# One Chromium session over a runner's share of the web browser tests still runs out of memory
+# on the 16 GB GitHub-hosted runners, closing the page partway. Unit tests run in their own
+# process, and each runner splits its browser share in four so each part gets a fresh Chromium.
+perl -pi -e 's|^(\s+)run: vp run --filter \@t3tools/web test --shard \$\{\{ matrix\.shard \}\}/\$\{\{ strategy\.job-total \}\}$|$1run: \|\n$1  cd apps/web\n$1  vp test run --passWithNoTests --project unit --shard \${{ matrix.shard }}/\${{ strategy.job-total }}\n$1  for part in 1 2 3 4; do\n$1    vp test run --passWithNoTests --project browser --shard \$(((\${{ matrix.shard }} - 1) * 4 + part))/\$((\${{ strategy.job-total }} * 4))\n$1  done|' \
+  .github/workflows/ci.yml .github/workflows/release.yml
+
 # The production relay deploy must run for this repository after an upstream sync.
 python3 - <<'PY_RELAY'
 from pathlib import Path
@@ -45,6 +51,38 @@ perl -0pi -e '
   s/needs\.desktop_win_(x64|arm64)\.result == \x27success\x27/needs.desktop_win_$1.result != \x27failure\x27/g;
   s/\n[ \t]*echo \x27release-assets\/\*\.exe\x27//g;
 ' .github/workflows/release.yml
+
+# Upstream's merge requires both Windows manifests too; merge the macOS pair only,
+# still failing when either architecture is missing.
+python3 - <<'PY_MANIFESTS'
+from pathlib import Path
+
+path = Path('.github/workflows/release.yml')
+text = path.read_text()
+upstream = '        run: node scripts/merge-release-update-manifests.ts release-assets\n'
+fork = '''        run: |
+          shopt -s nullglob
+          arm64_manifests=(release-assets/*-mac.yml)
+          if [[ ${#arm64_manifests[@]} -eq 0 ]]; then
+            echo "Incomplete macOS updater manifests: no architecture manifests found." >&2
+            exit 1
+          fi
+          for arm64_manifest in "${arm64_manifests[@]}"; do
+            x64_manifest="${arm64_manifest%.yml}-x64.yml"
+            if [[ ! -f "$x64_manifest" ]]; then
+              echo "Incomplete macOS updater manifests: $x64_manifest is missing." >&2
+              exit 1
+            fi
+            node scripts/merge-update-manifests.ts --platform mac "$arm64_manifest" "$x64_manifest"
+            rm -f "$x64_manifest"
+          done
+'''
+if upstream in text:
+    text = text.replace(upstream, fork)
+elif fork not in text:
+    raise SystemExit('Missing upstream updater manifest merge step')
+path.write_text(text)
+PY_MANIFESTS
 
 # Keep Cloudflare hosting at the fork's deployment boundary. Upstream retains
 # its Vercel implementation; Otter stages a Worker version and promotes it only

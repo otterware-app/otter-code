@@ -688,7 +688,7 @@ jobs:
     needs: production
     # Skipped when the production job failed: no store build after a failed OTA.
     if: needs.production.outputs.ios_build == 'true'
-    runs-on: blacksmith-12vcpu-macos-27
+    runs-on: macos-15
     timeout-minutes: 60
     concurrency:
       group: mobile-ios-store-build

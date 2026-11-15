@@ -12,7 +12,7 @@ cd "$(git rev-parse --show-toplevel)"
 # upstream pins electron-builder 26.16.1 or later.
 find .github -name '*.yml' -print0 | xargs -0 sed -i.bak -E \
   -e 's/blacksmith-[0-9]+vcpu-ubuntu-2404/ubuntu-24.04/g' \
-  -e 's/blacksmith-[0-9]+vcpu-macos-26/macos-15/g' \
+  -e 's/blacksmith-[0-9]+vcpu-macos-[0-9]+/macos-15/g' \
   -e 's/blacksmith-[0-9]+vcpu-windows-2025/windows-2025/g'
 find .github -name '*.yml.bak' -delete
 

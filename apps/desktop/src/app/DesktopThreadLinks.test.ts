@@ -9,7 +9,7 @@ describe("threadPathFromDeepLink", () => {
     );
   });
 
-  it("ignores Clerk's callback, other schemes, and other paths", () => {
+  it("ignores unrelated callbacks, other schemes, and other paths", () => {
     for (const url of [
       "ottercode://app/",
       "ottercode://app/?code=1",

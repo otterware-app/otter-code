@@ -1,4 +1,4 @@
-import { useAuth } from "@clerk/react";
+import { useAuth } from "../../accounts/AccountProvider";
 import { useAtomValue } from "@effect/atom-react";
 import type { EnvironmentId } from "@t3tools/contracts";
 import type {
@@ -16,7 +16,7 @@ import {
   unlinkLinearAccount,
   updateLinearLinkEnvironment,
 } from "~/cloud/linearRelay";
-import { hasCloudPublicConfig, resolveRelayClerkTokenOptions } from "~/cloud/publicConfig";
+import { hasCloudPublicConfig } from "~/cloud/publicConfig";
 import { requestConfirmDialog } from "~/confirmDialog";
 import { useEnvironmentSettings, useUpdateEnvironmentSettings } from "~/hooks/useSettings";
 import { cn } from "~/lib/utils";
@@ -90,8 +90,8 @@ function ConfiguredLinearSettings({
   return isSignedIn ? (
     <SignedInLinearSettings
       primaryEnvironmentId={primaryEnvironmentId}
-      readClerkToken={async () => {
-        const token = await getToken(resolveRelayClerkTokenOptions());
+      readAccountToken={async () => {
+        const token = await getToken();
         if (!token) throw new Error("Sign in to Otter Connect first.");
         return token;
       }}
@@ -149,7 +149,7 @@ function useLinearReturnParam(authLoaded: boolean, signedIn: boolean) {
     });
   });
   useEffect(() => {
-    // Wait for Clerk so a signed-in user isn't told to sign in.
+    // Wait for Otter Accounts so a signed-in user isn't told to sign in.
     if (!authLoaded || typeof outcome !== "string" || handledRef.current) return;
     handledRef.current = true;
     handle(outcome);
@@ -158,10 +158,10 @@ function useLinearReturnParam(authLoaded: boolean, signedIn: boolean) {
 
 function SignedInLinearSettings({
   primaryEnvironmentId,
-  readClerkToken,
+  readAccountToken,
 }: {
   readonly primaryEnvironmentId: EnvironmentId | null;
-  readonly readClerkToken: () => Promise<string>;
+  readonly readAccountToken: () => Promise<string>;
 }) {
   const discovery = useRelayEnvironmentDiscovery();
   const [state, setState] = useState<LinearStatusState>({ kind: "loading" });
@@ -192,7 +192,7 @@ function SignedInLinearSettings({
 
   const readStatus = async (): Promise<LinearStatusState> => {
     try {
-      return { kind: "ready", status: await fetchLinearStatus(await readClerkToken()) };
+      return { kind: "ready", status: await fetchLinearStatus(await readAccountToken()) };
     } catch (cause) {
       return { kind: "error", message: errorMessage(cause, "Could not load Linear status.") };
     }
@@ -227,7 +227,7 @@ function SignedInLinearSettings({
   const authorize = (kind: RelayLinearAuthorizeKind, environmentId = linkEnvironmentId) =>
     run(kind, "Could not open Linear", async () => {
       const url = await startLinearAuthorization(
-        await readClerkToken(),
+        await readAccountToken(),
         kind,
         kind === "link" ? (environmentId ?? undefined) : undefined,
       );
@@ -244,7 +244,7 @@ function SignedInLinearSettings({
 
   const moveLink = (organizationId: string, environmentId: EnvironmentId) =>
     run(organizationId, "Could not change the environment", async () => {
-      await updateLinearLinkEnvironment(await readClerkToken(), organizationId, environmentId);
+      await updateLinearLinkEnvironment(await readAccountToken(), organizationId, environmentId);
       await load();
     });
 
@@ -255,7 +255,7 @@ function SignedInLinearSettings({
     );
     if (confirmed !== true) return;
     await run(organizationId, "Could not unlink Linear", async () => {
-      await unlinkLinearAccount(await readClerkToken(), organizationId);
+      await unlinkLinearAccount(await readAccountToken(), organizationId);
       await load();
     });
   };
